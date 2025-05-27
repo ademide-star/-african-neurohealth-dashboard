@@ -36,6 +36,8 @@ Principal Investigator **Prof. Owolabi Mayowa** (University of Ibadan)
 Supported by Growing Data-science Research in Africa to Stimulate Progress (GRASP) program
 in Collaboration with
 The National Institutes for Health (NIH) and Data Science Initiative (DSI)
+📄 License: MIT © 2024 Adebimpe John Omolola
+
 
 ---
 
