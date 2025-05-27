@@ -1,4 +1,5 @@
-# sparkle-   
+![MIT License](https://img.shields.io/badge/license-MIT-blue.svg)
+
 # 🧠 Stroke & Memory Loss Diagnostic Tool
 
 This diagnostic tool was developed with a strong emphasis on contextual and cultural relevance for African populations. Beyond conventional biomedical variables, it incorporates lifestyle, environmental, and psychosocial stressors that reflect lived realities such as noise pollution, use of herbal treatments, and sleep quality. To further enhance specificity, the system optionally captures users’ cultural group (e.g., Yoruba, Hausa, Swahili's) to allow future modeling of ethnoculturally-informed health patterns. These efforts aim to bridge the cultural gap in AI-driven health diagnostics, ensuring more equitable and representative digital health solutions across Africa. An AI-powered web and mobile diagnostic tool designed to predict individual risk for stroke and memory loss using clinical, behavioral, and environmental factors relevant to African populations.
