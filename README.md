@@ -33,7 +33,7 @@ This diagnostic tool was developed with a strong emphasis on contextual and cult
 
 Developed by **Adebimpe John Omolola Olamide**  
 Supervised by **Prof. Bamidele Owoyele** (University of Ilorin)
-Principal Investigator **Prof. Owolabi Mayowa** (University of Ibadan) 
+and **Prof. Owolabi Mayowa** (University of Ibadan) 
 Supported by Growing Data-science Research in Africa to Stimulate Progress (GRASP) program
 in Collaboration with
 The National Institutes for Health (NIH) and Data Science Initiative (DSI)
