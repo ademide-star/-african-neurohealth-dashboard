@@ -24,10 +24,9 @@ import traceback
 from sklearn.pipeline import Pipeline
 from supabase import create_client, Client
 
-# --- Load Environment Variables ---
-load_dotenv() 
-SUPABASE_URL = st.secrets("SUPABASE_URL")
-SUPABASE_KEY = st.secrets("SUPABASE_KEY" )
+# --- Load Environment Variables --
+SUPABASE_URL = st.secrets["SUPABASE_URL"]
+SUPABASE_KEY = st.secrets["SUPABASE_KEY"]
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 logging.basicConfig(level=logging.DEBUG)
 
@@ -1233,5 +1232,6 @@ if app_mode == "Alzheimer Risk Prediction":
         except Exception as e:
 
                 st.error(f"Error during alzheimers prediction or saving: {e}")
+
 
 
