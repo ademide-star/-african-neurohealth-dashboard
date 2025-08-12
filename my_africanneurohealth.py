@@ -26,8 +26,8 @@ from supabase import create_client, Client
 
 # --- Load Environment Variables ---
 load_dotenv() 
-SUPABASE_URL = os.getenv("SUPABASE_URL", "https://ejdchikokrqtezhabigb.supabase.co")
-SUPABASE_KEY = os.getenv("SUPABASE_KEY", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVqZGNoaWtva3JxdGV6aGFiaWdiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc0ODg1NzEyNSwiZXhwIjoyMDY0NDMzMTI1fQ.VlVdizh8h_Ft4CocxgFiT_c3szGxo6fK_YERRHExrYk")
+SUPABASE_URL = st.secrets("SUPABASE_URL")
+SUPABASE_KEY = st.secrets("SUPABASE_KEY" )
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 logging.basicConfig(level=logging.DEBUG)
 
@@ -1233,4 +1233,5 @@ if app_mode == "Alzheimer Risk Prediction":
         except Exception as e:
 
                 st.error(f"Error during alzheimers prediction or saving: {e}")
+
 
