@@ -264,18 +264,6 @@ else:
     page = st.sidebar.radio("Navigation", ["Login", "Register", "About"])
 
 # Render Pages
-if not st.session_state.user:
-    if page == "Login":
-        login()
-    elif page == "Register":
-        register()
-    elif page == "About":
-        about()
-else:
-    st.sidebar.success(f"Logged in as {st.session_state.user.email}")
-    if st.sidebar.button("Logout"):
-        logout()
-
     if page == "Home":
         st.title("Welcome to the African Neuro Health App")
         st.write("This is your private dashboard.")
@@ -1383,6 +1371,7 @@ if app_mode == "Alzheimer Risk Prediction":
         except Exception as e:
 
                 st.error(f"Error during alzheimers prediction or saving: {e}")
+
 
 
 
