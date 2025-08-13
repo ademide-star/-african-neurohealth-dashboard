@@ -130,14 +130,6 @@ if 'location_str' not in st.session_state:
 if "user" not in st.session_state:
     st.session_state.user = None
 
-import streamlit as st
-from supabase import create_client
-
-# Initialize Supabase client
-SUPABASE_URL = st.secrets["SUPABASE_URL"]
-SUPABASE_KEY = st.secrets["SUPABASE_KEY"]
-supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
-
 def login():
     st.subheader("Login")
     email = st.text_input("Email", key="login_email")
@@ -172,19 +164,44 @@ def login():
         else:
             st.warning("Please enter your email.")
 
-# Main app code...
-if "user" not in st.session_state:
+def register():
+    st.subheader("Register")
+    email = st.text_input("New Email", key="register_email")
+    password = st.text_input("New Password", type="password", key="register_password")
+    confirm_password = st.text_input("Confirm Password", type="password", key="register_confirm_password")
+
+    if st.button("Register"):
+        if password != confirm_password:
+            st.error("Passwords do not match")
+        else:
+            try:
+                response = supabase.auth.sign_up({"email": email, "password": password})
+                if response.user:
+                    st.success("Registration successful! Please check your email to confirm your account.")
+                else:
+                    st.error("Registration failed.")
+            except Exception as e:
+                st.error(f"Registration error: {e}")
+
+def logout():
+    supabase.auth.sign_out()
     st.session_state.user = None
+    st.experimental_rerun()
 
-if st.session_state.user is None:
-    login()
-else:
-    st.write(f"Welcome, {st.session_state.user.email}!")
-    if st.button("Logout"):
-        supabase.auth.sign_out()
-        st.session_state.user = None
-        st.experimental_rerun()
+# Main app interface inside sidebar
+with st.sidebar:
+    st.header("🔐 User Authentication")
 
+    if st.session_state.user is None:
+        option = st.radio("Select option:", ["Login", "Register"])
+        if option == "Login":
+            login()
+        else:
+            register()
+    else:
+        st.write(f"Welcome, {st.session_state.user.email}!")
+        if st.button("Logout"):
+            logout()
 
 countries_with_provinces = {
     "Nigeria": [
@@ -1273,6 +1290,7 @@ if app_mode == "Alzheimer Risk Prediction":
         except Exception as e:
 
                 st.error(f"Error during alzheimers prediction or saving: {e}")
+
 
 
 
