@@ -97,12 +97,13 @@ def custom_stress_score(prefix="", use_container=False):
         return level, label, total_score
 
 
-# --- Login Function ---
+# --- LOGIN FUNCTION ---
 def login():
     st.subheader("Login with Email & Password")
     email = st.text_input("Email", key="login_email")
     password = st.text_input("Password", type="password", key="login_password")
 
+    # Email/Password login
     if st.button("Login", key="login_btn"):
         try:
             response = supabase.auth.sign_in_with_password({"email": email, "password": password})
@@ -115,8 +116,47 @@ def login():
         except Exception as e:
             st.error(f"Login error: {e}")
 
+    st.markdown("---")
+    st.subheader("Or Sign in with Google")
 
-# --- Register Function ---
+    # Google OAuth login
+    if st.button("Login with Google", key="google_btn"):
+        redirect_url = "https://ademideola.streamlit.app"  # Change to your deployed URL
+        res = supabase.auth.sign_in_with_oauth(
+            {
+                "provider": "google",
+                "options": {"redirect_to": redirect_url}
+            }
+        )
+        st.markdown(f"[Click here to continue login]({res.url})")
+
+    # Detect Google OAuth callback
+    query_params = st.query_params
+    if "access_token" in query_params:
+        try:
+            user_session = supabase.auth.get_user()
+            if user_session.user:
+                st.session_state.user = user_session.user
+                st.success(f"Welcome, {st.session_state.user.email}!")
+                st.query_params.clear()  # Remove OAuth params from URL
+                st.rerun()
+        except Exception as e:
+            st.error(f"OAuth login error: {e}")
+
+    st.markdown("---")
+    st.subheader("Resend Magic Link")
+    resend_email = st.text_input("Enter your email to resend the magic link", key="resend_email")
+    if st.button("Resend Magic Link", key="resend_btn"):
+        if resend_email:
+            try:
+                supabase.auth.sign_in_with_otp({"email": resend_email})
+                st.success("Magic link sent! Please check your email.")
+            except Exception as e:
+                st.error(f"Failed to send magic link: {e}")
+        else:
+            st.warning("Please enter your email.")
+
+# --- REGISTER FUNCTION ---
 def register():
     st.subheader("Register")
     email = st.text_input("New Email", key="register_email")
@@ -136,6 +176,32 @@ def register():
             except Exception as e:
                 st.error(f"Registration error: {e}")
 
+# --- LOGOUT FUNCTION ---
+def logout():
+    try:
+        supabase.auth.sign_out()
+        st.session_state.user = None
+        st.success("Logged out successfully.")
+        st.rerun()
+    except Exception as e:
+        st.error(f"Logout error: {e}")
+
+# --- MAIN ---
+if "user" not in st.session_state:
+    st.session_state.user = None
+
+st.title("African Neuro Health App")
+
+if st.session_state.user:
+    st.write(f"Hello, {st.session_state.user.email}!")
+    if st.button("Logout"):
+        logout()
+else:
+    option = st.radio("Choose an option:", ["Login", "Register"])
+    if option == "Login":
+        login()
+    elif option == "Register":
+        register()
 
 # --- About Page ---
 def about():
@@ -1317,6 +1383,7 @@ if app_mode == "Alzheimer Risk Prediction":
         except Exception as e:
 
                 st.error(f"Error during alzheimers prediction or saving: {e}")
+
 
 
 
