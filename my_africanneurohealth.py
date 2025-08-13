@@ -115,29 +115,27 @@ except FileNotFoundError as e:
 except Exception as e:
     st.error(f"Error loading models: {e}")
     models_loaded = False
-# Initialize session state variables
+# --- Initialize session state variables ---
 if 'user' not in st.session_state:
     st.session_state.user = None
 if 'nutritional_data' not in st.session_state:
-    st.session_state.nutritional_data = {}  
+    st.session_state.nutritional_data = {}
 if 'default_lifestyles' not in st.session_state:
     st.session_state.default_lifestyles = []
 if 'stress_score' not in st.session_state:
     st.session_state.stress_score = 0
 if 'location_str' not in st.session_state:
-    st.session_state.location_str = {} 
-# --- Authentication in sidebar ---
-if "user" not in st.session_state:
-    st.session_state.user = None
+    st.session_state.location_str = {}
 
+# --- Authentication functions ---
 def login():
     st.subheader("Login")
     email = st.text_input("Email", key="login_email")
     password = st.text_input("Password", type="password", key="login_password")
 
-    if st.button("Login"):
+    if st.button("Login", key="login_button"):
         try:
-            response = supabase.auth.sign_in_with_password({"Email": email, "Password": password})
+            response = supabase.auth.sign_in_with_password({"email": email, "password": password})
             if response.user:
                 st.session_state.user = response.user
                 st.success(f"Logged in as {email}")
@@ -148,9 +146,9 @@ def login():
             st.error(f"Login error: {e}")
 
     st.markdown("---")
-    st.subheader("Resend Magic Link (if your email link expired)")
-    resend_email = st.text_input("Enter your email to resend the magic link", key="resend_email")
-    if st.button("Resend Magic Link"):
+    st.subheader("Resend Magic Link")
+    resend_email = st.text_input("Enter your email", key="resend_email")
+    if st.button("Resend Magic Link", key="resend_magic_button"):
         if resend_email:
             try:
                 response = supabase.auth.sign_in_with_password({"email": resend_email})
@@ -169,14 +167,14 @@ def register():
     password = st.text_input("New Password", type="password", key="register_password")
     confirm_password = st.text_input("Confirm Password", type="password", key="register_confirm_password")
 
-    if st.button("Register"):
+    if st.button("Register", key="register_button"):
         if password != confirm_password:
             st.error("Passwords do not match")
         else:
             try:
                 response = supabase.auth.sign_up({"email": email, "password": password})
                 if response.user:
-                    st.success("Registration successful! Please check your email to confirm your account.")
+                    st.success("Registration successful! Please check your email.")
                 else:
                     st.error("Registration failed.")
             except Exception as e:
@@ -187,8 +185,9 @@ def logout():
     st.session_state.user = None
     st.experimental_rerun()
 
+# --- App pages ---
 def stroke_prediction_app():
-    st.header("Stroke Prediction")
+    st.header("Stroke Risk Prediction")
     st.write("Stroke prediction UI and logic here...")
 
 def alzheimers_prediction_app():
@@ -199,20 +198,12 @@ def nutrition_tracker_app():
     st.header("Nutrition Tracker")
     st.write("Nutrition tracker UI and logic here...")
 
-# --- Main App ---
-
-# Initialize app_choice in session state
-if "user" not in st.session_state:
-    st.session_state.user = None
-if "app_choice" not in st.session_state:
-    st.session_state.app_choice = None
-
-# --- Before Login ---
+# --- Main App Logic ---
 if st.session_state.user is None:
     with st.sidebar:
         st.header("🔐 User Authentication")
-        option = st.radio("Select option:", ["Login", "Register"])
-        if option == "Login":
+        auth_option = st.radio("Select option:", ["Login", "Register"], key="auth_radio")
+        if auth_option == "Login":
             login()
         else:
             register()
@@ -244,48 +235,23 @@ By embedding these meaningful, locally grounded variables into an AI-powered hea
 **Principal Investigator:** Prof Mayowa Owolabi  
 **GRASP / NIH / DSI Collaborative Program**
 """)
-# --- Initialization ---
-if "user" not in st.session_state:
-    st.session_state.user = None
-if "app_choice" not in st.session_state:
-    st.session_state.app_choice = None
-
-# --- Before Login ---
-if st.session_state.user is None:
-    with st.sidebar:
-        st.header("🔐 User Authentication")
-        option = st.radio("Select option:", ["Login", "Register"])
-        if option == "Login":
-            login()
-        else:
-            register()
-
-    # About section
-    st.expander("ℹ️ About This App 🧠 African NeuroHealth Dashboard").markdown("""
-    ... about text ...
-    """)
-
-# --- After Login ---
 else:
     with st.sidebar:
         st.write(f"Welcome, {st.session_state.user.email}!")
-        st.session_state.app_choice = st.radio(
+        app_choice = st.radio(
             "Select app:",
             ["Stroke Prediction", "Alzheimer's Prediction", "Nutrition Tracker"],
-            key="app_choice"
+            key="app_choice_radio"
         )
-        if st.button("Logout"):
+        if st.button("Logout", key="logout_button"):
             logout()
 
-    # Render the selected app
-    if st.session_state.app_choice == "Stroke Prediction":
+    if app_choice == "Stroke Prediction":
         stroke_prediction_app()
-    elif st.session_state.app_choice == "Alzheimer's Prediction":
+    elif app_choice == "Alzheimer's Prediction":
         alzheimers_prediction_app()
-    elif st.session_state.app_choice == "Nutrition Tracker":
+    elif app_choice == "Nutrition Tracker":
         nutrition_tracker_app()
-    else:
-        st.write("Please select an app from the sidebar.")
 
 countries_with_provinces = {
     "Nigeria": [
@@ -1346,6 +1312,7 @@ if app_mode == "Alzheimer Risk Prediction":
         except Exception as e:
 
                 st.error(f"Error during alzheimers prediction or saving: {e}")
+
 
 
 
