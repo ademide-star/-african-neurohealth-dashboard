@@ -654,8 +654,8 @@ def build_full_input(raw):
 # --- Streamlit app ---
 # --- Stroke Predictor ---
 
-st.sidebar.title("🧠 African NeuroHealth Dashboard")
-app_mode = st.sidebar.selectbox("Choose Section", ["Stroke Risk Prediction", "Alzheimer Risk Prediction"])
+st.header("🧠 African NeuroHealth Dashboard")
+app_mode = st.selectbox("Choose Section", ["Stroke Risk Prediction", "Alzheimer Risk Prediction"])
 
 
 # =======================
@@ -1290,6 +1290,7 @@ if app_mode == "Alzheimer Risk Prediction":
         except Exception as e:
 
                 st.error(f"Error during alzheimers prediction or saving: {e}")
+
 
 
 
