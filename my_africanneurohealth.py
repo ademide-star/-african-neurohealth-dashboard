@@ -9,6 +9,7 @@ from dotenv import load_dotenv
 import requests
 from dataclasses import dataclass
 from typing import Dict, List, Tuple, Optional
+from urllib.parse import urlparse, parse_qs
 import logging
 import math
 from uuid import UUID
@@ -133,6 +134,7 @@ def login():
     email = st.text_input("Email", key="login_email")
     password = st.text_input("Password", type="password", key="login_password")
 
+    # Email/Password login
     if st.button("Login", key="login_btn"):
         try:
             response = supabase.auth.sign_in_with_password({"email": email, "password": password})
@@ -146,44 +148,46 @@ def login():
             st.error(f"Login error: {e}")
 
     st.markdown("---")
+    st.subheader("Or Sign in with Google")
+
+    # Google OAuth login
+    if st.button("Login with Google", key="google_btn"):
+        redirect_url = "https://ademideola.streamlit.app"  # Change if running locally
+        res = supabase.auth.sign_in_with_oauth(
+            {
+                "provider": "google",
+                "options": {"redirect_to": redirect_url}
+            }
+        )
+        # Open Google login URL
+        st.markdown(f"[Click here to continue login]({res.url})")
+
+    # Detect Google OAuth callback
+    query_params = st.experimental_get_query_params()
+    if "access_token" in query_params:
+        try:
+            user_session = supabase.auth.get_user()
+            if user_session.user:
+                st.session_state.user = user_session.user
+                st.success(f"Welcome, {st.session_state.user.email}!")
+                st.experimental_set_query_params()  # Clean URL
+                st.experimental_rerun()
+        except Exception as e:
+            st.error(f"OAuth login error: {e}")
+
+    st.markdown("---")
     st.subheader("Resend Magic Link")
     resend_email = st.text_input("Enter your email to resend the magic link", key="resend_email")
     if st.button("Resend Magic Link", key="resend_btn"):
         if resend_email:
             try:
-                response = supabase.auth.sign_in_with_password({"email": resend_email})
-                if response.get("error"):
-                    st.error(f"Error: {response['error']['message']}")
-                else:
-                    st.success("Magic link sent! Please check your email.")
+                supabase.auth.sign_in_with_otp({"email": resend_email})
+                st.success("Magic link sent! Please check your email.")
             except Exception as e:
                 st.error(f"Failed to send magic link: {e}")
         else:
             st.warning("Please enter your email.")
 
-def register():
-    st.subheader("Register")
-    email = st.text_input("New Email", key="register_email")
-    password = st.text_input("New Password", type="password", key="register_password")
-    confirm_password = st.text_input("Confirm Password", type="password", key="register_confirm_password")
-
-    if st.button("Register", key="register_btn"):
-        if password != confirm_password:
-            st.error("Passwords do not match")
-        else:
-            try:
-                response = supabase.auth.sign_up({"email": email, "password": password})
-                if response.user:
-                    st.success("Registration successful! Please check your email to confirm your account.")
-                else:
-                    st.error("Registration failed.")
-            except Exception as e:
-                st.error(f"Registration error: {e}")
-
-def logout():
-    supabase.auth.sign_out()
-    st.session_state.user = None
-    st.experimental_rerun()
 
 # --- App Feature Functions ---
 def stroke_prediction_app():
@@ -1311,6 +1315,7 @@ if app_mode == "Alzheimer Risk Prediction":
         except Exception as e:
 
                 st.error(f"Error during alzheimers prediction or saving: {e}")
+
 
 
 
