@@ -1,0 +1,13 @@
+streamlit
+pandas
+numpy
+joblib
+python-dotenv
+requests
+dataclasses-json
+jsonschema
+shap
+sqlite3-binary
+postgrest-py
+scikit-learn
+supabase
