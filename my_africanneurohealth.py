@@ -128,65 +128,75 @@ if "stress_score" not in st.session_state:
 if "location_str" not in st.session_state:
     st.session_state.location_str = {}
 
-# --- Auth Functions ---
+# --- Login Function ---
 def login():
-    st.subheader("Login")
+    st.subheader("Login with Email & Password")
     email = st.text_input("Email", key="login_email")
     password = st.text_input("Password", type="password", key="login_password")
 
-    # Email/Password login
     if st.button("Login", key="login_btn"):
         try:
             response = supabase.auth.sign_in_with_password({"email": email, "password": password})
             if response.user:
                 st.session_state.user = response.user
                 st.success(f"Logged in as {email}")
-                st.experimental_rerun()
+                st.rerun()
             else:
                 st.error("Invalid login credentials")
         except Exception as e:
             st.error(f"Login error: {e}")
 
-    st.markdown("---")
-    st.subheader("Or Sign in with Google")
 
-    # Google OAuth login
-    if st.button("Login with Google", key="google_btn"):
-        redirect_url = "https://ademideola.streamlit.app"  # Change if running locally
-        res = supabase.auth.sign_in_with_oauth(
-            {
-                "provider": "google",
-                "options": {"redirect_to": redirect_url}
-            }
-        )
-        # Open Google login URL
-        st.markdown(f"[Click here to continue login]({res.url})")
+# --- Register Function ---
+def register():
+    st.subheader("Register")
+    email = st.text_input("New Email", key="register_email")
+    password = st.text_input("New Password", type="password", key="register_password")
+    confirm_password = st.text_input("Confirm Password", type="password", key="register_confirm_password")
 
-    # Detect Google OAuth callback
-    query_params = st.experimental_get_query_params()
-    if "access_token" in query_params:
-        try:
-            user_session = supabase.auth.get_user()
-            if user_session.user:
-                st.session_state.user = user_session.user
-                st.success(f"Welcome, {st.session_state.user.email}!")
-                st.experimental_set_query_params()  # Clean URL
-                st.experimental_rerun()
-        except Exception as e:
-            st.error(f"OAuth login error: {e}")
-
-    st.markdown("---")
-    st.subheader("Resend Magic Link")
-    resend_email = st.text_input("Enter your email to resend the magic link", key="resend_email")
-    if st.button("Resend Magic Link", key="resend_btn"):
-        if resend_email:
-            try:
-                supabase.auth.sign_in_with_otp({"email": resend_email})
-                st.success("Magic link sent! Please check your email.")
-            except Exception as e:
-                st.error(f"Failed to send magic link: {e}")
+    if st.button("Register", key="register_btn"):
+        if password != confirm_password:
+            st.error("Passwords do not match")
         else:
-            st.warning("Please enter your email.")
+            try:
+                response = supabase.auth.sign_up({"email": email, "password": password})
+                if response.user:
+                    st.success("Registration successful! Please check your email to confirm your account.")
+                else:
+                    st.error("Registration failed.")
+            except Exception as e:
+                st.error(f"Registration error: {e}")
+
+
+# --- About Page ---
+def about():
+    st.title("About African Neuro Health")
+    with st.expander("ℹ️ About This App 🧠 African NeuroHealth Dashboard"):
+        st.markdown("""
+        This platform is a culturally attuned, context-aware diagnostic tool tailored for assessing neuro-health risks in African populations. 
+        It blends conventional biomedical metrics with locally relevant stressors, lifestyle habits, and cultural practices to offer a truly holistic health assessment experience.
+
+        **Key Features:**
+        - Environmental exposures (e.g., noise, air pollution)
+        - Dietary patterns (including traditional nutrition)
+        - Sleep quality and hydration
+        - Use of herbal or traditional remedies
+        - Psychosocial stressors unique to African settings
+        - Ethnocultural identity tracking for precision health insights
+
+        **By:** Adebimpe-John Omolola E  
+        **Supervisor:** Prof. Bamidele Owoyele Victor  
+        **Institution:** University of Ilorin  
+        **Principal Investigator:** Prof Mayowa Owolabi  
+        **GRASP / NIH / DSI Collaborative Program**
+        """)
+
+
+# --- Logout Function ---
+def logout():
+    supabase.auth.sign_out()
+    st.session_state.user = None
+    st.rerun()
 
 
 # --- App Feature Functions ---
@@ -195,65 +205,56 @@ def stroke_prediction_app():
     st.title("🫀 Stroke Risk Predictor")
     st.write("Stroke prediction UI and logic here...")
 
+
 def alzheimers_prediction_app():
     st.header("Alzheimer's Prediction")
     st.title("🧠 Alzheimer’s Predictor")
     st.write("Alzheimer's prediction UI and logic here...")
+
 
 def nutrition_tracker_app():
     st.header("Nutrition Tracker")
     st.title("🥗 Nutrition Tracker")
     st.write("Nutrition tracker UI and logic here...")
 
-# --- Main App Flow ---
-if st.session_state.user is None:
-    # Left Sidebar for Login/Register
-    with st.sidebar:
-        st.header("🔐 User Authentication")
-        auth_option = st.radio("Select option:", ["Login", "Register"], key="auth_option")
-        if auth_option == "Login":
-            login()
-        else:
-            register()
 
-    with st.expander("ℹ️ About This App 🧠 African NeuroHealth Dashboard"):
-        st.markdown("""
-This platform is a culturally attuned, context-aware diagnostic tool tailored for assessing neuro-health risks in African populations. 
-It blends conventional biomedical metrics with locally relevant stressors, lifestyle habits, and cultural practices to offer a truly holistic health assessment experience.
+# --- Main App ---
+if "user" not in st.session_state:
+    st.session_state.user = None
 
-**Key Features:**
-- Environmental exposures (e.g., noise, air pollution)
-- Dietary patterns (including traditional nutrition)
-- Sleep quality and hydration
-- Use of herbal or traditional remedies
-- Psychosocial stressors unique to African settings
-- Ethnocultural identity tracking for precision health insights
-
-**By:** Adebimpe-John Omolola E  
-**Supervisor:** Prof. Bamidele Owoyele Victor  
-**Institution:** University of Ilorin  
-**Principal Investigator:** Prof Mayowa Owolabi  
-**GRASP / NIH / DSI Collaborative Program**
-""")
-
+# Sidebar Navigation
+if st.session_state.user:
+    page = st.sidebar.radio("Navigation", ["Home", "Stroke Prediction", "Alzheimer's Prediction", "Nutrition Tracker", "Profile", "Settings"])
 else:
-    # Authenticated users see app selection + tools
-    with st.sidebar:
-        st.write(f"👋 Welcome, {st.session_state.user.email}!")
-        app_choice = st.radio(
-            "Choose an App:",
-            ["Stroke Prediction", "Alzheimer's Prediction", "Nutrition Tracker"],
-            key="app_choice"
-        )
-        if st.button("Logout", key="logout_button"):
-            logout()
+    page = st.sidebar.radio("Navigation", ["Login", "Register", "About"])
 
-    if app_choice == "Stroke Prediction":
+# Render Pages
+if not st.session_state.user:
+    if page == "Login":
+        login()
+    elif page == "Register":
+        register()
+    elif page == "About":
+        about()
+else:
+    st.sidebar.success(f"Logged in as {st.session_state.user.email}")
+    if st.sidebar.button("Logout"):
+        logout()
+
+    if page == "Home":
+        st.title("Welcome to the African Neuro Health App")
+        st.write("This is your private dashboard.")
+    elif page == "Stroke Prediction":
         stroke_prediction_app()
-    elif app_choice == "Alzheimer's Prediction":
+    elif page == "Alzheimer's Prediction":
         alzheimers_prediction_app()
-    elif app_choice == "Nutrition Tracker":
+    elif page == "Nutrition Tracker":
         nutrition_tracker_app()
+    elif page == "Profile":
+        st.title("Your Profile")
+        st.write(st.session_state.user)
+    elif page == "Settings":
+        st.title("Settings")
 
 
 countries_with_provinces = {
@@ -1315,6 +1316,7 @@ if app_mode == "Alzheimer Risk Prediction":
         except Exception as e:
 
                 st.error(f"Error during alzheimers prediction or saving: {e}")
+
 
 
 
