@@ -96,37 +96,6 @@ def custom_stress_score(prefix="", use_container=False):
         
         return level, label, total_score
 
-# --- Load Models with error handling ---
-base_path = os.path.dirname(r"C:\Users\sibs2\african-neurohealth-dashboard\stroke_model_pipeline.pkl")  # script folder
-stroke_path = os.path.join(base_path, "stroke_model_pipeline.pkl")
-alz_path = os.path.join(base_path, "alz_model_pipeline.pkl")
-
-stroke_model = joblib.load(stroke_path)
-alz_model = joblib.load(alz_path)
-
-try:
-    # Use relative paths instead of absolute paths
-     stroke_model = joblib.load("stroke_model_pipeline.pkl")
-     alz_model = joblib.load("alz_model_pipeline.pkl")
-     models_loaded = True
-except FileNotFoundError as e:
-    st.error(f"Model files not found: {e}")
-    st.error("Please ensure model files are in the correct path.")
-    models_loaded = False
-except Exception as e:
-    st.error(f"Error loading models: {e}")
-    models_loaded = False
-# --- Initialize session state ---
-if "user" not in st.session_state:
-    st.session_state.user = None
-if "nutritional_data" not in st.session_state:
-    st.session_state.nutritional_data = {}
-if "default_lifestyles" not in st.session_state:
-    st.session_state.default_lifestyles = []
-if "stress_score" not in st.session_state:
-    st.session_state.stress_score = 0
-if "location_str" not in st.session_state:
-    st.session_state.location_str = {}
 
 # --- Login Function ---
 def login():
@@ -255,6 +224,38 @@ else:
         st.write(st.session_state.user)
     elif page == "Settings":
         st.title("Settings")
+        
+# --- Load Models with error handling ---
+base_path = os.path.dirname(r"C:\Users\sibs2\african-neurohealth-dashboard\stroke_model_pipeline.pkl")  # script folder
+stroke_path = os.path.join(base_path, "stroke_model_pipeline.pkl")
+alz_path = os.path.join(base_path, "alz_model_pipeline.pkl")
+
+stroke_model = joblib.load(stroke_path)
+alz_model = joblib.load(alz_path)
+
+try:
+    # Use relative paths instead of absolute paths
+     stroke_model = joblib.load("stroke_model_pipeline.pkl")
+     alz_model = joblib.load("alz_model_pipeline.pkl")
+     models_loaded = True
+except FileNotFoundError as e:
+    st.error(f"Model files not found: {e}")
+    st.error("Please ensure model files are in the correct path.")
+    models_loaded = False
+except Exception as e:
+    st.error(f"Error loading models: {e}")
+    models_loaded = False
+# --- Initialize session state ---
+if "user" not in st.session_state:
+    st.session_state.user = None
+if "nutritional_data" not in st.session_state:
+    st.session_state.nutritional_data = {}
+if "default_lifestyles" not in st.session_state:
+    st.session_state.default_lifestyles = []
+if "stress_score" not in st.session_state:
+    st.session_state.stress_score = 0
+if "location_str" not in st.session_state:
+    st.session_state.location_str = {}
 
 
 countries_with_provinces = {
@@ -1316,6 +1317,7 @@ if app_mode == "Alzheimer Risk Prediction":
         except Exception as e:
 
                 st.error(f"Error during alzheimers prediction or saving: {e}")
+
 
 
 
