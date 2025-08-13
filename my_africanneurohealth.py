@@ -129,7 +129,18 @@ if 'location_str' not in st.session_state:
 # --- Authentication in sidebar ---
 if st.session_state.user is None:
     st.session_state.user = None  # properly indented inside the if block
-
+with st.sidebar:
+    st.header("🔐 User Authentication")
+    if st.session_state.user is None:
+        option = st.radio("Select option:", ["Login", "Register"])
+        if option == "Login":
+            login()
+        else:
+            register()
+    else:
+        st.write(f"Welcome, {st.session_state.user.email}!")
+        if st.button("Logout"):
+            logout()
 
 def login():
     st.subheader("Login")
@@ -1276,6 +1287,7 @@ if app_mode == "Alzheimer Risk Prediction":
         except Exception as e:
 
                 st.error(f"Error during alzheimers prediction or saving: {e}")
+
 
 
 
