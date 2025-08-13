@@ -174,19 +174,19 @@ def logout():
     st.session_state.user = None
     st.experimental_rerun()
 
-if st.session_state.user is None:
-    option = st.radio("Select option:", ["Login", "Register"])
-    if option == "Login":
-        login()
+    if st.session_state.user is None:
+        option = st.radio("Select option:", ["Login", "Register"])
+        if option == "Login":
+            login()
+        else:
+            register()
     else:
-        register()
-else:
-    st.write(f"Welcome, {st.session_state.user.email}!")
+        st.write(f"Welcome, {st.session_state.user.email}!")
     if st.button("Logout"):
         logout()
     else:
         st.write(f"Welcome {st.session_state.user['email']}")
-        if st.button("Logout"):
+    if st.button("Logout"):
             st.session_state.user = None
             st.session_state.nutritional_data = {}
             st.rerun()
@@ -1278,6 +1278,7 @@ if app_mode == "Alzheimer Risk Prediction":
         except Exception as e:
 
                 st.error(f"Error during alzheimers prediction or saving: {e}")
+
 
 
 
