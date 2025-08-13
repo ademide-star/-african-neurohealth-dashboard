@@ -130,21 +130,60 @@ if 'location_str' not in st.session_state:
 with st.sidebar:
     st.header("Account")
     
-    if st.session_state.user is None:
-        # Login form
-        email = st.text_input("Email")
-        password = st.text_input("Password", type="password")
-        
-        if st.button("Login"):
-            # Replace with actual authentication logic
-            if email == "test@example.com" and password == "password":
-                st.session_state.user = {
-                    "id": "user_id_123",
-                    "email": email
-                }
-                st.rerun()
+    if "user" not in st.session_state:
+    st.session_state.user = None
+
+def login():
+    st.subheader("Login")
+    email = st.text_input("Email", key="login_email")
+    password = st.text_input("Password", type="password", key="login_password")
+
+    if st.button("Login"):
+        try:
+            response = supabase.auth.sign_in_with_password({"email": email, "password": password})
+            if response.user:
+                st.session_state.user = response.user
+                st.success(f"Logged in as {email}")
+                st.experimental_rerun()
             else:
-                st.error("Invalid credentials")
+                st.error("Invalid login credentials")
+        except Exception as e:
+            st.error(f"Login error: {e}")
+
+def register():
+    st.subheader("Register")
+    email = st.text_input("New Email", key="register_email")
+    password = st.text_input("New Password", type="password", key="register_password")
+    confirm_password = st.text_input("Confirm Password", type="password", key="register_confirm_password")
+
+    if st.button("Register"):
+        if password != confirm_password:
+            st.error("Passwords do not match")
+        else:
+            try:
+                response = supabase.auth.sign_up({"email": email, "password": password})
+                if response.user:
+                    st.success("Registration successful! Please check your email to confirm your account.")
+                else:
+                    st.error("Registration failed.")
+            except Exception as e:
+                st.error(f"Registration error: {e}")
+
+def logout():
+    supabase.auth.sign_out()
+    st.session_state.user = None
+    st.experimental_rerun()
+
+if st.session_state.user is None:
+    option = st.radio("Select option:", ["Login", "Register"])
+    if option == "Login":
+        login()
+    else:
+        register()
+else:
+    st.write(f"Welcome, {st.session_state.user.email}!")
+    if st.button("Logout"):
+        logout()
     else:
         st.write(f"Welcome {st.session_state.user['email']}")
         if st.button("Logout"):
@@ -1239,6 +1278,7 @@ if app_mode == "Alzheimer Risk Prediction":
         except Exception as e:
 
                 st.error(f"Error during alzheimers prediction or saving: {e}")
+
 
 
 
