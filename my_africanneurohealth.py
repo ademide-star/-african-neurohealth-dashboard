@@ -178,7 +178,7 @@ def register():
             try:
                 response = supabase.auth.sign_up({"email": email, "password": password})
                 if response.user:
-                    st.success("Registration successful! Please check your email to confirm your account.")
+                    st.success("Registration successful! Please Log in.")
                 else:
                     st.error("Registration failed.")
             except Exception as e:
@@ -1360,6 +1360,7 @@ if app_mode == "Alzheimer Risk Prediction":
         except Exception as e:
 
                 st.error(f"Error during alzheimers prediction or saving: {e}")
+
 
 
 
