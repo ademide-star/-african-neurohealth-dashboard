@@ -137,7 +137,7 @@ def login():
 
     if st.button("Login"):
         try:
-            response = supabase.auth.sign_in_with_password({"email": email, "password": password})
+            response = supabase.auth.sign_in_with_password({"Email": email, "Password": password})
             if response.user:
                 st.session_state.user = response.user
                 st.success(f"Logged in as {email}")
@@ -1310,6 +1310,7 @@ if app_mode == "Alzheimer Risk Prediction":
         except Exception as e:
 
                 st.error(f"Error during alzheimers prediction or saving: {e}")
+
 
 
 
