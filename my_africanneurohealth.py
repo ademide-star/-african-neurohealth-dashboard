@@ -147,7 +147,6 @@ def login():
         except Exception as e:
             st.error(f"Login error: {e}")
 
-    # Resend magic link section
     st.markdown("---")
     st.subheader("Resend Magic Link (if your email link expired)")
     resend_email = st.text_input("Enter your email to resend the magic link", key="resend_email")
@@ -188,20 +187,69 @@ def logout():
     st.session_state.user = None
     st.experimental_rerun()
 
-# Main app interface inside sidebar
-with st.sidebar:
-    st.header("🔐 User Authentication")
+def stroke_prediction_app():
+    st.header("Stroke Prediction")
+    st.write("Stroke prediction UI and logic here...")
 
-    if st.session_state.user is None:
+def alzheimers_prediction_app():
+    st.header("Alzheimer's Prediction")
+    st.write("Alzheimer's prediction UI and logic here...")
+
+def nutrition_tracker_app():
+    st.header("Nutrition Tracker")
+    st.write("Nutrition tracker UI and logic here...")
+
+# --- Main App ---
+
+if st.session_state.user is None:
+    with st.sidebar:
+        st.header("🔐 User Authentication")
         option = st.radio("Select option:", ["Login", "Register"])
         if option == "Login":
             login()
         else:
             register()
-    else:
+
+    st.expander("ℹ️ About This App 🧠 African NeuroHealth Dashboard").markdown("""
+This platform is a culturally attuned, context-aware diagnostic tool tailored for assessing neuro-health risks in African populations. It blends conventional biomedical metrics with locally relevant stressors, lifestyle habits, and cultural practices to offer a truly holistic health assessment experience.
+
+Rooted in a deep understanding of Africa’s diverse contexts, the tool goes beyond standard variables like age, BMI, and blood pressure. It integrates often-overlooked factors such as:
+
+Environmental exposures (e.g., noise, air pollution),
+
+Dietary patterns (including traditional nutrition),
+
+Sleep quality and hydration,
+
+Use of herbal or traditional remedies, and
+
+Psychosocial stressors unique to many African settings.
+
+Recognizing the continent’s rich ethnocultural fabric, the system also records users’ ethnic and cultural identities (e.g., Yoruba, Hausa, Igbo, Swahili). This enables the future development of ethnoculturally-informed AI models that generate more precise and population-specific insights.
+
+By embedding these meaningful, locally grounded variables into an AI-powered health dashboard, this tool aspires to close the cultural and diagnostic gap in digital health. It promotes equity, representation, and precision in preventive neuro-healthcare across Africa.
+
+**By:** Adebimpe-John Omolola E  
+**Supervisor:** Prof. Bamidele Owoyele Victor  
+**Institution:** University of Ilorin
+
+**Principal Investigator:** Prof Mayowa Owolabi  
+**GRASP / NIH / DSI Collaborative Program**
+""")
+else:
+    with st.sidebar:
         st.write(f"Welcome, {st.session_state.user.email}!")
+        app_choice = st.radio("Select app:", ["Stroke Prediction", "Alzheimer's Prediction", "Nutrition Tracker"])
         if st.button("Logout"):
             logout()
+
+    # Show the app based on choice; Nutrition Tracker is always available as a choice
+    if app_choice == "Stroke Prediction":
+        stroke_prediction_app()
+    elif app_choice == "Alzheimer's Prediction":
+        alzheimers_prediction_app()
+    elif app_choice == "Nutrition Tracker":
+        nutrition_tracker_app()
 
 countries_with_provinces = {
     "Nigeria": [
@@ -451,34 +499,6 @@ if st.sidebar.button("Save Nutritional Data"):
             
 
 # --- About Section ---
-with st.expander("ℹ️ About This App 🧠 African NeuroHealth Dashboard"):
-    st.markdown("""
-This platform is a culturally attuned, context-aware diagnostic tool tailored for assessing neuro-health risks in African populations. It blends conventional biomedical metrics with locally relevant stressors, lifestyle habits, and cultural practices to offer a truly holistic health assessment experience.
-
-Rooted in a deep understanding of Africa’s diverse contexts, the tool goes beyond standard variables like age, BMI, and blood pressure. It integrates often-overlooked factors such as:
-
-Environmental exposures (e.g., noise, air pollution),
-
-Dietary patterns (including traditional nutrition),
-
-Sleep quality and hydration,
-
-Use of herbal or traditional remedies, and
-
-Psychosocial stressors unique to many African settings.
-
-Recognizing the continent’s rich ethnocultural fabric, the system also records users’ ethnic and cultural identities (e.g., Yoruba, Hausa, Igbo, Swahili). This enables the future development of ethnoculturally-informed AI models that generate more precise and population-specific insights.
-
-By embedding these meaningful, locally grounded variables into an AI-powered health dashboard, this tool aspires to close the cultural and diagnostic gap in digital health. It promotes equity, representation, and precision in preventive neuro-healthcare across Africa.
-
-**By:** Adebimpe-John Omolola E  
-**Supervisor:** Prof. Bamidele Owoyele Victor  
-**Institution:** University of Ilorin
-
-**Principal Investigator:** Prof Mayowa Owolabi  
-**GRASP / NIH / DSI Collaborative Program**
-    """)
-
 
 if not models_loaded:
     st.error("Cannot proceed without model files. Please check the file paths and restart the application.")
@@ -1290,6 +1310,7 @@ if app_mode == "Alzheimer Risk Prediction":
         except Exception as e:
 
                 st.error(f"Error during alzheimers prediction or saving: {e}")
+
 
 
 
