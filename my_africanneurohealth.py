@@ -202,9 +202,12 @@ def nutrition_tracker_app():
 # --- Main App ---
 
 # Initialize app_choice in session state
+if "user" not in st.session_state:
+    st.session_state.user = None
 if "app_choice" not in st.session_state:
     st.session_state.app_choice = None
 
+# --- Before Login ---
 if st.session_state.user is None:
     with st.sidebar:
         st.header("🔐 User Authentication")
@@ -241,13 +244,40 @@ By embedding these meaningful, locally grounded variables into an AI-powered hea
 **Principal Investigator:** Prof Mayowa Owolabi  
 **GRASP / NIH / DSI Collaborative Program**
 """)
+# --- Initialization ---
+if "user" not in st.session_state:
+    st.session_state.user = None
+if "app_choice" not in st.session_state:
+    st.session_state.app_choice = None
+
+# --- Before Login ---
+if st.session_state.user is None:
+    with st.sidebar:
+        st.header("🔐 User Authentication")
+        option = st.radio("Select option:", ["Login", "Register"])
+        if option == "Login":
+            login()
+        else:
+            register()
+
+    # About section
+    st.expander("ℹ️ About This App 🧠 African NeuroHealth Dashboard").markdown("""
+    ... about text ...
+    """)
+
+# --- After Login ---
 else:
     with st.sidebar:
         st.write(f"Welcome, {st.session_state.user.email}!")
-        st.session_state.app_choice = st.radio("Select app:", ["Stroke Prediction", "Alzheimer's Prediction", "Nutrition Tracker"], key="app_choice")
+        st.session_state.app_choice = st.radio(
+            "Select app:",
+            ["Stroke Prediction", "Alzheimer's Prediction", "Nutrition Tracker"],
+            key="app_choice"
+        )
         if st.button("Logout"):
             logout()
 
+    # Render the selected app
     if st.session_state.app_choice == "Stroke Prediction":
         stroke_prediction_app()
     elif st.session_state.app_choice == "Alzheimer's Prediction":
@@ -1316,6 +1346,7 @@ if app_mode == "Alzheimer Risk Prediction":
         except Exception as e:
 
                 st.error(f"Error during alzheimers prediction or saving: {e}")
+
 
 
 
