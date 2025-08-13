@@ -115,14 +115,6 @@ except FileNotFoundError as e:
 except Exception as e:
     st.error(f"Error loading models: {e}")
     models_loaded = False
-import streamlit as st
-from supabase import create_client, Client
-
-# --- Supabase setup ---
-SUPABASE_URL = "YOUR_SUPABASE_URL"
-SUPABASE_KEY = "YOUR_SUPABASE_KEY"
-supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
-
 # --- Initialize session state ---
 if "user" not in st.session_state:
     st.session_state.user = None
@@ -1317,6 +1309,7 @@ if app_mode == "Alzheimer Risk Prediction":
         except Exception as e:
 
                 st.error(f"Error during alzheimers prediction or saving: {e}")
+
 
 
 
