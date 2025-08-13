@@ -96,10 +96,17 @@ def custom_stress_score(prefix="", use_container=False):
         return level, label, total_score
 
 # --- Load Models with error handling ---
+base_path = os.path.dirname(r"C:\Users\sibs2\african-neurohealth-dashboard\stroke_model_pipeline.pkl")  # script folder
+stroke_path = os.path.join(base_path, "stroke_model_pipeline.pkl")
+alz_path = os.path.join(base_path, "alz_model_pipeline.pkl")
+
+stroke_model = joblib.load(stroke_path)
+alz_model = joblib.load(alz_path)
+
 try:
     # Use relative paths instead of absolute paths
-     stroke_model = joblib.load("C:\\Users\\sibs2\\african-neurohealth-dashboard\\stroke_model_pipeline.pkl")
-     alz_model = joblib.load("C:\\Users\\sibs2\\african-neurohealth-dashboard\\alz_model_pipeline.pkl")
+     stroke_model = joblib.load("stroke_model_pipeline.pkl")
+     alz_model = joblib.load("alz_model_pipeline.pkl")
      models_loaded = True
 except FileNotFoundError as e:
     st.error(f"Model files not found: {e}")
@@ -1232,6 +1239,7 @@ if app_mode == "Alzheimer Risk Prediction":
         except Exception as e:
 
                 st.error(f"Error during alzheimers prediction or saving: {e}")
+
 
 
 
