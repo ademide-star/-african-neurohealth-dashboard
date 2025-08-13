@@ -201,6 +201,10 @@ def nutrition_tracker_app():
 
 # --- Main App ---
 
+# Initialize app_choice in session state
+if "app_choice" not in st.session_state:
+    st.session_state.app_choice = None
+
 if st.session_state.user is None:
     with st.sidebar:
         st.header("🔐 User Authentication")
@@ -211,6 +215,7 @@ if st.session_state.user is None:
             register()
 
     st.expander("ℹ️ About This App 🧠 African NeuroHealth Dashboard").markdown("""
+                                                                               
 This platform is a culturally attuned, context-aware diagnostic tool tailored for assessing neuro-health risks in African populations. It blends conventional biomedical metrics with locally relevant stressors, lifestyle habits, and cultural practices to offer a truly holistic health assessment experience.
 
 Rooted in a deep understanding of Africa’s diverse contexts, the tool goes beyond standard variables like age, BMI, and blood pressure. It integrates often-overlooked factors such as:
@@ -239,17 +244,18 @@ By embedding these meaningful, locally grounded variables into an AI-powered hea
 else:
     with st.sidebar:
         st.write(f"Welcome, {st.session_state.user.email}!")
-        app_choice = st.radio("Select app:", ["Stroke Prediction", "Alzheimer's Prediction", "Nutrition Tracker"])
+        st.session_state.app_choice = st.radio("Select app:", ["Stroke Prediction", "Alzheimer's Prediction", "Nutrition Tracker"], key="app_choice")
         if st.button("Logout"):
             logout()
 
-    # Show the app based on choice; Nutrition Tracker is always available as a choice
-    if app_choice == "Stroke Prediction":
+    if st.session_state.app_choice == "Stroke Prediction":
         stroke_prediction_app()
-    elif app_choice == "Alzheimer's Prediction":
+    elif st.session_state.app_choice == "Alzheimer's Prediction":
         alzheimers_prediction_app()
-    elif app_choice == "Nutrition Tracker":
+    elif st.session_state.app_choice == "Nutrition Tracker":
         nutrition_tracker_app()
+    else:
+        st.write("Please select an app from the sidebar.")
 
 countries_with_provinces = {
     "Nigeria": [
@@ -1310,6 +1316,7 @@ if app_mode == "Alzheimer Risk Prediction":
         except Exception as e:
 
                 st.error(f"Error during alzheimers prediction or saving: {e}")
+
 
 
 
