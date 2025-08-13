@@ -127,11 +127,9 @@ if 'stress_score' not in st.session_state:
 if 'location_str' not in st.session_state:
     st.session_state.location_str = {} 
 # --- Authentication in sidebar ---
-with st.sidebar:
-    st.header("Account")
-    
-    if "user" not in st.session_state:
-    st.session_state.user = None
+if st.session_state.user is None:
+    st.session_state.user = None  # properly indented inside the if block
+
 
 def login():
     st.subheader("Login")
@@ -1278,6 +1276,7 @@ if app_mode == "Alzheimer Risk Prediction":
         except Exception as e:
 
                 st.error(f"Error during alzheimers prediction or saving: {e}")
+
 
 
 
