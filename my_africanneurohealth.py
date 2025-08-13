@@ -96,6 +96,17 @@ def custom_stress_score(prefix="", use_container=False):
         
         return level, label, total_score
 
+import streamlit as st
+from supabase import create_client, Client
+
+# --- Supabase Setup ---
+SUPABASE_URL = "YOUR_SUPABASE_URL"
+SUPABASE_KEY = "YOUR_SUPABASE_ANON_KEY"
+supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+
+# --- Initialize user ---
+if "user" not in st.session_state:
+    st.session_state.user = None
 
 # --- LOGIN FUNCTION ---
 def login():
@@ -103,7 +114,6 @@ def login():
     email = st.text_input("Email", key="login_email")
     password = st.text_input("Password", type="password", key="login_password")
 
-    # Email/Password login
     if st.button("Login", key="login_btn"):
         try:
             response = supabase.auth.sign_in_with_password({"email": email, "password": password})
@@ -119,9 +129,8 @@ def login():
     st.markdown("---")
     st.subheader("Or Sign in with Google")
 
-    # Google OAuth login
     if st.button("Login with Google", key="google_btn"):
-        redirect_url = "https://ademideola.streamlit.app"  # Change to your deployed URL
+        redirect_url = "https://ademideola.streamlit.app"
         res = supabase.auth.sign_in_with_oauth(
             {
                 "provider": "google",
@@ -130,7 +139,6 @@ def login():
         )
         st.markdown(f"[Click here to continue login]({res.url})")
 
-    # Detect Google OAuth callback
     query_params = st.query_params
     if "access_token" in query_params:
         try:
@@ -138,7 +146,7 @@ def login():
             if user_session.user:
                 st.session_state.user = user_session.user
                 st.success(f"Welcome, {st.session_state.user.email}!")
-                st.query_params.clear()  # Remove OAuth params from URL
+                st.query_params.clear()
                 st.rerun()
         except Exception as e:
             st.error(f"OAuth login error: {e}")
@@ -186,27 +194,10 @@ def logout():
     except Exception as e:
         st.error(f"Logout error: {e}")
 
-# --- MAIN ---
-if "user" not in st.session_state:
-    st.session_state.user = None
-
-st.title("African Neuro Health App")
-
-if st.session_state.user:
-    st.write(f"Hello, {st.session_state.user.email}!")
-    if st.button("Logout"):
-        logout()
-else:
-    option = st.radio("Choose an option:", ["Login", "Register"])
-    if option == "Login":
-        login()
-    elif option == "Register":
-        register()
-
-# --- About Page ---
+# --- ABOUT PAGE ---
 def about():
     st.title("About African Neuro Health")
-    with st.expander("ℹ️ About This App 🧠 African NeuroHealth Dashboard"):
+     with st.expander("ℹ️ About This App 🧠 African NeuroHealth Dashboard"):
         st.markdown("""
         This platform is a culturally attuned, context-aware diagnostic tool tailored for assessing neuro-health risks in African populations. 
         It blends conventional biomedical metrics with locally relevant stressors, lifestyle habits, and cultural practices to offer a truly holistic health assessment experience.
@@ -227,46 +218,31 @@ def about():
         """)
 
 
-# --- Logout Function ---
-def logout():
-    supabase.auth.sign_out()
-    st.session_state.user = None
-    st.rerun()
-
-
-# --- App Feature Functions ---
+# --- APP FEATURES ---
 def stroke_prediction_app():
     st.header("Stroke Risk Prediction")
-    st.title("🫀 Stroke Risk Predictor")
     st.write("Stroke prediction UI and logic here...")
-
 
 def alzheimers_prediction_app():
     st.header("Alzheimer's Prediction")
-    st.title("🧠 Alzheimer’s Predictor")
     st.write("Alzheimer's prediction UI and logic here...")
-
 
 def nutrition_tracker_app():
     st.header("Nutrition Tracker")
-    st.title("🥗 Nutrition Tracker")
     st.write("Nutrition tracker UI and logic here...")
 
+# --- MAIN ROUTER WITH FORCE LOGIN ---
+st.title("African Neuro Health App")
 
-# --- Main App ---
-if "user" not in st.session_state:
-    st.session_state.user = None
-
-# Sidebar Navigation
 if st.session_state.user:
+    # Authenticated users
+    st.sidebar.success(f"Logged in as {st.session_state.user.email}")
+    if st.sidebar.button("Logout"):
+        logout()
     page = st.sidebar.radio("Navigation", ["Home", "Stroke Prediction", "Alzheimer's Prediction", "Nutrition Tracker", "Profile", "Settings"])
-else:
-    page = st.sidebar.radio("Navigation", ["Login", "Register", "About"])
-
-# Render Pages
+    
     if page == "Home":
-        st.title("Welcome to the African Neuro Health App")
-        st.write("This is your private dashboard.")
+        st.write("Welcome to your dashboard.")
     elif page == "Stroke Prediction":
         stroke_prediction_app()
     elif page == "Alzheimer's Prediction":
@@ -274,11 +250,24 @@ else:
     elif page == "Nutrition Tracker":
         nutrition_tracker_app()
     elif page == "Profile":
-        st.title("Your Profile")
         st.write(st.session_state.user)
     elif page == "Settings":
-        st.title("Settings")
-        
+        st.write("Settings")
+
+else:
+    # Unauthenticated users can ONLY see these pages
+    page = st.radio("Choose an option:", ["Login", "Register", "About"])
+    if page == "Login":
+        login()
+    elif page == "Register":
+        register()
+    elif page == "About":
+        about()
+
+    # Force login redirect for app pages
+    # If someone tries to manipulate the URL or sidebar, they cannot access features
+    st.stop()  # stops execution here for unauthenticated users
+
 # --- Load Models with error handling ---
 base_path = os.path.dirname(r"C:\Users\sibs2\african-neurohealth-dashboard\stroke_model_pipeline.pkl")  # script folder
 stroke_path = os.path.join(base_path, "stroke_model_pipeline.pkl")
@@ -1371,6 +1360,7 @@ if app_mode == "Alzheimer Risk Prediction":
         except Exception as e:
 
                 st.error(f"Error during alzheimers prediction or saving: {e}")
+
 
 
 
