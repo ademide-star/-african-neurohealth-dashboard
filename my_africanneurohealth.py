@@ -197,7 +197,7 @@ def logout():
 # --- ABOUT PAGE ---
 def about():
     st.title("About African Neuro Health")
-     with st.expander("ℹ️ About This App 🧠 African NeuroHealth Dashboard"):
+    with st.expander("ℹ️ About This App 🧠 African NeuroHealth Dashboard"):
         st.markdown("""
         This platform is a culturally attuned, context-aware diagnostic tool tailored for assessing neuro-health risks in African populations. 
         It blends conventional biomedical metrics with locally relevant stressors, lifestyle habits, and cultural practices to offer a truly holistic health assessment experience.
@@ -1360,6 +1360,7 @@ if app_mode == "Alzheimer Risk Prediction":
         except Exception as e:
 
                 st.error(f"Error during alzheimers prediction or saving: {e}")
+
 
 
 
