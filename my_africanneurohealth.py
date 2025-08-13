@@ -250,7 +250,7 @@ if st.session_state.user:
     elif page == "Nutrition Tracker":
         nutrition_tracker_app()
     elif page == "Profile":
-        st.write(st.session_state.user)
+        st.write(st.session_state.user.id)
     elif page == "Settings":
         st.write("Settings")
 
@@ -290,7 +290,7 @@ except Exception as e:
     models_loaded = False
 # --- Initialize session state ---
 if "user" not in st.session_state:
-    st.session_state.user = None
+    st.session_state.user.id = None
 if "nutritional_data" not in st.session_state:
     st.session_state.nutritional_data = {}
 if "default_lifestyles" not in st.session_state:
@@ -519,7 +519,7 @@ if st.session_state.nutritional_data:
 
 # --- Save Functionality ---
 if st.sidebar.button("Save Nutritional Data"):
-    if st.session_state.user is None:
+    if st.session_state.user.id is None:
         st.sidebar.warning("Please log in to save nutritional data")
     elif not st.session_state.nutritional_data:
         st.sidebar.warning("No nutritional data to save")
@@ -816,7 +816,7 @@ if app_mode == "Stroke Risk Prediction":
             stroke_inputs_df = prepare_stroke_input_robust(raw_inputs)  # Adjust to your function name
             pred = stroke_model.predict(stroke_inputs_df)[0]   
             inputs = {
-                "user_id": st.session_state.user['id'] if st.session_state.get('user') else "anonymous",
+                "user_id": st.session_state.user.id if st.session_state.get('user') else "anonymous",
                 "age": age,
                 "gender": gender,
                 "heart_disease": heart_disease,
@@ -910,7 +910,7 @@ if app_mode == "Stroke Risk Prediction":
 
     # Prepare database dictionary (separate from stroke_df)
             db_payload = {
-        "user_id": st.session_state.user['id'] if st.session_state.get('user') else "anonymous",
+        "user_id": st.session_state.user.id if st.session_state.get('user') else "anonymous",
         "raw_inputs": inputs,
         "location": location_str,
         "prediction_result": float(pred)
@@ -1018,7 +1018,7 @@ if app_mode == "Alzheimer Risk Prediction":
     nutritional_score = compute_nutritional_score()
     st.info(f"🍎 Nutritional Health Score: **{nutritional_score}/5**")
     
-    user_id = st.session_state.user['id'] if st.session_state.user else "anonymous"
+    user_id = st.session_state.user.id if st.session_state.user else "anonymous"
     with st.form("alz_form"):
         age = st.number_input("Age", 0, 100, 65, key='alz_age')
         gender = 1 if st.selectbox("Gender", ["Male", "Female"], key='alz_gender') == "Male" else 0
@@ -1312,7 +1312,7 @@ if app_mode == "Alzheimer Risk Prediction":
 
             # Prepare data dict for database save
             alz_data = {
-                "user_id": st.session_state.user['id'] if st.session_state.get('user') else "anonymous",
+                "user_id": st.session_state.user.id if st.session_state.get('user') else "anonymous",
                 "age": age,
                 "gender": gender,  # 1 = Male, 0 = Female
                 "bmi": bmi,
@@ -1360,6 +1360,7 @@ if app_mode == "Alzheimer Risk Prediction":
         except Exception as e:
 
                 st.error(f"Error during alzheimers prediction or saving: {e}")
+
 
 
 
