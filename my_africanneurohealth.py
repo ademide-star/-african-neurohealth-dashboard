@@ -130,6 +130,14 @@ if 'location_str' not in st.session_state:
 if "user" not in st.session_state:
     st.session_state.user = None
 
+import streamlit as st
+from supabase import create_client
+
+# Initialize Supabase client
+SUPABASE_URL = st.secrets["SUPABASE_URL"]
+SUPABASE_KEY = st.secrets["SUPABASE_KEY"]
+supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+
 def login():
     st.subheader("Login")
     email = st.text_input("Email", key="login_email")
@@ -137,7 +145,7 @@ def login():
 
     if st.button("Login"):
         try:
-            response = supabase.auth.sign_in_with_password({"Email": email, "Password": password})
+            response = supabase.auth.sign_in_with_password({"email": email, "password": password})
             if response.user:
                 st.session_state.user = response.user
                 st.success(f"Logged in as {email}")
@@ -147,44 +155,36 @@ def login():
         except Exception as e:
             st.error(f"Login error: {e}")
 
-def register():
-    st.subheader("Register")
-    email = st.text_input("New Email", key="register_email")
-    password = st.text_input("New Password", type="password", key="register_password")
-    confirm_password = st.text_input("Confirm Password", type="password", key="register_confirm_password")
-
-    if st.button("Register"):
-        if password != confirm_password:
-            st.error("Passwords do not match")
-        else:
+    # Resend magic link section
+    st.markdown("---")
+    st.subheader("Resend Magic Link (if your email link expired)")
+    resend_email = st.text_input("Enter your email to resend the magic link", key="resend_email")
+    if st.button("Resend Magic Link"):
+        if resend_email:
             try:
-                response = supabase.auth.sign_up({"email": email, "password": password})
-                if response.user:
-                    st.success("Registration successful! Please check your email to confirm your account.")
+                response = supabase.auth.sign_in_with_password({"email": resend_email})
+                if response.get("error"):
+                    st.error(f"Error: {response['error']['message']}")
                 else:
-                    st.error("Registration failed.")
+                    st.success("Magic link sent! Please check your email.")
             except Exception as e:
-                st.error(f"Registration error: {e}")
-
-def logout():
-    supabase.auth.sign_out()
-    st.session_state.user = None
-    st.experimental_rerun()
-
-# Main app interface inside sidebar
-with st.sidebar:
-    st.header("🔐 User Authentication")
-
-    if st.session_state.user is None:
-        option = st.radio("Select option:", ["Login", "Register"])
-        if option == "Login":
-            login()
+                st.error(f"Failed to send magic link: {e}")
         else:
-            register()
-    else:
-        st.write(f"Welcome, {st.session_state.user.email}!")
-        if st.button("Logout"):
-            logout()
+            st.warning("Please enter your email.")
+
+# Main app code...
+if "user" not in st.session_state:
+    st.session_state.user = None
+
+if st.session_state.user is None:
+    login()
+else:
+    st.write(f"Welcome, {st.session_state.user.email}!")
+    if st.button("Logout"):
+        supabase.auth.sign_out()
+        st.session_state.user = None
+        st.experimental_rerun()
+
 
 countries_with_provinces = {
     "Nigeria": [
@@ -1273,6 +1273,7 @@ if app_mode == "Alzheimer Risk Prediction":
         except Exception as e:
 
                 st.error(f"Error during alzheimers prediction or saving: {e}")
+
 
 
 
