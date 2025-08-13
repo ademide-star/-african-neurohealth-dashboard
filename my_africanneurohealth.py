@@ -115,25 +115,33 @@ except FileNotFoundError as e:
 except Exception as e:
     st.error(f"Error loading models: {e}")
     models_loaded = False
-# --- Initialize session state variables ---
-if 'user' not in st.session_state:
+import streamlit as st
+from supabase import create_client, Client
+
+# --- Supabase setup ---
+SUPABASE_URL = "YOUR_SUPABASE_URL"
+SUPABASE_KEY = "YOUR_SUPABASE_KEY"
+supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+
+# --- Initialize session state ---
+if "user" not in st.session_state:
     st.session_state.user = None
-if 'nutritional_data' not in st.session_state:
+if "nutritional_data" not in st.session_state:
     st.session_state.nutritional_data = {}
-if 'default_lifestyles' not in st.session_state:
+if "default_lifestyles" not in st.session_state:
     st.session_state.default_lifestyles = []
-if 'stress_score' not in st.session_state:
+if "stress_score" not in st.session_state:
     st.session_state.stress_score = 0
-if 'location_str' not in st.session_state:
+if "location_str" not in st.session_state:
     st.session_state.location_str = {}
 
-# --- Authentication functions ---
+# --- Auth Functions ---
 def login():
     st.subheader("Login")
     email = st.text_input("Email", key="login_email")
     password = st.text_input("Password", type="password", key="login_password")
 
-    if st.button("Login", key="login_button"):
+    if st.button("Login", key="login_btn"):
         try:
             response = supabase.auth.sign_in_with_password({"email": email, "password": password})
             if response.user:
@@ -147,8 +155,8 @@ def login():
 
     st.markdown("---")
     st.subheader("Resend Magic Link")
-    resend_email = st.text_input("Enter your email", key="resend_email")
-    if st.button("Resend Magic Link", key="resend_magic_button"):
+    resend_email = st.text_input("Enter your email to resend the magic link", key="resend_email")
+    if st.button("Resend Magic Link", key="resend_btn"):
         if resend_email:
             try:
                 response = supabase.auth.sign_in_with_password({"email": resend_email})
@@ -167,14 +175,14 @@ def register():
     password = st.text_input("New Password", type="password", key="register_password")
     confirm_password = st.text_input("Confirm Password", type="password", key="register_confirm_password")
 
-    if st.button("Register", key="register_button"):
+    if st.button("Register", key="register_btn"):
         if password != confirm_password:
             st.error("Passwords do not match")
         else:
             try:
                 response = supabase.auth.sign_up({"email": email, "password": password})
                 if response.user:
-                    st.success("Registration successful! Please check your email.")
+                    st.success("Registration successful! Please check your email to confirm your account.")
                 else:
                     st.error("Registration failed.")
             except Exception as e:
@@ -185,66 +193,61 @@ def logout():
     st.session_state.user = None
     st.experimental_rerun()
 
-# --- App pages ---
+# --- App Feature Functions ---
 def stroke_prediction_app():
     st.header("Stroke Risk Prediction")
     st.title("🫀 Stroke Risk Predictor")
-    # Stroke prediction inputs and outputs go here...
+    st.write("Stroke prediction UI and logic here...")
 
 def alzheimers_prediction_app():
     st.header("Alzheimer's Prediction")
+    st.title("🧠 Alzheimer’s Predictor")
     st.write("Alzheimer's prediction UI and logic here...")
 
 def nutrition_tracker_app():
     st.header("Nutrition Tracker")
+    st.title("🥗 Nutrition Tracker")
     st.write("Nutrition tracker UI and logic here...")
 
-# --- Main App Logic ---
+# --- Main App Flow ---
 if st.session_state.user is None:
     with st.sidebar:
         st.header("🔐 User Authentication")
-        auth_option = st.radio("Select option:", ["Login", "Register"], key="auth_radio")
+        auth_option = st.radio("Select option:", ["Login", "Register"], key="auth_option")
         if auth_option == "Login":
             login()
         else:
             register()
 
-    st.expander("ℹ️ About This App 🧠 African NeuroHealth Dashboard").markdown("""
-                                                                               
-This platform is a culturally attuned, context-aware diagnostic tool tailored for assessing neuro-health risks in African populations. It blends conventional biomedical metrics with locally relevant stressors, lifestyle habits, and cultural practices to offer a truly holistic health assessment experience.
+    with st.expander("ℹ️ About This App 🧠 African NeuroHealth Dashboard"):
+        st.markdown("""
+This platform is a culturally attuned, context-aware diagnostic tool tailored for assessing neuro-health risks in African populations. 
+It blends conventional biomedical metrics with locally relevant stressors, lifestyle habits, and cultural practices to offer a truly holistic health assessment experience.
 
-Rooted in a deep understanding of Africa’s diverse contexts, the tool goes beyond standard variables like age, BMI, and blood pressure. It integrates often-overlooked factors such as:
-
-Environmental exposures (e.g., noise, air pollution),
-
-Dietary patterns (including traditional nutrition),
-
-Sleep quality and hydration,
-
-Use of herbal or traditional remedies, and
-
-Psychosocial stressors unique to many African settings.
-
-Recognizing the continent’s rich ethnocultural fabric, the system also records users’ ethnic and cultural identities (e.g., Yoruba, Hausa, Igbo, Swahili). This enables the future development of ethnoculturally-informed AI models that generate more precise and population-specific insights.
-
-By embedding these meaningful, locally grounded variables into an AI-powered health dashboard, this tool aspires to close the cultural and diagnostic gap in digital health. It promotes equity, representation, and precision in preventive neuro-healthcare across Africa.
+**Key Features:**
+- Environmental exposures (e.g., noise, air pollution)
+- Dietary patterns (including traditional nutrition)
+- Sleep quality and hydration
+- Use of herbal or traditional remedies
+- Psychosocial stressors unique to African settings
+- Ethnocultural identity tracking for precision health insights
 
 **By:** Adebimpe-John Omolola E  
 **Supervisor:** Prof. Bamidele Owoyele Victor  
-**Institution:** University of Ilorin
-
+**Institution:** University of Ilorin  
 **Principal Investigator:** Prof Mayowa Owolabi  
 **GRASP / NIH / DSI Collaborative Program**
 """)
+
 else:
     with st.sidebar:
         st.write(f"Welcome, {st.session_state.user.email}!")
         app_choice = st.radio(
             "Select app:",
             ["Stroke Prediction", "Alzheimer's Prediction", "Nutrition Tracker"],
-            key="app_choice_radio"
+            key="app_selector"
         )
-        if st.button("Logout", key="logout_button"):
+        if st.button("Logout", key="logout_btn"):
             logout()
 
     if app_choice == "Stroke Prediction":
@@ -253,6 +256,7 @@ else:
         alzheimers_prediction_app()
     elif app_choice == "Nutrition Tracker":
         nutrition_tracker_app()
+
 
 countries_with_provinces = {
     "Nigeria": [
@@ -1313,6 +1317,7 @@ if app_mode == "Alzheimer Risk Prediction":
         except Exception as e:
 
                 st.error(f"Error during alzheimers prediction or saving: {e}")
+
 
 
 
