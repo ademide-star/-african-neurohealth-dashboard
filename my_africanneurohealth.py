@@ -203,6 +203,7 @@ def nutrition_tracker_app():
 
 # --- Main App Flow ---
 if st.session_state.user is None:
+    # Left Sidebar for Login/Register
     with st.sidebar:
         st.header("🔐 User Authentication")
         auth_option = st.radio("Select option:", ["Login", "Register"], key="auth_option")
@@ -1310,6 +1311,7 @@ if app_mode == "Alzheimer Risk Prediction":
         except Exception as e:
 
                 st.error(f"Error during alzheimers prediction or saving: {e}")
+
 
 
 
