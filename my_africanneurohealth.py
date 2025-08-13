@@ -232,14 +232,15 @@ It blends conventional biomedical metrics with locally relevant stressors, lifes
 """)
 
 else:
+    # Authenticated users see app selection + tools
     with st.sidebar:
-        st.write(f"Welcome, {st.session_state.user.email}!")
+        st.write(f"👋 Welcome, {st.session_state.user.email}!")
         app_choice = st.radio(
-            "Select app:",
+            "Choose an App:",
             ["Stroke Prediction", "Alzheimer's Prediction", "Nutrition Tracker"],
-            key="app_selector"
+            key="app_choice"
         )
-        if st.button("Logout", key="logout_btn"):
+        if st.button("Logout", key="logout_button"):
             logout()
 
     if app_choice == "Stroke Prediction":
@@ -1309,6 +1310,7 @@ if app_mode == "Alzheimer Risk Prediction":
         except Exception as e:
 
                 st.error(f"Error during alzheimers prediction or saving: {e}")
+
 
 
 
