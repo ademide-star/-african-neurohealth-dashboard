@@ -188,7 +188,8 @@ def logout():
 # --- App pages ---
 def stroke_prediction_app():
     st.header("Stroke Risk Prediction")
-    st.write("Stroke prediction UI and logic here...")
+    st.title("🫀 Stroke Risk Predictor")
+    # Stroke prediction inputs and outputs go here...
 
 def alzheimers_prediction_app():
     st.header("Alzheimer's Prediction")
@@ -1312,6 +1313,7 @@ if app_mode == "Alzheimer Risk Prediction":
         except Exception as e:
 
                 st.error(f"Error during alzheimers prediction or saving: {e}")
+
 
 
 
