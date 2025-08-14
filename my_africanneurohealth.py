@@ -755,7 +755,6 @@ def build_full_input(raw):
 # =======================
 # TAB 1: STROKE PREDICTION
 # =======================
-if app_mode == "Stroke Risk Prediction":
     st.title("🫀 Stroke Risk Predictor")
     st.warning("Complete all fields for accurate assessment")
 # Get nutritional score
@@ -1029,7 +1028,6 @@ def prepare_alz_data_robust(full_input):
 
 
                             # --- Alzheimer Predictor ---#
-if app_mode == "Alzheimer Risk Prediction":
     st.title("🧠 Alzheimer Risk Predictor")
 
 # =======================#
@@ -1384,6 +1382,7 @@ if app_mode == "Alzheimer Risk Prediction":
         except Exception as e:
 
                 st.error(f"Error during alzheimers prediction or saving: {e}")
+
 
 
 
