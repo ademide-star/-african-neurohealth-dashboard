@@ -487,7 +487,7 @@ def stroke_prediction_app():
 # Get nutritional score
         nutritional_score = compute_nutritional_score()
         st.info(f"🍎 Nutritional Health Score: **{nutritional_score}/5**")
-    with st.form("stroke_form"):
+with st.form("stroke_form"):
             age = st.slider("Age", 18, 100, 45)
             gender = st.selectbox("Gender", ["Male", "Female"])
             heart_disease = st.selectbox("Heart Disease",[0, 1], format_func=lambda x: ["Yes", "No"][x])
@@ -526,7 +526,7 @@ def stroke_prediction_app():
             submit_stroke_inputs = st.form_submit_button("Predict Stroke Risk")
 
             # Collect raw inputs
-    if submit_stroke_inputs:
+if submit_stroke_inputs:
             raw_inputs = {
                 'age': age,
                 'avg_glucose_level': avg_glucose_level,
@@ -685,7 +685,7 @@ def alzheimers_prediction_app():
     st.info(f"🍎 Nutritional Health Score: **{nutritional_score}/5**")
     
     user_id = st.session_state.user.id if st.session_state.user else "anonymous"
-    with st.form("alz_form"):
+with st.form("alz_form"):
         age = st.number_input("Age", 0, 100, 65, key='alz_age')
         gender = 1 if st.selectbox("Gender", ["Male", "Female"], key='alz_gender') == "Male" else 0
         education_years = st.slider("Education Level (Years)", 0, 20, 12, key='alz_eduyears')
@@ -739,7 +739,7 @@ def alzheimers_prediction_app():
         
         col1, col2 = st.columns(2)
         
-        with col1:
+with col1:
             q1 = st.selectbox("Do you forget names of relatives/village members?", 
                          ["Never", "Sometimes", "Often"], key='q1')
             q2 = st.selectbox("Do you misplace important items (farming tools, keys)?", 
@@ -747,7 +747,7 @@ def alzheimers_prediction_app():
             q3 = st.selectbox("Can you recall traditional recipes or remedies?", 
                          ["Always", "Sometimes", "Rarely"], key='q3')
             
-        with col2:
+with col2:
             q4 = st.selectbox("Do you recognize people from your community?", 
                          ["Always", "Sometimes", "Rarely"], key='q4')
             q5 = st.selectbox("Can you navigate familiar paths/markets?", 
@@ -1381,6 +1381,7 @@ with st.sidebar:
 # =======================#
     
     
+
 
 
 
