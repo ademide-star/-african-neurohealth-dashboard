@@ -161,7 +161,7 @@ def login():
         try:
             user_session = supabase.auth.get_user()
             if user_session.user:
-                st.session_state.user = user_session.user
+                st.session_state.user.id = user_session.user
                 st.success(f"Welcome, {st.session_state.user.email}!")
                 st.query_params.clear()
                 st.rerun()
@@ -1377,6 +1377,7 @@ if app_mode == "Alzheimer Risk Prediction":
         except Exception as e:
 
                 st.error(f"Error during alzheimers prediction or saving: {e}")
+
 
 
 
