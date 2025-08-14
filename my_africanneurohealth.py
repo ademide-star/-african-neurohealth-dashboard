@@ -121,22 +121,27 @@ SUPABASE_URL = st.secrets["SUPABASE_URL"]
 SUPABASE_KEY = st.secrets["SUPABASE_KEY"]
 supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
+# Initialize session state
+# ----------------------------
 if "user" not in st.session_state:
-    st.session_state.user = None
+    st.session_state.user = {"id": None, "email": None}
 
-# --- LOGIN FUNCTION ---
+# ----------------------------
+# LOGIN FUNCTION
+# ----------------------------
 def login():
     st.subheader("Login with Email & Password")
     email = st.text_input("Email", key="login_email")
     password = st.text_input("Password", type="password", key="login_password")
 
+    # Email/password login
     if st.button("Login", key="login_btn"):
         try:
             response = supabase.auth.sign_in_with_password({"email": email, "password": password})
             if response.user:
-                st.session_state.user = response.user
-                st.success(f"Logged in as {email}")
-                st.rerun()
+                st.session_state.user["id"] = response.user.id
+                st.session_state.user["email"] = response.user.email
+                st.success(f"Logged in as {st.session_state.user['email']}")
             else:
                 st.error("Invalid login credentials")
         except Exception as e:
@@ -145,6 +150,7 @@ def login():
     st.markdown("---")
     st.subheader("Or Sign in with Google")
 
+    # Google OAuth login
     if st.button("Login with Google", key="google_btn"):
         redirect_url = "https://ademideola.streamlit.app"
         res = supabase.auth.sign_in_with_oauth(
@@ -153,19 +159,28 @@ def login():
                 "options": {"redirect_to": redirect_url}
             }
         )
-        st.markdown(f"[Click here to continue login]({res.url})")
+        # Redirect to Google login
+        st.markdown(f'<meta http-equiv="refresh" content="0; url={res.url}">', unsafe_allow_html=True)
 
-    query_params = st.query_params
-    if "access_token" in query_params:
-        try:
-            user_session = supabase.auth.get_user()
-            if user_session.user:
-                st.session_state.user = user_session.user
-                st.success(f"Welcome, {st.session_state.user.email}!")
-                st.query_params.clear()
-                st.rerun()
-        except Exception as e:
-            st.error(f"OAuth login error: {e}")
+# ----------------------------
+# Handle OAuth callback
+# ----------------------------
+query_params = st.query_params
+if "access_token" in query_params:
+    try:
+        user_session = supabase.auth.get_user()
+        if user_session.user:
+            st.session_state.user["id"] = user_session.user.id
+            st.session_state.user["email"] = user_session.user.email
+            st.success(f"Welcome, {st.session_state.user['email']}!")
+    except Exception as e:
+        st.error(f"OAuth login error: {e}")
+
+# ----------------------------
+# Display logged-in user info in sidebar
+# ----------------------------
+if st.session_state.user.get("id") and st.session_state.user.get("email"):
+    st.sidebar.success(f"Logged in as {st.session_state.user['email']}")
 
     st.markdown("---")
     st.subheader("Resend Magic Link")
@@ -179,6 +194,11 @@ def login():
                 st.error(f"Failed to send magic link: {e}")
         else:
             st.warning("Please enter your email.")
+
+# ----------------------------
+# Call login function
+# ----------------------------
+login()
 
 # --- REGISTER FUNCTION ---
 def register():
@@ -1362,6 +1382,7 @@ if app_mode == "Alzheimer Risk Prediction":
         except Exception as e:
 
                 st.error(f"Error during alzheimers prediction or saving: {e}")
+
 
 
 
