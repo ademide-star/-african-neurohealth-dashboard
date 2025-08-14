@@ -113,8 +113,6 @@ def custom_stress_score(prefix="", use_container=False):
         
         return level, label, total_score
 
-
-
 # ----------------------------
 # SESSION STATE INIT
 # ----------------------------
@@ -133,7 +131,6 @@ def login():
         try:
             response = supabase.auth.sign_in_with_password({"email": email, "password": password})
             if response.user:
-                # Update session state, Streamlit reruns automatically
                 st.session_state.user = {"id": response.user.id, "email": response.user.email}
                 st.success(f"Logged in as {st.session_state.user['email']}")
             else:
@@ -249,11 +246,11 @@ if st.session_state.user.get("email"):
     if st.sidebar.button("Logout", key="logout_btn"):
         logout()
 
-    # Post-login welcome + about
+    # Post-login: Welcome + About
     st.subheader(f"Welcome to your dashboard, {st.session_state.user['email']}!")
-    about()  # show About directly
+    about()  # About shows directly
 
-    # --- Sidebar Navigation ---
+    # Sidebar navigation for app features
     page = st.sidebar.radio(
         "Choose a feature:",
         ["Select an option", "Stroke Prediction", "Alzheimer's Prediction", "Nutrition Tracker", "Profile", "Settings"],
@@ -261,7 +258,7 @@ if st.session_state.user.get("email"):
         key="sidebar_nav"
     )
 
-    # Render only if user selects a feature
+    # Render selected feature ONLY if a valid option is chosen
     if page == "Stroke Prediction":
         stroke_prediction_app()
     elif page == "Alzheimer's Prediction":
@@ -272,6 +269,7 @@ if st.session_state.user.get("email"):
         st.write(st.session_state.user)
     elif page == "Settings":
         st.write("Settings")
+    # "Select an option" does nothing (About already shown)
 
 else:
     # Unauthenticated users
@@ -1376,6 +1374,7 @@ if app_mode == "Alzheimer Risk Prediction":
         except Exception as e:
 
                 st.error(f"Error during alzheimers prediction or saving: {e}")
+
 
 
 
