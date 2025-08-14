@@ -1374,14 +1374,15 @@ def prepare_alz_data_robust(full_input):
 
     else:
     # Unauthenticated users
-    unauth_page = st.radio("Choose an option:", ["Login", "Register", "About"], key="unauth_nav")
+        unauth_page = st.radio("Choose an option:", ["Login", "Register", "About"], key="unauth_nav")
     if unauth_page == "Login":
         login()
     elif unauth_page == "Register":
         register()
     elif unauth_page == "About":
         about()
-    st.stop()  # stop execution to prevent access
+        st.stop()  # stop execution to prevent access
+
 
 
 
