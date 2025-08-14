@@ -32,6 +32,15 @@ supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 logging.basicConfig(level=logging.DEBUG)
 
 
+import streamlit as st
+
+st.set_page_config(
+    page_title="My App",
+    page_icon="📊",
+    layout="wide",
+    initial_sidebar_state="expanded",
+    menu_items={}
+)
 
 # --- Get User Location ---
 def get_user_location():
@@ -1360,6 +1369,7 @@ if app_mode == "Alzheimer Risk Prediction":
         except Exception as e:
 
                 st.error(f"Error during alzheimers prediction or saving: {e}")
+
 
 
 
