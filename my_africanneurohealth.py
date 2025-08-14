@@ -1360,7 +1360,7 @@ def prepare_alz_data_robust(full_input):
                 st.error(f"Error during alzheimers prediction or saving: {e}")
 
  # Render selected app feature ONLY if user selects something other than placeholder
-    if page != "Select an option":
+if page != "Select an option":
         if page == "Stroke Prediction":
             stroke_prediction_app()
         elif page == "Alzheimer's Prediction":
@@ -1382,6 +1382,7 @@ else:
     elif unauth_page == "About":
         about()
     st.stop()  # stop execution to prevent access
+
 
 
 
