@@ -115,7 +115,6 @@ def custom_stress_score(prefix="", use_container=False):
 
 
 
-# Initialize session state safely
 # ----------------------------
 # SESSION STATE INIT
 # ----------------------------
@@ -134,9 +133,9 @@ def login():
         try:
             response = supabase.auth.sign_in_with_password({"email": email, "password": password})
             if response.user:
+                # Update session state, Streamlit reruns automatically
                 st.session_state.user = {"id": response.user.id, "email": response.user.email}
                 st.success(f"Logged in as {st.session_state.user['email']}")
-                st.experimental_rerun()
             else:
                 st.error("Invalid login credentials")
         except Exception as e:
@@ -164,7 +163,6 @@ if "access_token" in query_params:
         if user_session.user:
             st.session_state.user = {"id": user_session.user.id, "email": user_session.user.email}
             st.success(f"Welcome, {st.session_state.user['email']}!")
-            st.experimental_rerun()
     except Exception as e:
         st.error(f"OAuth login error: {e}")
 
@@ -176,7 +174,6 @@ def logout():
         supabase.auth.sign_out()
         st.session_state.user = {"id": None, "email": None}
         st.success("Logged out successfully.")
-        st.experimental_rerun()
     except Exception as e:
         st.error(f"Logout error: {e}")
 
@@ -254,9 +251,9 @@ if st.session_state.user.get("email"):
 
     # Post-login welcome + about
     st.subheader(f"Welcome to your dashboard, {st.session_state.user['email']}!")
-    about()  # show about directly, not in expander
+    about()  # show About directly
 
-    # Sidebar navigation for app features (default placeholder)
+    # Sidebar navigation for app features
     page = st.sidebar.radio(
         "Choose a feature:",
         ["Select an option", "Stroke Prediction", "Alzheimer's Prediction", "Nutrition Tracker", "Profile", "Settings"],
@@ -274,7 +271,7 @@ if st.session_state.user.get("email"):
         st.write(st.session_state.user)
     elif page == "Settings":
         st.write("Settings")
-    # If "Select an option", nothing runs
+    # If "Select an option", do nothing
 
 else:
     # Unauthenticated users
@@ -1379,6 +1376,7 @@ if app_mode == "Alzheimer Risk Prediction":
         except Exception as e:
 
                 st.error(f"Error during alzheimers prediction or saving: {e}")
+
 
 
 
