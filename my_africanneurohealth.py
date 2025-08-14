@@ -256,7 +256,7 @@ This platform is a culturally attuned, context-aware diagnostic tool tailored fo
 """)
 
     # Sidebar navigation for app features
-   page = st.sidebar.radio(
+    page = st.sidebar.radio(
     "Choose a feature:",
     ["Select an option", "Stroke Prediction", "Alzheimer's Prediction", "Nutrition Tracker", "Profile", "Settings"],
     index=0,
@@ -1379,6 +1379,7 @@ if app_mode == "Alzheimer Risk Prediction":
         except Exception as e:
 
                 st.error(f"Error during alzheimers prediction or saving: {e}")
+
 
 
 
