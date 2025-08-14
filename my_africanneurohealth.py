@@ -206,7 +206,36 @@ def register():
 def about():
     st.title("About African Neuro Health")
     with st.expander("ℹ️ About This App 🧠 African NeuroHealth Dashboard"):
-        st.markdown("This platform is a culturally attuned, context-aware diagnostic tool...")
+        st.markdown("""
+This platform is a culturally attuned, context-aware diagnostic tool tailored for assessing neuro-health risks in African populations. 
+It blends conventional biomedical metrics with locally relevant stressors, lifestyle habits, and cultural practices to offer a truly holistic health assessment experience.
+
+**Key Features:**
+- Environmental exposures (e.g., noise, air pollution)
+- Dietary patterns (including traditional nutrition)
+- Sleep quality and hydration
+- Use of herbal or traditional remedies
+- Psychosocial stressors unique to African settings
+- Ethnocultural identity tracking for precision health insights
+
+**By:** Adebimpe-John Omolola E  
+**Supervisor:** Prof. Bamidele Owoyele Victor  
+**Institution:** University of Ilorin  
+**Principal Investigator:** Prof Mayowa Owolabi  
+**GRASP / NIH / DSI Collaborative Program**
+""")
+
+else:
+    # Authenticated users see app selection + tools
+    with st.sidebar:
+        st.write(f"👋 Welcome, {st.session_state.user.email}!")
+        app_choice = st.radio(
+            "Choose an App:",
+            ["Stroke Prediction", "Alzheimer's Prediction", "Nutrition Tracker"],
+            key="app_choice"
+        )
+        if st.button("Logout", key="logout_button"):
+            logout()
 
 # ----------------------------
 # APP FEATURES (simplified placeholders)
@@ -1354,6 +1383,7 @@ if app_mode == "Alzheimer Risk Prediction":
         except Exception as e:
 
                 st.error(f"Error during alzheimers prediction or saving: {e}")
+
 
 
 
