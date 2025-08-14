@@ -236,6 +236,7 @@ st.title("African Neuro Health App")
 
 if st.session_state.user:
     # Authenticated users
+    if st.session_state.user and st.session_state.user.get("email"):
     st.sidebar.success(f"Logged in as {st.session_state.user['email']}")
 
     if st.sidebar.button("Logout"):
@@ -1361,6 +1362,7 @@ if app_mode == "Alzheimer Risk Prediction":
         except Exception as e:
 
                 st.error(f"Error during alzheimers prediction or saving: {e}")
+
 
 
 
