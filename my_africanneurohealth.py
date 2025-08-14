@@ -127,9 +127,8 @@ SUPABASE_URL = "https://ejdchikokrqtezhabigb.supabase.co"
 SUPABASE_KEY = "YOUR_SUPABASE_ANON_KEY"
 supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
-# Initialize session state for user as a dict
 if "user" not in st.session_state:
-    st.session_state.user = {"id": None, "email": None}
+    st.session_state.user = None
 
 # --- LOGIN FUNCTION ---
 def login():
@@ -137,14 +136,13 @@ def login():
     email = st.text_input("Email", key="login_email")
     password = st.text_input("Password", type="password", key="login_password")
 
-    # --- Email/password login ---
     if st.button("Login", key="login_btn"):
         try:
             response = supabase.auth.sign_in_with_password({"email": email, "password": password})
             if response.user:
-                st.session_state.user["id"] = response.user.id
-                st.session_state.user["email"] = response.user.email
+                st.session_state.user = response.user
                 st.success(f"Logged in as {email}")
+                st.rerun()
             else:
                 st.error("Invalid login credentials")
         except Exception as e:
@@ -153,7 +151,6 @@ def login():
     st.markdown("---")
     st.subheader("Or Sign in with Google")
 
-    # --- Google OAuth login ---
     if st.button("Login with Google", key="google_btn"):
         redirect_url = "https://ademideola.streamlit.app"
         res = supabase.auth.sign_in_with_oauth(
@@ -162,24 +159,19 @@ def login():
                 "options": {"redirect_to": redirect_url}
             }
         )
-        # Redirect user to Google login
-        st.markdown(f'<meta http-equiv="refresh" content="0; url={res.url}">', unsafe_allow_html=True)
+        st.markdown(f"[Click here to continue login]({res.url})")
 
-# --- Handle OAuth callback using st.query_params ---
-query_params = st.query_params
-if "access_token" in query_params:
-    try:
-        user_session = supabase.auth.get_user()
-        if user_session.user:
-            st.session_state.user["id"] = user_session.user.id
-            st.session_state.user["email"] = user_session.user.email
-            st.success(f"Welcome, {st.session_state.user['email']}!")
-    except Exception as e:
-        st.error(f"OAuth login error: {e}")
-
-# --- Display logged-in user info ---
-if st.session_state.user["id"]:
-    st.write(f"Logged in as: {st.session_state.user['email']}")
+    query_params = st.query_params
+    if "access_token" in query_params:
+        try:
+            user_session = supabase.auth.get_user()
+            if user_session.user:
+                st.session_state.user = user_session.user
+                st.success(f"Welcome, {st.session_state.user.email}!")
+                st.query_params.clear()
+                st.rerun()
+        except Exception as e:
+            st.error(f"OAuth login error: {e}")
 
     st.markdown("---")
     st.subheader("Resend Magic Link")
@@ -193,9 +185,6 @@ if st.session_state.user["id"]:
                 st.error(f"Failed to send magic link: {e}")
         else:
             st.warning("Please enter your email.")
-
-# Call login function
-login()
 
 # --- REGISTER FUNCTION ---
 def register():
@@ -211,7 +200,7 @@ def register():
             try:
                 response = supabase.auth.sign_up({"email": email, "password": password})
                 if response.user:
-                    st.success("Registration successful! Please Log in.")
+                    st.success("Registration successful! Please check your email to confirm your account.")
                 else:
                     st.error("Registration failed.")
             except Exception as e:
@@ -231,25 +220,9 @@ def logout():
 def about():
     st.title("About African Neuro Health")
     with st.expander("ℹ️ About This App 🧠 African NeuroHealth Dashboard"):
-        st.markdown("""
-        This platform is a culturally attuned, context-aware diagnostic tool tailored for assessing neuro-health risks in African populations. 
-        It blends conventional biomedical metrics with locally relevant stressors, lifestyle habits, and cultural practices to offer a truly holistic health assessment experience.
-
-        **Key Features:**
-        - Environmental exposures (e.g., noise, air pollution)
-        - Dietary patterns (including traditional nutrition)
-        - Sleep quality and hydration
-        - Use of herbal or traditional remedies
-        - Psychosocial stressors unique to African settings
-        - Ethnocultural identity tracking for precision health insights
-
-        **By:** Adebimpe-John Omolola E  
-        **Supervisor:** Prof. Bamidele Owoyele Victor  
-        **Institution:** University of Ilorin  
-        **Principal Investigator:** Prof Mayowa Owolabi  
-        **GRASP / NIH / DSI Collaborative Program**
+        st.markdown(""" 
+        This platform is a culturally attuned, context-aware diagnostic tool...
         """)
-
 
 # --- APP FEATURES ---
 def stroke_prediction_app():
@@ -269,7 +242,7 @@ st.title("African Neuro Health App")
 
 if st.session_state.user:
     # Authenticated users
-    st.sidebar.success(f"Logged in as {st.session_state.user['email']}")
+    st.sidebar.success(f"Logged in as {st.session_state.user.email}")
     if st.sidebar.button("Logout"):
         logout()
     page = st.sidebar.radio("Navigation", ["Home", "Stroke Prediction", "Alzheimer's Prediction", "Nutrition Tracker", "Profile", "Settings"])
@@ -283,7 +256,7 @@ if st.session_state.user:
     elif page == "Nutrition Tracker":
         nutrition_tracker_app()
     elif page == "Profile":
-        st.write(st.session_state.user.id)
+        st.write(st.session_state.user)
     elif page == "Settings":
         st.write("Settings")
 
