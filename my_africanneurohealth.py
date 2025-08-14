@@ -667,7 +667,7 @@ if submit_stroke_inputs:
     }
 
     # Save to Supabase#
-            response = supabase.table("stroke_predictions").insert(inputs).execute()
+        response = supabase.table("stroke_predictions").insert(inputs).execute()
         if response.data:
             st.success("Stroke prediction saved to database!")
         else:
@@ -1381,6 +1381,7 @@ with st.sidebar:
 # =======================#
     
     
+
 
 
 
