@@ -220,17 +220,6 @@ def nutrition_tracker_app():
     st.header("Nutrition Tracker")
     st.write("Nutrition tracker UI and logic here...")
 
-# ----------------------------
-# MAIN APP ROUTER
-# ----------------------------
-st.title("African Neuro Health App")
-
-if st.session_state.user.get("email"):
-    # Authenticated user
-    st.sidebar.success(f"Logged in as {st.session_state.user['email']}")
-    if st.sidebar.button("Logout"):
-        logout()
-
    # --- MAIN APP ROUTER ---
 st.title("African Neuro Health App")
 
@@ -1383,6 +1372,7 @@ if app_mode == "Alzheimer Risk Prediction":
         except Exception as e:
 
                 st.error(f"Error during alzheimers prediction or saving: {e}")
+
 
 
 
