@@ -863,7 +863,7 @@ if 'memory_game' not in st.session_state:
             "score_history": []
         }
 
-    game = st.session_state.memory_game
+game = st.session_state.memory_game
 
 if game["state"] == "start":
         st.markdown(f"**Level {game['level']}** - You will see {4 + game['level']} words.")
@@ -1381,6 +1381,7 @@ with st.sidebar:
 # =======================#
     
     
+
 
 
 
