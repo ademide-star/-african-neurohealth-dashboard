@@ -121,12 +121,6 @@ SUPABASE_URL = st.secrets["SUPABASE_URL"]
 SUPABASE_KEY = st.secrets["SUPABASE_KEY"]
 supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
-# --- Initialize user ---
-# Initialize Supabase
-SUPABASE_URL = "https://ejdchikokrqtezhabigb.supabase.co"
-SUPABASE_KEY = "YOUR_SUPABASE_ANON_KEY"
-supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
-
 if "user" not in st.session_state:
     st.session_state.user = None
 
@@ -1367,6 +1361,7 @@ if app_mode == "Alzheimer Risk Prediction":
         except Exception as e:
 
                 st.error(f"Error during alzheimers prediction or saving: {e}")
+
 
 
 
