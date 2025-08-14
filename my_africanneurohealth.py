@@ -165,8 +165,8 @@ def login():
         # Redirect user to Google login
         st.markdown(f'<meta http-equiv="refresh" content="0; url={res.url}">', unsafe_allow_html=True)
 
-# --- Handle OAuth callback ---
-query_params = st.experimental_get_query_params()
+# --- Handle OAuth callback using st.query_params ---
+query_params = st.query_params
 if "access_token" in query_params:
     try:
         user_session = supabase.auth.get_user()
@@ -1393,6 +1393,7 @@ if app_mode == "Alzheimer Risk Prediction":
         except Exception as e:
 
                 st.error(f"Error during alzheimers prediction or saving: {e}")
+
 
 
 
