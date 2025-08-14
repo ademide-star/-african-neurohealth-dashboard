@@ -113,17 +113,11 @@ def custom_stress_score(prefix="", use_container=False):
         
         return level, label, total_score
 
-import streamlit as st
-from supabase import create_client, Client
 
-# --- Supabase Setup ---
-SUPABASE_URL = st.secrets["SUPABASE_URL"]
-SUPABASE_KEY = st.secrets["SUPABASE_KEY"]
-supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
-# Initialize session state
+# Initialize session state safely
 # ----------------------------
-if "user" not in st.session_state:
+if "user" not in st.session_state or st.session_state.user is None:
     st.session_state.user = {"id": None, "email": None}
 
 # ----------------------------
@@ -134,13 +128,11 @@ def login():
     email = st.text_input("Email", key="login_email")
     password = st.text_input("Password", type="password", key="login_password")
 
-    # Email/password login
     if st.button("Login", key="login_btn"):
         try:
             response = supabase.auth.sign_in_with_password({"email": email, "password": password})
             if response.user:
-                st.session_state.user["id"] = response.user.id
-                st.session_state.user["email"] = response.user.email
+                st.session_state.user = {"id": response.user.id, "email": response.user.email}
                 st.success(f"Logged in as {st.session_state.user['email']}")
             else:
                 st.error("Invalid login credentials")
@@ -150,7 +142,6 @@ def login():
     st.markdown("---")
     st.subheader("Or Sign in with Google")
 
-    # Google OAuth login
     if st.button("Login with Google", key="google_btn"):
         redirect_url = "https://ademideola.streamlit.app"
         res = supabase.auth.sign_in_with_oauth(
@@ -159,7 +150,6 @@ def login():
                 "options": {"redirect_to": redirect_url}
             }
         )
-        # Redirect to Google login
         st.markdown(f'<meta http-equiv="refresh" content="0; url={res.url}">', unsafe_allow_html=True)
 
 # ----------------------------
@@ -170,37 +160,27 @@ if "access_token" in query_params:
     try:
         user_session = supabase.auth.get_user()
         if user_session.user:
-            st.session_state.user["id"] = user_session.user.id
-            st.session_state.user["email"] = user_session.user.email
+            st.session_state.user = {"id": user_session.user.id, "email": user_session.user.email}
             st.success(f"Welcome, {st.session_state.user['email']}!")
     except Exception as e:
         st.error(f"OAuth login error: {e}")
 
 # ----------------------------
-# Display logged-in user info in sidebar
+# LOGOUT FUNCTION
 # ----------------------------
-if st.session_state.user.get("id") and st.session_state.user.get("email"):
-    st.sidebar.success(f"Logged in as {st.session_state.user['email']}")
-
-    st.markdown("---")
-    st.subheader("Resend Magic Link")
-    resend_email = st.text_input("Enter your email to resend the magic link", key="resend_email")
-    if st.button("Resend Magic Link", key="resend_btn"):
-        if resend_email:
-            try:
-                supabase.auth.sign_in_with_otp({"email": resend_email})
-                st.success("Magic link sent! Please check your email.")
-            except Exception as e:
-                st.error(f"Failed to send magic link: {e}")
-        else:
-            st.warning("Please enter your email.")
+def logout():
+    try:
+        supabase.auth.sign_out()
+        # Always reset to dict, never None
+        st.session_state.user = {"id": None, "email": None}
+        st.success("Logged out successfully.")
+        st.experimental_rerun()
+    except Exception as e:
+        st.error(f"Logout error: {e}")
 
 # ----------------------------
-# Call login function
+# REGISTER FUNCTION
 # ----------------------------
-login()
-
-# --- REGISTER FUNCTION ---
 def register():
     st.subheader("Register")
     email = st.text_input("New Email", key="register_email")
@@ -220,25 +200,17 @@ def register():
             except Exception as e:
                 st.error(f"Registration error: {e}")
 
-# --- LOGOUT FUNCTION ---
-def logout():
-    try:
-        supabase.auth.sign_out()
-        st.session_state.user = None
-        st.success("Logged out successfully.")
-        st.rerun()
-    except Exception as e:
-        st.error(f"Logout error: {e}")
-
-# --- ABOUT PAGE ---
+# ----------------------------
+# ABOUT FUNCTION
+# ----------------------------
 def about():
     st.title("About African Neuro Health")
     with st.expander("ℹ️ About This App 🧠 African NeuroHealth Dashboard"):
-        st.markdown(""" 
-        This platform is a culturally attuned, context-aware diagnostic tool...
-        """)
+        st.markdown("This platform is a culturally attuned, context-aware diagnostic tool...")
 
-# --- APP FEATURES ---
+# ----------------------------
+# APP FEATURES (simplified placeholders)
+# ----------------------------
 def stroke_prediction_app():
     st.header("Stroke Risk Prediction")
     st.write("Stroke prediction UI and logic here...")
@@ -251,18 +223,21 @@ def nutrition_tracker_app():
     st.header("Nutrition Tracker")
     st.write("Nutrition tracker UI and logic here...")
 
-# --- MAIN ROUTER WITH FORCE LOGIN ---
+# ----------------------------
+# MAIN APP ROUTER
+# ----------------------------
 st.title("African Neuro Health App")
 
-if st.session_state.user:
-    # Authenticated users
-    if st.session_state.user and st.session_state.user.get("email"):
-        st.sidebar.success(f"Logged in as {st.session_state.user['email']}")
-
+if st.session_state.user.get("email"):
+    # Authenticated user
+    st.sidebar.success(f"Logged in as {st.session_state.user['email']}")
     if st.sidebar.button("Logout"):
         logout()
-    page = st.sidebar.radio("Navigation", ["Home", "Stroke Prediction", "Alzheimer's Prediction", "Nutrition Tracker", "Profile", "Settings"])
-    
+
+    page = st.sidebar.radio(
+        "Navigation",
+        ["Home", "Stroke Prediction", "Alzheimer's Prediction", "Nutrition Tracker", "Profile", "Settings"]
+    )
     if page == "Home":
         st.write("Welcome to your dashboard.")
     elif page == "Stroke Prediction":
@@ -277,7 +252,7 @@ if st.session_state.user:
         st.write("Settings")
 
 else:
-    # Unauthenticated users can ONLY see these pages
+    # Unauthenticated users
     page = st.radio("Choose an option:", ["Login", "Register", "About"])
     if page == "Login":
         login()
@@ -285,10 +260,7 @@ else:
         register()
     elif page == "About":
         about()
-
-    # Force login redirect for app pages
-    # If someone tries to manipulate the URL or sidebar, they cannot access features
-    st.stop()  # stops execution here for unauthenticated users
+    st.stop()  # Prevent access to app features
 
 # --- Load Models with error handling ---
 base_path = os.path.dirname(r"C:\Users\sibs2\african-neurohealth-dashboard\stroke_model_pipeline.pkl")  # script folder
@@ -1382,6 +1354,7 @@ if app_mode == "Alzheimer Risk Prediction":
         except Exception as e:
 
                 st.error(f"Error during alzheimers prediction or saving: {e}")
+
 
 
 
