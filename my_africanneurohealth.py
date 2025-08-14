@@ -246,30 +246,35 @@ if st.session_state.user.get("email"):
     if st.sidebar.button("Logout", key="logout_btn"):
         logout()
 
-    # Post-login: Welcome + About
-    st.subheader(f"Welcome to your dashboard, {st.session_state.user['email']}!")
-    about()  # About shows directly
+   # Post-login: Welcome + About
+st.subheader(f"Welcome to your dashboard, {st.session_state.user['email']}!")
+
+# About content shows directly
+st.markdown("""
+This platform is a culturally attuned, context-aware diagnostic tool tailored for assessing neuro-health risks in African populations. 
+...
+""")
 
     # Sidebar navigation for app features
-    page = st.sidebar.radio(
-        "Choose a feature:",
-        ["Select an option", "Stroke Prediction", "Alzheimer's Prediction", "Nutrition Tracker", "Profile", "Settings"],
-        index=0,
-        key="sidebar_nav"
-    )
+   page = st.sidebar.radio(
+    "Choose a feature:",
+    ["Select an option", "Stroke Prediction", "Alzheimer's Prediction", "Nutrition Tracker", "Profile", "Settings"],
+    index=0,
+    key="sidebar_nav"
+)
 
-    # Render selected feature ONLY if a valid option is chosen
-    if page == "Stroke Prediction":
-        stroke_prediction_app()
-    elif page == "Alzheimer's Prediction":
-        alzheimers_prediction_app()
-    elif page == "Nutrition Tracker":
-        nutrition_tracker_app()
-    elif page == "Profile":
-        st.write(st.session_state.user)
-    elif page == "Settings":
-        st.write("Settings")
-    # "Select an option" does nothing (About already shown)
+# Render features ONLY if user selects them
+if page == "Stroke Prediction":
+    stroke_prediction_app()
+elif page == "Alzheimer's Prediction":
+    alzheimers_prediction_app()
+elif page == "Nutrition Tracker":
+    nutrition_tracker_app()
+elif page == "Profile":
+    st.write(st.session_state.user)
+elif page == "Settings":
+    st.write("Settings")
+# If "Select an option", nothing else renders
 
 else:
     # Unauthenticated users
@@ -1374,6 +1379,7 @@ if app_mode == "Alzheimer Risk Prediction":
         except Exception as e:
 
                 st.error(f"Error during alzheimers prediction or saving: {e}")
+
 
 
 
