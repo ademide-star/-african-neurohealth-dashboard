@@ -223,9 +223,6 @@ It blends conventional biomedical metrics with locally relevant stressors, lifes
 # ----------------------------
 # APP FEATURES
 # ----------------------------
-def stroke_prediction_app():
-    st.header("Stroke Risk Prediction")
-    st.write("Stroke prediction UI and logic here...")
 
 def alzheimers_prediction_app():
     st.header("Alzheimer's Prediction")
@@ -755,11 +752,13 @@ def build_full_input(raw):
 # =======================
 # TAB 1: STROKE PREDICTION
 # =======================
-    st.title("🫀 Stroke Risk Predictor")
-    st.warning("Complete all fields for accurate assessment")
+    def stroke_prediction_app():
+        st.header("Stroke Risk Prediction")
+        st.title("🫀 Stroke Risk Predictor")
+        st.warning("Complete all fields for accurate assessment")
 # Get nutritional score
-    nutritional_score = compute_nutritional_score()
-    st.info(f"🍎 Nutritional Health Score: **{nutritional_score}/5**")
+        nutritional_score = compute_nutritional_score()
+        st.info(f"🍎 Nutritional Health Score: **{nutritional_score}/5**")
     with st.form("stroke_form"):
             age = st.slider("Age", 18, 100, 45)
             gender = st.selectbox("Gender", ["Male", "Female"])
@@ -1382,6 +1381,7 @@ def prepare_alz_data_robust(full_input):
         except Exception as e:
 
                 st.error(f"Error during alzheimers prediction or saving: {e}")
+
 
 
 
