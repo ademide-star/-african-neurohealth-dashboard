@@ -845,16 +845,16 @@ if submit_alz:
 # ============================#
 # TAB 2: MEMORY RECALL GAME#
 # ============================#
-    st.subheader("🎮 Memory Recall Game")
+st.subheader("🎮 Memory Recall Game")
 
-    WORD_POOL = [
+WORD_POOL = [
         "apple", "table", "river", "mountain", "sun", "flower",
         "clock", "phone", "book", "star", "moon", "chair",
         "pencil", "car", "glass", "tree", "music", "house",
         "cloud", "lamp", "keyboard", "shoe", "bottle", "ring"
     ]
 
-    if 'memory_game' not in st.session_state:
+if 'memory_game' not in st.session_state:
         st.session_state.memory_game = {
             "state": "start",
             "words": [],
@@ -865,7 +865,7 @@ if submit_alz:
 
     game = st.session_state.memory_game
 
-    if game["state"] == "start":
+if game["state"] == "start":
         st.markdown(f"**Level {game['level']}** - You will see {4 + game['level']} words.")
         if st.button("Start Memory Exercise"):
             num_words = 4 + game["level"]
@@ -875,7 +875,7 @@ if submit_alz:
             game["state"] = "showing"
             st.rerun()
 
-    elif game["state"] == "showing":
+elif game["state"] == "showing":
         st.write("Memorize these words (5 seconds):")
         st.info(", ".join(game["words"]))
 
@@ -883,7 +883,7 @@ if submit_alz:
             game["state"] = "recalling"
             st.rerun()
 
-    elif game["state"] == "recalling":
+elif game["state"] == "recalling":
         with st.form("recall_form"):
             recalled_input = st.text_input("Type the words you remember, separated by commas:")
             submit = st.form_submit_button("Submit Recall")
@@ -925,7 +925,7 @@ if submit_alz:
 # ================
 # 🧮 Prediction Logic
 # ================
-    if submit_alz:
+if submit_alz:
             # Prepare data for prediction
         alz_inputs = {
                 "Age": age,
@@ -964,20 +964,20 @@ if submit_alz:
                 "Province_Option": selected_province,
                 "CustomStressScore": st.session_state.stress_score
             }
-    if submit_alz:
-        try:
+if submit_alz:
+    try:
             # Convert raw inputs into proper DataFrame for prediction
-            alz_inputs_df = prepare_alz_data_robust(alz_inputs)
+        alz_inputs_df = prepare_alz_data_robust(alz_inputs)
 
             # Predict Alzheimer’s risk
-            pred = int(alz_model.predict(alz_inputs_df)[0])
+        pred = int(alz_model.predict(alz_inputs_df)[0])
 
             # Get user location
-            city, region, country = get_user_location()
-            location_str = f"{city}, {region}, {country}"
+        city, region, country = get_user_location()
+        location_str = f"{city}, {region}, {country}"
 
             # Prepare data dict for database save
-            alz_data = {
+        alz_data = {
                 "user_id": st.session_state.user.id if st.session_state.get('user') else "anonymous",
                 "age": age,
                 "gender": gender,  # 1 = Male, 0 = Female
@@ -1017,21 +1017,21 @@ if submit_alz:
                 "prediction_result": int(pred)
         }
 
-            response = supabase.table("alzheimers_predictions").insert(alz_data).execute()
-            if response.data:
-                st.success("alzheimers prediction saved to database!")
-            else:
-                st.error(f"Failed to save alzheimers prediction: {response.error}")
+        response = supabase.table("alzheimers_predictions").insert(alz_data).execute()
+        if response.data:
+            st.success("alzheimers prediction saved to database!")
+        else:
+            st.error(f"Failed to save alzheimers prediction: {response.error}")
 
-        except Exception as e:
+    except Exception as e:
 
-                st.error(f"Error during alzheimers prediction or saving: {e}")
+            st.error(f"Error during alzheimers prediction or saving: {e}")
 
 
 
 def nutrition_tracker_app():
     st.header("Nutrition Tracker")
-    def calculate_weekly_servings(freq, servings):
+def calculate_weekly_servings(freq, servings):
     if freq == "Daily":
         return servings * 7
     elif freq == "Weekly":
@@ -1381,6 +1381,7 @@ with st.sidebar:
 # =======================#
     
     
+
 
 
 
