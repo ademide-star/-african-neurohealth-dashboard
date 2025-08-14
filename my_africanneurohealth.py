@@ -247,10 +247,10 @@ if st.session_state.user.get("email"):
         logout()
 
    # Post-login: Welcome + About
-st.subheader(f"Welcome to your dashboard, {st.session_state.user['email']}!")
+    st.subheader(f"Welcome to your dashboard, {st.session_state.user['email']}!")
 
 # About content shows directly
-st.markdown("""
+    st.markdown("""
 This platform is a culturally attuned, context-aware diagnostic tool tailored for assessing neuro-health risks in African populations. 
 ...
 """)
@@ -1379,6 +1379,7 @@ if app_mode == "Alzheimer Risk Prediction":
         except Exception as e:
 
                 st.error(f"Error during alzheimers prediction or saving: {e}")
+
 
 
 
