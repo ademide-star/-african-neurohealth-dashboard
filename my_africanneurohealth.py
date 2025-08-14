@@ -117,6 +117,8 @@ def custom_stress_score(prefix="", use_container=False):
 
 # Initialize session state safely
 # ----------------------------
+# SESSION STATE INIT
+# ----------------------------
 if "user" not in st.session_state or st.session_state.user is None:
     st.session_state.user = {"id": None, "email": None}
 
@@ -134,6 +136,7 @@ def login():
             if response.user:
                 st.session_state.user = {"id": response.user.id, "email": response.user.email}
                 st.success(f"Logged in as {st.session_state.user['email']}")
+                st.experimental_rerun()
             else:
                 st.error("Invalid login credentials")
         except Exception as e:
@@ -141,7 +144,6 @@ def login():
 
     st.markdown("---")
     st.subheader("Or Sign in with Google")
-
     if st.button("Login with Google", key="google_btn"):
         redirect_url = "https://ademideola.streamlit.app"
         res = supabase.auth.sign_in_with_oauth(
@@ -153,7 +155,7 @@ def login():
         st.markdown(f'<meta http-equiv="refresh" content="0; url={res.url}">', unsafe_allow_html=True)
 
 # ----------------------------
-# Handle OAuth callback
+# HANDLE OAUTH CALLBACK
 # ----------------------------
 query_params = st.query_params
 if "access_token" in query_params:
@@ -162,6 +164,7 @@ if "access_token" in query_params:
         if user_session.user:
             st.session_state.user = {"id": user_session.user.id, "email": user_session.user.email}
             st.success(f"Welcome, {st.session_state.user['email']}!")
+            st.experimental_rerun()
     except Exception as e:
         st.error(f"OAuth login error: {e}")
 
@@ -171,7 +174,6 @@ if "access_token" in query_params:
 def logout():
     try:
         supabase.auth.sign_out()
-        # Always reset to dict, never None
         st.session_state.user = {"id": None, "email": None}
         st.success("Logged out successfully.")
         st.experimental_rerun()
@@ -205,34 +207,7 @@ def register():
 # ----------------------------
 def about():
     st.title("About African Neuro Health")
-# ----------------------------#
-# APP FEATURES (simplified placeholders)
-# ----------------------------
-def stroke_prediction_app():
-    st.header("Stroke Risk Prediction")
-    st.write("Stroke prediction UI and logic here...")
-
-def alzheimers_prediction_app():
-    st.header("Alzheimer's Prediction")
-    st.write("Alzheimer's prediction UI and logic here...")
-
-def nutrition_tracker_app():
-    st.header("Nutrition Tracker")
-    st.write("Nutrition tracker UI and logic here...")
-
-   # --- MAIN APP ROUTER ---
-st.title("African Neuro Health App")
-
-if st.session_state.user.get("email"):
-    # Authenticated user
-    st.sidebar.success(f"Logged in as {st.session_state.user['email']}")
-    if st.sidebar.button("Logout"):
-        logout()
-
-    # --- POST LOGIN: Welcome + About ---
-    st.subheader(f"Welcome to your dashboard, {st.session_state.user['email']}!")
-    with st.expander("ℹ️ About This App 🧠 African NeuroHealth Dashboard"):
-        st.markdown("""
+    st.markdown("""
 This platform is a culturally attuned, context-aware diagnostic tool tailored for assessing neuro-health risks in African populations. 
 It blends conventional biomedical metrics with locally relevant stressors, lifestyle habits, and cultural practices to offer a truly holistic health assessment experience.
 
@@ -251,10 +226,42 @@ It blends conventional biomedical metrics with locally relevant stressors, lifes
 **GRASP / NIH / DSI Collaborative Program**
 """)
 
-    # --- NAVIGATION AFTER LOGIN ---
+# ----------------------------
+# APP FEATURES
+# ----------------------------
+def stroke_prediction_app():
+    st.header("Stroke Risk Prediction")
+    st.write("Stroke prediction UI and logic here...")
+
+def alzheimers_prediction_app():
+    st.header("Alzheimer's Prediction")
+    st.write("Alzheimer's prediction UI and logic here...")
+
+def nutrition_tracker_app():
+    st.header("Nutrition Tracker")
+    st.write("Nutrition tracker UI and logic here...")
+
+# ----------------------------
+# MAIN APP ROUTER
+# ----------------------------
+st.title("African Neuro Health App")
+
+if st.session_state.user.get("email"):
+    # Authenticated user
+    st.sidebar.success(f"Logged in as {st.session_state.user['email']}")
+    if st.sidebar.button("Logout", key="logout_btn"):
+        logout()
+
+    # Post-login welcome + about
+    st.subheader(f"Welcome to your dashboard, {st.session_state.user['email']}!")
+    about()  # show about directly, not in expander
+
+    # Sidebar navigation for app features (default placeholder)
     page = st.sidebar.radio(
         "Choose a feature:",
-        ["Stroke Prediction", "Alzheimer's Prediction", "Nutrition Tracker", "Profile", "Settings"]
+        ["Select an option", "Stroke Prediction", "Alzheimer's Prediction", "Nutrition Tracker", "Profile", "Settings"],
+        index=0,
+        key="sidebar_nav"
     )
 
     if page == "Stroke Prediction":
@@ -267,10 +274,11 @@ It blends conventional biomedical metrics with locally relevant stressors, lifes
         st.write(st.session_state.user)
     elif page == "Settings":
         st.write("Settings")
+    # If "Select an option", nothing runs
 
 else:
     # Unauthenticated users
-    page = st.radio("Choose an option:", ["Login", "Register", "About"])
+    page = st.radio("Choose an option:", ["Login", "Register", "About"], key="unauth_nav")
     if page == "Login":
         login()
     elif page == "Register":
@@ -278,7 +286,6 @@ else:
     elif page == "About":
         about()
     st.stop()  # Prevent access to app features
-
 
 # --- Load Models with error handling ---
 base_path = os.path.dirname(r"C:\Users\sibs2\african-neurohealth-dashboard\stroke_model_pipeline.pkl")  # script folder
@@ -1372,6 +1379,7 @@ if app_mode == "Alzheimer Risk Prediction":
         except Exception as e:
 
                 st.error(f"Error during alzheimers prediction or saving: {e}")
+
 
 
 
