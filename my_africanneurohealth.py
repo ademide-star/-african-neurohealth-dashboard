@@ -225,18 +225,6 @@ It blends conventional biomedical metrics with locally relevant stressors, lifes
 **GRASP / NIH / DSI Collaborative Program**
 """)
 
-else:
-    # Authenticated users see app selection + tools
-    with st.sidebar:
-        st.write(f"👋 Welcome, {st.session_state.user.email}!")
-        app_choice = st.radio(
-            "Choose an App:",
-            ["Stroke Prediction", "Alzheimer's Prediction", "Nutrition Tracker"],
-            key="app_choice"
-        )
-        if st.button("Logout", key="logout_button"):
-            logout()
-
 # ----------------------------
 # APP FEATURES (simplified placeholders)
 # ----------------------------
@@ -1383,6 +1371,7 @@ if app_mode == "Alzheimer Risk Prediction":
         except Exception as e:
 
                 st.error(f"Error during alzheimers prediction or saving: {e}")
+
 
 
 
