@@ -270,30 +270,7 @@ It blends conventional biomedical metrics with locally relevant stressors, lifes
         key="sidebar_nav"
     )
 
-    # Render selected app feature ONLY if user selects something other than placeholder
-    if page != "Select an option":
-        if page == "Stroke Prediction":
-            stroke_prediction_app()
-        elif page == "Alzheimer's Prediction":
-            alzheimers_prediction_app()
-        elif page == "Nutrition Tracker":
-            nutrition_tracker_app()
-        elif page == "Profile":
-            st.write(st.session_state.user)
-        elif page == "Settings":
-            st.write("Settings")
-
-else:
-    # Unauthenticated users
-    unauth_page = st.radio("Choose an option:", ["Login", "Register", "About"], key="unauth_nav")
-    if unauth_page == "Login":
-        login()
-    elif unauth_page == "Register":
-        register()
-    elif unauth_page == "About":
-        about()
-    st.stop()  # stop execution to prevent access
-
+   
 
 # --- Load Models with error handling ---
 base_path = os.path.dirname(r"C:\Users\sibs2\african-neurohealth-dashboard\stroke_model_pipeline.pkl")  # script folder
@@ -1381,6 +1358,30 @@ def prepare_alz_data_robust(full_input):
         except Exception as e:
 
                 st.error(f"Error during alzheimers prediction or saving: {e}")
+
+ # Render selected app feature ONLY if user selects something other than placeholder
+    if page != "Select an option":
+        if page == "Stroke Prediction":
+            stroke_prediction_app()
+        elif page == "Alzheimer's Prediction":
+            alzheimers_prediction_app()
+        elif page == "Nutrition Tracker":
+            nutrition_tracker_app()
+        elif page == "Profile":
+            st.write(st.session_state.user)
+        elif page == "Settings":
+            st.write("Settings")
+
+else:
+    # Unauthenticated users
+    unauth_page = st.radio("Choose an option:", ["Login", "Register", "About"], key="unauth_nav")
+    if unauth_page == "Login":
+        login()
+    elif unauth_page == "Register":
+        register()
+    elif unauth_page == "About":
+        about()
+    st.stop()  # stop execution to prevent access
 
 
 
