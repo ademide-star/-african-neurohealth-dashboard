@@ -248,28 +248,43 @@ if st.session_state.user.get("email"):
     st.subheader(f"Welcome to your dashboard, {st.session_state.user['email']}!")
     st.markdown("""
 This platform is a culturally attuned, context-aware diagnostic tool tailored for assessing neuro-health risks in African populations. 
-...
+It blends conventional biomedical metrics with locally relevant stressors, lifestyle habits, and cultural practices to offer a truly holistic health assessment experience.
+
+**Key Features:**
+- Environmental exposures (e.g., noise, air pollution)
+- Dietary patterns (including traditional nutrition)
+- Sleep quality and hydration
+- Use of herbal or traditional remedies
+- Psychosocial stressors unique to African settings
+- Ethnocultural identity tracking for precision health insights
+
+**By:** Adebimpe-John Omolola E  
+**Supervisor:** Prof. Bamidele Owoyele Victor  
+**Institution:** University of Ilorin  
+**Principal Investigator:** Prof Mayowa Owolabi  
+**GRASP / NIH / DSI Collaborative Program**
 """)
 
     # Sidebar navigation with default placeholder
     page = st.sidebar.radio(
         "Choose a feature:",
         ["Select an option", "Stroke Prediction", "Alzheimer's Prediction", "Nutrition Tracker", "Profile", "Settings"],
-        index=0,  # default = "Select an option"
+        index=0,
         key="sidebar_nav"
     )
 
-    # Render selected app feature only if chosen
-    if page == "Stroke Prediction":
-        stroke_prediction_app()
-    elif page == "Alzheimer's Prediction":
-        alzheimers_prediction_app()
-    elif page == "Nutrition Tracker":
-        nutrition_tracker_app()
-    elif page == "Profile":
-        st.write(st.session_state.user)
-    elif page == "Settings":
-        st.write("Settings")
+    # Render selected app feature ONLY if user selects something other than placeholder
+    if page != "Select an option":
+        if page == "Stroke Prediction":
+            stroke_prediction_app()
+        elif page == "Alzheimer's Prediction":
+            alzheimers_prediction_app()
+        elif page == "Nutrition Tracker":
+            nutrition_tracker_app()
+        elif page == "Profile":
+            st.write(st.session_state.user)
+        elif page == "Settings":
+            st.write("Settings")
 
 else:
     # Unauthenticated users
@@ -281,6 +296,7 @@ else:
     elif unauth_page == "About":
         about()
     st.stop()  # stop execution to prevent access
+
 
 # --- Load Models with error handling ---
 base_path = os.path.dirname(r"C:\Users\sibs2\african-neurohealth-dashboard\stroke_model_pipeline.pkl")  # script folder
@@ -1374,6 +1390,7 @@ if app_mode == "Alzheimer Risk Prediction":
         except Exception as e:
 
                 st.error(f"Error during alzheimers prediction or saving: {e}")
+
 
 
 
