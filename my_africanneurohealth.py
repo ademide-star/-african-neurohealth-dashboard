@@ -560,12 +560,12 @@ if submit_stroke_inputs:
 
             # You may need to update the above dictionary to include all required fields
 
-    if submit_stroke_inputs:
+if submit_stroke_inputs:
     # Prepare raw inputs dict#
-        try: 
-            stroke_inputs_df = prepare_stroke_input_robust(raw_inputs)  # Adjust to your function name
-            pred = stroke_model.predict(stroke_inputs_df)[0]   
-            inputs = {
+    try: 
+        stroke_inputs_df = prepare_stroke_input_robust(raw_inputs)  # Adjust to your function name
+        pred = stroke_model.predict(stroke_inputs_df)[0]   
+        inputs = {
                 "user_id": st.session_state.user.id if st.session_state.get('user') else "anonymous",
                 "age": age,
                 "gender": gender,
@@ -600,18 +600,18 @@ if submit_stroke_inputs:
         }
 
     # Convert raw inputs into DataFrame for prediction #
-            stroke_df = prepare_stroke_input_robust(inputs)
+        stroke_df = prepare_stroke_input_robust(inputs)
 
     # Predict#
-            pred = stroke_model.predict(stroke_inputs_df)[0]
+        pred = stroke_model.predict(stroke_inputs_df)[0]
 
     # Location#
-            city, region, country = get_user_location()
-            location_str = f"{city}, {region}, {country}"
+        city, region, country = get_user_location()
+        location_str = f"{city}, {region}, {country}"
 
 
      # Display prediction result with detailed advice#
-            if pred == 1:
+        if pred == 1:
                 st.error("⚠️ HIGH STROKE RISK DETECTED")
                 st.markdown("""
             ## 🚨 Immediate Action Recommended:
@@ -739,7 +739,7 @@ with st.form("alz_form"):
         
         col1, col2 = st.columns(2)
         
-with col1:
+        with col1:
             q1 = st.selectbox("Do you forget names of relatives/village members?", 
                          ["Never", "Sometimes", "Often"], key='q1')
             q2 = st.selectbox("Do you misplace important items (farming tools, keys)?", 
@@ -747,7 +747,7 @@ with col1:
             q3 = st.selectbox("Can you recall traditional recipes or remedies?", 
                          ["Always", "Sometimes", "Rarely"], key='q3')
             
-with col2:
+        with col2:
             q4 = st.selectbox("Do you recognize people from your community?", 
                          ["Always", "Sometimes", "Rarely"], key='q4')
             q5 = st.selectbox("Can you navigate familiar paths/markets?", 
@@ -794,7 +794,7 @@ with col2:
 
         submit_alz = st.form_submit_button("🔍 Predict Alzheimer Risk")
 
-    if submit_alz:
+if submit_alz:
         pred = 1 if mmse < 24 or stress_score > 6 else 0
 
         if pred == 1:
@@ -1381,6 +1381,7 @@ with st.sidebar:
 # =======================#
     
     
+
 
 
 
