@@ -25,12 +25,6 @@ import traceback
 from sklearn.pipeline import Pipeline
 from supabase import create_client, Client
 
-# --- Load Environment Variables --
-SUPABASE_URL = st.secrets["SUPABASE_URL"]
-SUPABASE_KEY = st.secrets["SUPABASE_KEY"]
-supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
-logging.basicConfig(level=logging.DEBUG
-
 # Must be the first Streamlit command
 st.set_page_config(
     page_title="My App",
@@ -49,6 +43,12 @@ hide_streamlit_style = """
     </style>
 """
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
+
+# --- Load Environment Variables --
+SUPABASE_URL = st.secrets["SUPABASE_URL"]
+SUPABASE_KEY = st.secrets["SUPABASE_KEY"]
+supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+logging.basicConfig(level=logging.DEBUG
 
 # --- Get User Location ---
 def get_user_location():
@@ -1377,6 +1377,7 @@ if app_mode == "Alzheimer Risk Prediction":
         except Exception as e:
 
                 st.error(f"Error during alzheimers prediction or saving: {e}")
+
 
 
 
