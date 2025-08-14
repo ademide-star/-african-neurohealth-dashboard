@@ -48,7 +48,7 @@ st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 SUPABASE_URL = st.secrets["SUPABASE_URL"]
 SUPABASE_KEY = st.secrets["SUPABASE_KEY"]
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
-logging.basicConfig(level=logging.DEBUG
+logging.basicConfig(level=logging.DEBUG)
 
 # --- Get User Location ---
 def get_user_location():
@@ -1377,6 +1377,7 @@ if app_mode == "Alzheimer Risk Prediction":
         except Exception as e:
 
                 st.error(f"Error during alzheimers prediction or saving: {e}")
+
 
 
 
