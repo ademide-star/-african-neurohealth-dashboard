@@ -232,43 +232,7 @@ def nutrition_tracker_app():
     st.header("Nutrition Tracker")
     st.write("Nutrition tracker UI and logic here...")
 
-# --- MAIN APP ROUTER ---
-st.title("African Neuro Health App")
 
-if st.session_state.user.get("email"):
-    # Authenticated users
-    st.sidebar.success(f"Logged in as {st.session_state.user['email']}")
-    if st.sidebar.button("Logout", key="logout_btn"):
-        logout()
-
-    # Welcome + About
-    st.subheader(f"Welcome to your dashboard, {st.session_state.user['email']}!")
-    st.markdown("""
-This platform is a culturally attuned, context-aware diagnostic tool tailored for assessing neuro-health risks in African populations. 
-It blends conventional biomedical metrics with locally relevant stressors, lifestyle habits, and cultural practices to offer a truly holistic health assessment experience.
-
-**Key Features:**
-- Environmental exposures (e.g., noise, air pollution)
-- Dietary patterns (including traditional nutrition)
-- Sleep quality and hydration
-- Use of herbal or traditional remedies
-- Psychosocial stressors unique to African settings
-- Ethnocultural identity tracking for precision health insights
-
-**By:** Adebimpe-John Omolola E  
-**Supervisor:** Prof. Bamidele Owoyele Victor  
-**Institution:** University of Ilorin  
-**Principal Investigator:** Prof Mayowa Owolabi  
-**GRASP / NIH / DSI Collaborative Program**
-""")
-
-    # Sidebar navigation with default placeholder
-    page = st.sidebar.radio(
-        "Choose a feature:",
-        ["Select an option", "Stroke Prediction", "Alzheimer's Prediction", "Nutrition Tracker", "Profile", "Settings"],
-        index=0,
-        key="sidebar_nav"
-    )
 
    
 
@@ -1359,7 +1323,44 @@ def prepare_alz_data_robust(full_input):
 
                 st.error(f"Error during alzheimers prediction or saving: {e}")
 
- # Render selected app feature ONLY if user selects something other than placeholder
+# --- MAIN APP ROUTER ---
+st.title("African Neuro Health App")
+
+if st.session_state.user.get("email"):
+    # Authenticated users
+    st.sidebar.success(f"Logged in as {st.session_state.user['email']}")
+    if st.sidebar.button("Logout", key="logout_btn"):
+        logout()
+
+    # Welcome + About
+    st.subheader(f"Welcome to your dashboard, {st.session_state.user['email']}!")
+    st.markdown("""
+This platform is a culturally attuned, context-aware diagnostic tool tailored for assessing neuro-health risks in African populations. 
+It blends conventional biomedical metrics with locally relevant stressors, lifestyle habits, and cultural practices to offer a truly holistic health assessment experience.
+
+**Key Features:**
+- Environmental exposures (e.g., noise, air pollution)
+- Dietary patterns (including traditional nutrition)
+- Sleep quality and hydration
+- Use of herbal or traditional remedies
+- Psychosocial stressors unique to African settings
+- Ethnocultural identity tracking for precision health insights
+
+**By:** Adebimpe-John Omolola E  
+**Supervisor:** Prof. Bamidele Owoyele Victor  
+**Institution:** University of Ilorin  
+**Principal Investigator:** Prof Mayowa Owolabi  
+**GRASP / NIH / DSI Collaborative Program**
+""")
+
+    # Sidebar navigation with default placeholder
+    page = st.sidebar.radio(
+        "Choose a feature:",
+        ["Select an option", "Stroke Prediction", "Alzheimer's Prediction", "Nutrition Tracker", "Profile", "Settings"],
+        index=0,
+        key="sidebar_nav"
+    )
+# Render selected app feature ONLY if user selects something other than placeholder
     if page != "Select an option":
         if page == "Stroke Prediction":
             stroke_prediction_app()
@@ -1382,6 +1383,8 @@ def prepare_alz_data_robust(full_input):
     elif unauth_page == "About":
         about()
         st.stop()  # stop execution to prevent access
+
+ 
 
 
 
