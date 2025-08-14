@@ -288,12 +288,6 @@ def build_full_input(raw):
     return input_df
 
 
-# =======================
-# TAB 1: STROKE PREDICTION
-# =======================
-    
-             
-
 def build_full_input(raw):
     # Map gender
     gender = 1 if raw.get("gender") == "Male" else 0
@@ -1168,20 +1162,21 @@ if st.sidebar.button("Save Nutritional Data"):
             
 
 
-# --- MAIN APP ROUTER ---
-st.title("African Neuro Health App")
+
 
 if st.session_state.user.get("email"):
     # Authenticated users
     st.sidebar.success(f"Logged in as {st.session_state.user['email']}")
     if st.sidebar.button("Logout", key="logout_btn"):
         logout()
-
+        
+def about_page():
+    st.title("About African Neuro Health")
     # Welcome + About
     st.subheader(f"Welcome to your dashboard, {st.session_state.user['email']}!")
     st.markdown("""
-This platform is a culturally attuned, context-aware diagnostic tool tailored for assessing neuro-health risks in African populations. 
-It blends conventional biomedical metrics with locally relevant stressors, lifestyle habits, and cultural practices to offer a truly holistic health assessment experience.
+    This platform is a culturally attuned, context-aware diagnostic tool tailored for assessing neuro-health risks in African populations. 
+    It blends conventional biomedical metrics with locally relevant stressors, lifestyle habits, and cultural practices to offer a truly holistic health assessment experience.
 
 **Key Features:**
 - Environmental exposures (e.g., noise, air pollution)
@@ -1198,25 +1193,23 @@ It blends conventional biomedical metrics with locally relevant stressors, lifes
 **GRASP / NIH / DSI Collaborative Program**
 """)
 
-    # Sidebar navigation with default placeholder
-    page = st.sidebar.radio(
-        "Choose a feature:",
-        ["Select an option", "Stroke Prediction", "Alzheimer's Prediction", "Nutrition Tracker", "Profile", "Settings"],
-        index=0,
-        key="sidebar_nav"
-    )
 # Render selected app feature ONLY if user selects something other than placeholder
-    if page != "Select an option":
-        if page == "Stroke Prediction":
-            stroke_prediction_app()
-        elif page == "Alzheimer's Prediction":
-            alzheimers_prediction_app()
-        elif page == "Nutrition Tracker":
-            nutrition_tracker_app()
-        elif page == "Profile":
-            st.write(st.session_state.user)
-        elif page == "Settings":
-            st.write("Settings")
+  # APP ROUTER
+# =======================
+st.sidebar.title("Navigation")
+page = st.sidebar.radio(
+    "Choose a page:",
+    ["About", "Stroke Prediction", "Alzheimer's Prediction", "Nutrition Tracker"]
+)
+
+if page == "About":
+    about_page()
+elif page == "Stroke Prediction":
+    stroke_prediction_page()
+elif page == "Alzheimer's Prediction":
+    alzheimers_prediction_page()
+elif page == "Nutrition Tracker":
+    nutrition_tracker_page()
 
     else:
     # Unauthenticated users
@@ -1371,16 +1364,9 @@ with st.sidebar:
     selected_region = st.selectbox("🌍 Select Region", list(region_with_ethnicity.keys()))
     selected_ethnicity = st.selectbox("Select Ethnicity", region_with_ethnicity[selected_region])
 
-
-
-                            # --- Alzheimer Predictor ---#
-
-
-# =======================#
-# TAB 1: ALZHEIMER FORM #
-# =======================#
     
     
+
 
 
 
