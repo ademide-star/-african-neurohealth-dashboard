@@ -253,26 +253,25 @@ if st.session_state.user.get("email"):
     st.subheader(f"Welcome to your dashboard, {st.session_state.user['email']}!")
     about()  # show About directly
 
-    # Sidebar navigation for app features
+    # --- Sidebar Navigation ---
     page = st.sidebar.radio(
-    "Choose a feature:",
-    ["Select an option", "Stroke Prediction", "Alzheimer's Prediction", "Nutrition Tracker", "Profile", "Settings"],
-    index=0,  # default is "Select an option"
-    key="sidebar_nav"
-)
+        "Choose a feature:",
+        ["Select an option", "Stroke Prediction", "Alzheimer's Prediction", "Nutrition Tracker", "Profile", "Settings"],
+        index=0,
+        key="sidebar_nav"
+    )
 
-# Render app features ONLY if user selects a valid option
-if page == "Stroke Prediction":
-    stroke_prediction_app()
-elif page == "Alzheimer's Prediction":
-    alzheimers_prediction_app()
-elif page == "Nutrition Tracker":
-    nutrition_tracker_app()
-elif page == "Profile":
-    st.write(st.session_state.user)
-elif page == "Settings":
-    st.write("Settings")
-# If "Select an option", do nothing (About already shown above)
+    # Render only if user selects a feature
+    if page == "Stroke Prediction":
+        stroke_prediction_app()
+    elif page == "Alzheimer's Prediction":
+        alzheimers_prediction_app()
+    elif page == "Nutrition Tracker":
+        nutrition_tracker_app()
+    elif page == "Profile":
+        st.write(st.session_state.user)
+    elif page == "Settings":
+        st.write("Settings")
 
 else:
     # Unauthenticated users
@@ -1377,6 +1376,7 @@ if app_mode == "Alzheimer Risk Prediction":
         except Exception as e:
 
                 st.error(f"Error during alzheimers prediction or saving: {e}")
+
 
 
 
