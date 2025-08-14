@@ -626,12 +626,12 @@ if submit_stroke_inputs:
             - Maintain regular sleep schedule
             - ⚖️ Maintain a healthy weight (avoid obesity)
             """)
-            else:
-                st.success("✅ LOW STROKE RISK DETECTED")
+        else:
+            st.success("✅ LOW STROKE RISK DETECTED")
 
         # Lifestyle suggestions expander
-            with st.expander("🛠️ Lifestyle Suggestions for Stroke Prevention"):
-                st.markdown("""
+        with st.expander("🛠️ Lifestyle Suggestions for Stroke Prevention"):
+            st.markdown("""
             ### 🍽️ Dietary Recommendations:
             - Reduce salt intake to <5g/day
             - Increase consumption of leafy greens
@@ -659,22 +659,22 @@ if submit_stroke_inputs:
 
 
     # Prepare database dictionary (separate from stroke_df)
-            db_payload = {
-        "user_id": st.session_state.user.id if st.session_state.get('user') else "anonymous",
-        "raw_inputs": inputs,
-        "location": location_str,
-        "prediction_result": float(pred)
+        db_payload = {
+    "user_id": st.session_state.user.id if st.session_state.get('user') else "anonymous",
+    "raw_inputs": inputs,
+    "location": location_str,
+    "prediction_result": float(pred)
     }
 
     # Save to Supabase#
             response = supabase.table("stroke_predictions").insert(inputs).execute()
-            if response.data:
-                st.success("Stroke prediction saved to database!")
-            else:
-                st.error(f"Failed to save Stroke prediction: {response.error}")
+        if response.data:
+            st.success("Stroke prediction saved to database!")
+        else:
+            st.error(f"Failed to save Stroke prediction: {response.error}")
 
-        except Exception as e:
-                st.error(f"Error during Stroke prediction or saving: {e}")
+    except Exception as e:
+            st.error(f"Error during Stroke prediction or saving: {e}")
 
 def alzheimers_prediction_app():
     st.header("Alzheimer's Prediction")
@@ -1381,6 +1381,7 @@ with st.sidebar:
 # =======================#
     
     
+
 
 
 
