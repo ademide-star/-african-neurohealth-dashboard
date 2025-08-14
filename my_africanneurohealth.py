@@ -123,7 +123,7 @@ supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 # --- Initialize user ---
 if "user" not in st.session_state:
-    st.session_state.user = None
+    st.session_state.user.id = None
 
 # --- LOGIN FUNCTION ---
 def login():
@@ -135,7 +135,7 @@ def login():
         try:
             response = supabase.auth.sign_in_with_password({"email": email, "password": password})
             if response.user:
-                st.session_state.user = response.user
+                st.session_state.user.id = response.user
                 st.success(f"Logged in as {email}")
                 st.rerun()
             else:
@@ -147,15 +147,15 @@ def login():
     st.subheader("Or Sign in with Google")
 
     if st.button("Login with Google", key="google_btn"):
-    redirect_url = "https://ademideola.streamlit.app"
-    res = supabase.auth.sign_in_with_oauth(
+        redirect_url = "https://ademideola.streamlit.app"
+        res = supabase.auth.sign_in_with_oauth(
         {
             "provider": "google",
             "options": {"redirect_to": redirect_url}
         }
     )
     # Redirect to Supabase login URL
-    st.markdown(f'<meta http-equiv="refresh" content="0; url={res.url}">', unsafe_allow_html=True)
+        st.markdown(f'<meta http-equiv="refresh" content="0; url={res.url}">', unsafe_allow_html=True)
 
 # Handle OAuth callback
 query_params = st.session_state.get("query_params", st.experimental_get_query_params())
@@ -163,13 +163,13 @@ if "access_token" in query_params:
     try:
         user_session = supabase.auth.get_user()
         if user_session.user:
-            st.session_state.user = user_session.user
+            st.session_state.user.id = user_session.user
             st.success(f"Welcome, {st.session_state.user.email}!")
     except Exception as e:
         st.error(f"OAuth login error: {e}")
 
 # Display logged-in user info
-if st.session_state.user:
+if st.session_state.user.id:
     st.write(f"Logged in as: {st.session_state.user.email}")
 
     st.markdown("---")
@@ -1381,6 +1381,7 @@ if app_mode == "Alzheimer Risk Prediction":
         except Exception as e:
 
                 st.error(f"Error during alzheimers prediction or saving: {e}")
+
 
 
 
