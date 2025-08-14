@@ -112,409 +112,7 @@ def custom_stress_score(prefix="", use_container=False):
         """, unsafe_allow_html=True)
         
         return level, label, total_score
-
-# ----------------------------
-# SESSION STATE INIT
-# ----------------------------
-if "user" not in st.session_state or st.session_state.user is None:
-    st.session_state.user = {"id": None, "email": None}
-
-# ----------------------------
-# LOGIN FUNCTION
-# ----------------------------
-def login():
-    st.subheader("Login with Email & Password")
-    email = st.text_input("Email", key="login_email")
-    password = st.text_input("Password", type="password", key="login_password")
-
-    if st.button("Login", key="login_btn"):
-        try:
-            response = supabase.auth.sign_in_with_password({"email": email, "password": password})
-            if response.user:
-                st.session_state.user = {"id": response.user.id, "email": response.user.email}
-                st.success(f"Logged in as {st.session_state.user['email']}")
-            else:
-                st.error("Invalid login credentials")
-        except Exception as e:
-            st.error(f"Login error: {e}")
-
-    st.markdown("---")
-    st.subheader("Or Sign in with Google")
-    if st.button("Login with Google", key="google_btn"):
-        redirect_url = "https://ademideola.streamlit.app"
-        res = supabase.auth.sign_in_with_oauth(
-            {
-                "provider": "google",
-                "options": {"redirect_to": redirect_url}
-            }
-        )
-        st.markdown(f'<meta http-equiv="refresh" content="0; url={res.url}">', unsafe_allow_html=True)
-
-# ----------------------------
-# HANDLE OAUTH CALLBACK
-# ----------------------------
-query_params = st.query_params
-if "access_token" in query_params:
-    try:
-        user_session = supabase.auth.get_user()
-        if user_session.user:
-            st.session_state.user = {"id": user_session.user.id, "email": user_session.user.email}
-            st.success(f"Welcome, {st.session_state.user['email']}!")
-    except Exception as e:
-        st.error(f"OAuth login error: {e}")
-
-# ----------------------------
-# LOGOUT FUNCTION
-# ----------------------------
-def logout():
-    try:
-        supabase.auth.sign_out()
-        st.session_state.user = {"id": None, "email": None}
-        st.success("Logged out successfully.")
-    except Exception as e:
-        st.error(f"Logout error: {e}")
-
-# ----------------------------
-# REGISTER FUNCTION
-# ----------------------------
-def register():
-    st.subheader("Register")
-    email = st.text_input("New Email", key="register_email")
-    password = st.text_input("New Password", type="password", key="register_password")
-    confirm_password = st.text_input("Confirm Password", type="password", key="register_confirm_password")
-
-    if st.button("Register", key="register_btn"):
-        if password != confirm_password:
-            st.error("Passwords do not match")
-        else:
-            try:
-                response = supabase.auth.sign_up({"email": email, "password": password})
-                if response.user:
-                    st.success("Registration successful! Please check your email to confirm your account.")
-                else:
-                    st.error("Registration failed.")
-            except Exception as e:
-                st.error(f"Registration error: {e}")
-
-# ----------------------------
-# ABOUT FUNCTION
-# ----------------------------
-def about():
-    st.title("About African Neuro Health")
-    st.markdown("""
-This platform is a culturally attuned, context-aware diagnostic tool tailored for assessing neuro-health risks in African populations. 
-It blends conventional biomedical metrics with locally relevant stressors, lifestyle habits, and cultural practices to offer a truly holistic health assessment experience.
-
-**Key Features:**
-- Environmental exposures (e.g., noise, air pollution)
-- Dietary patterns (including traditional nutrition)
-- Sleep quality and hydration
-- Use of herbal or traditional remedies
-- Psychosocial stressors unique to African settings
-- Ethnocultural identity tracking for precision health insights
-
-**By:** Adebimpe-John Omolola E  
-**Supervisor:** Prof. Bamidele Owoyele Victor  
-**Institution:** University of Ilorin  
-**Principal Investigator:** Prof Mayowa Owolabi  
-**GRASP / NIH / DSI Collaborative Program**
-""")
-
-# ----------------------------
-# APP FEATURES
-# ----------------------------
-
-def alzheimers_prediction_app():
-    st.header("Alzheimer's Prediction")
-    st.write("Alzheimer's prediction UI and logic here...")
-
-def nutrition_tracker_app():
-    st.header("Nutrition Tracker")
-    st.write("Nutrition tracker UI and logic here...")
-
-
-
-   
-
-# --- Load Models with error handling ---
-base_path = os.path.dirname(r"C:\Users\sibs2\african-neurohealth-dashboard\stroke_model_pipeline.pkl")  # script folder
-stroke_path = os.path.join(base_path, "stroke_model_pipeline.pkl")
-alz_path = os.path.join(base_path, "alz_model_pipeline.pkl")
-
-stroke_model = joblib.load(stroke_path)
-alz_model = joblib.load(alz_path)
-
-try:
-    # Use relative paths instead of absolute paths
-     stroke_model = joblib.load("stroke_model_pipeline.pkl")
-     alz_model = joblib.load("alz_model_pipeline.pkl")
-     models_loaded = True
-except FileNotFoundError as e:
-    st.error(f"Model files not found: {e}")
-    st.error("Please ensure model files are in the correct path.")
-    models_loaded = False
-except Exception as e:
-    st.error(f"Error loading models: {e}")
-    models_loaded = False
-# --- Initialize session state ---
-if "user" not in st.session_state:
-    st.session_state.user.id = None
-if "nutritional_data" not in st.session_state:
-    st.session_state.nutritional_data = {}
-if "default_lifestyles" not in st.session_state:
-    st.session_state.default_lifestyles = []
-if "stress_score" not in st.session_state:
-    st.session_state.stress_score = 0
-if "location_str" not in st.session_state:
-    st.session_state.location_str = {}
-
-
-countries_with_provinces = {
-    "Nigeria": [
-        "Abia", "Adamawa", "Akwa Ibom", "Anambra", "Bauchi", "Bayelsa", "Benue", "Borno", "Cross River", "Delta",
-        "Ebonyi", "Edo", "Ekiti", "Enugu", "FCT", "Gombe", "Imo", "Jigawa", "Kaduna", "Kano", "Katsina", "Kebbi",
-        "Kogi", "Kwara", "Lagos", "Nasarawa", "Niger", "Ogun", "Ondo", "Osun", "Oyo", "Plateau", "Rivers",
-        "Sokoto", "Taraba", "Yobe", "Zamfara"
-    ],
-    "Ghana": [
-        "Greater Accra", "Ashanti", "Western", "Eastern", "Volta", "Northern", "Upper East", "Upper West", "Bono",
-        "Ahafo", "Savannah", "Oti", "North East", "Western North", "Central"
-    ],
-    "Kenya": [
-        "Nairobi", "Mombasa", "Kisumu", "Nakuru", "Kiambu", "Machakos", "Uasin Gishu", "Meru", "Embu",
-        "Kakamega", "Bungoma", "Kisii"
-    ],
-    "South Africa": [
-        "Gauteng", "Western Cape", "Eastern Cape", "Northern Cape", "KwaZulu-Natal", "Free State", "North West",
-        "Mpumalanga", "Limpopo"
-    ],
-    "Uganda": ["Central", "Eastern", "Northern", "Western"],
-    "Tanzania": [
-        "Arusha", "Dar es Salaam", "Dodoma", "Geita", "Kagera", "Kigoma", "Kilimanjaro", "Lindi", "Manyara", "Mara",
-        "Mbeya", "Morogoro", "Mtwara", "Mwanza", "Njombe", "Pwani", "Rukwa", "Ruvuma", "Shinyanga", "Simiyu",
-        "Singida", "Tabora", "Tanga", "Zanzibar Central", "Zanzibar North", "Zanzibar South"
-    ],
-    "Ethiopia": [
-        "Addis Ababa", "Amhara", "Oromia", "Tigray", "Sidama", "Somali", "Benishangul-Gumuz", "SNNPR", "Afar",
-        "Gambela", "Harari"
-    ],
-    "Egypt": [
-        "Cairo", "Alexandria", "Giza", "Aswan", "Asyut", "Beheira", "Beni Suef", "Dakahlia", "Damietta", "Faiyum",
-        "Gharbia", "Ismailia", "Kafr El Sheikh", "Luxor", "Matruh", "Minya", "Monufia", "New Valley", "North Sinai",
-        "Port Said", "Qalyubia", "Qena", "Red Sea", "Sharqia", "Sohag", "South Sinai", "Suez"
-    ],
-    "Morocco": [
-        "Casablanca-Settat", "Rabat-Salé-Kénitra", "Fès-Meknès", "Marrakesh-Safi", "Tangier-Tetouan-Al Hoceima",
-        "Souss-Massa", "Oriental", "Beni Mellal-Khenifra", "Drâa-Tafilalet", "Guelmim-Oued Noun",
-        "Laâyoune-Sakia El Hamra", "Dakhla-Oued Ed-Dahab"
-    ],
-    "Cameroon": [
-        "Adamawa", "Centre", "East", "Far North", "Littoral", "North", "Northwest", "South", "Southwest", "West"
-    ],
-    "Zimbabwe": [
-        "Bulawayo", "Harare", "Manicaland", "Mashonaland Central", "Mashonaland East", "Mashonaland West",
-        "Masvingo", "Matabeleland North", "Matabeleland South", "Midlands"
-    ],
-    "Zambia": [
-        "Central", "Copperbelt", "Eastern", "Luapula", "Lusaka", "Muchinga", "Northern", "North-Western",
-        "Southern", "Western"
-    ],
-    "Rwanda": ["Kigali", "Eastern", "Northern", "Southern", "Western"],
-    "Sudan": [
-        "Khartoum", "North Darfur", "South Darfur", "East Darfur", "West Darfur", "Central Darfur",
-        "North Kordofan", "South Kordofan", "White Nile", "Blue Nile", "River Nile", "Red Sea", "Kassala",
-        "Gedaref", "Al Jazirah", "Sennar"
-    ],
-    "Namibia": [
-        "Erongo", "Hardap", "Karas", "Kavango East", "Kavango West", "Khomas", "Kunene", "Ohangwena", "Omaheke",
-        "Omusati", "Oshana", "Oshikoto", "Otjozondjupa", "Zambezi"
-    ],
-    "Botswana": [
-        "Central", "Ghanzi", "Kgalagadi", "Kgatleng", "Kweneng", "North-East", "North-West", "South-East", "Southern"
-    ],
-    "Algeria": [
-        "Algiers", "Oran", "Constantine", "Blida", "Annaba", "Batna", "Sétif", "Djelfa", "Tlemcen", "Tizi Ouzou",
-        "Béjaïa", "Skikda", "Mostaganem", "El Oued", "Laghouat", "Ouargla", "Biskra", "Chlef", "Ghardaïa", "Médéa"
-    ]
-}
-# Ethnic groups list
-region_with_ethnicity = {
-    "North Africa":[
-    "Amazigh (Berber)", "Arab", "Bedouin", "Coptic", "Nubian", "Tuareg", "Tebu", "Siwi", "Beja", "Riffian"],
-    
-    "West Africa":[
-    "Yoruba", "Hausa", "Igbo", "Fulani", "Akan", "Ashanti", "Ewe", "Fon", "Ga", "Mandinka", "Wolof", "Serer", 
-    "Toucouleur", "Mossi", "Dogon", "Songhai", "Senufo", "Gurma", "Dagomba", "Tiv", "Ijaw", "Ibibio", "Kanuri", 
-    "Nupe", "Teda", "Sara", "Beti-Pahuin", "Fang", "Bamileke", "Bamum", "Kirdi", "Kissi", "Limba", "Temne", 
-    "Mende", "Kpelle", "Vai", "Bassa", "Grebo", "Kru", "Malinke", "Susu", "Kissi", "Baga", "Landuma"],
-    
-    "Central Africa":[
-    "Bantu", "Kongo", "Luba", "Mongo", "Teke", "Sanga", "Pygmy (Aka, Baka, Mbuti)", "Fang", "Beti", "Bamileke", 
-    "Bamum", "Chokwe", "Ovimbundu", "Mbundu", "Lunda", "Gbagyi", "Zande", "Ngbaka", "Sara", "Kanuri", "Bagirmi", 
-    "Sango", "Gbaya", "Banda", "Azande", "Mangbetu", "Hema", "Lendu", "Tutsi", "Hutu", "Twa"],
-    
-    "East Africa":[ 
-    "Amhara", "Tigray", "Oromo", "Somali", "Afar", "Sidama", "Gurage", "Welayta", "Hadiya", "Kamba", "Kikuyu", 
-    "Luhya", "Luo", "Kalenjin", "Kisii", "Meru", "Maasai", "Chaga", "Sukuma", "Nyamwezi", "Haya", "Ganda", 
-    "Soga", "Nkole", "Toro", "Rundi", "Rwanda", "Tutsi", "Hutu", "Twa", "Dinka", "Nuer", "Shilluk", "Bari", 
-    "Lotuko", "Acholi", "Lango", "Karamojong", "Alur", "Lugbara", "Madi", "Kakwa", "Banyoro", "Baganda"],
-    
-    "Southern Africa":[
-    "Shona", "Ndebele", "Zulu", "Xhosa", "Sotho", "Tswana", "Swazi", "Venda", "Tsonga", "Pedi", "Nama", 
-    "Herero", "Himba", "Ovambo", "Kavango", "San (Bushmen)", "Khoikhoi", "Lozi", "Tonga", "Chewa", "Yao", 
-    "Lomwe", "Makua", "Ngoni", "Tumbuka", "Bemba", "Lunda", "Luvale", "Kaonde", "Tonga", "Nyanja", "Sena", 
-    "Chopi", "Shona", "Ndau", "Manyika", "Kalanga", "Kgalagadi", "Mbukushu", "Damara", "Basters", "Griqua"],
-    
-    "Indian Ocean Islands":[
-    "Merina", "Betsileo", "Betsimisaraka", "Sakalava", "Antandroy", "Antanosy", "Comorian", "Réunionese", 
-    "Mauritian", "Seychellois Creole", "Zanzibari"
-]}
-with st.sidebar:
-    st.header("🌍 Location Information")
-    selected_country = st.selectbox("Select Country", list(countries_with_provinces.keys()))
-    selected_province = st.selectbox("Select Province", countries_with_provinces[selected_country])
-    selected_region = st.selectbox("🌍 Select Region", list(region_with_ethnicity.keys()))
-    selected_ethnicity = st.selectbox("Select Ethnicity", region_with_ethnicity[selected_region])
-
-
 # --- Nutritional Lifestyle Tracker ---
-def calculate_weekly_servings(freq, servings):
-    if freq == "Daily":
-        return servings * 7
-    elif freq == "Weekly":
-        return servings
-    elif freq == "Monthly":
-        return servings / 4
-    return 0
-
-def compute_nutritional_score():
-    if not st.session_state.nutritional_data:
-        return 3
-    
-    positive = ["Homemade Food", "Vegetarian", "Vegan", "Mediterranean", "Pescatarian"]
-    negative = ["Junk Food", "Fast Foods"]
-    
-    positive_score = sum(
-        data["weekly_servings"] * 0.5 
-        for lifestyle, data in st.session_state.nutritional_data.items() 
-        if lifestyle in positive
-    )
-    
-    negative_score = sum(
-        data["weekly_servings"] * 1.0 
-        for lifestyle, data in st.session_state.nutritional_data.items() 
-        if lifestyle in negative
-    )
-    
-    raw_score = 3 + (positive_score / 10) - (negative_score / 5)
-    return max(1, min(5, round(raw_score)))
-
-st.sidebar.header("🍽️ Nutritional Lifestyle Tracker")
-st.sidebar.header("Additional Nutrition Details")
-
-fruit_intake = st.sidebar.number_input(
-    "Fruit Intake (servings per day)", min_value=0, max_value=20, value=2, key="fruit_intake"
-)
-
-vegetable_intake = st.sidebar.number_input(
-    "Vegetable Intake (servings per day)", min_value=0, max_value=20, value=3, key="vegetable_intake"
-)
-
-hydration_liters = st.sidebar.number_input(
-    "Water Intake (liters per day)", min_value=0.0, max_value=10.0, value=2.0, key="hydration_liters"
-)
-
-supplements_used = st.sidebar.text_input(
-    "Supplements Used (e.g., Vitamin D, Omega-3)", key="supplements_used"
-)
-
-natural_herbs = st.sidebar.text_input(
-    "Natural Herbs Taken (e.g., Ginger, Turmeric)", key="natural_herbs"
-)
-
-# Available options
-all_options = [
-    "Local Bukka/Street Food", "Homemade Food", "Junk Food", 
-    "Fast Foods", "Vegetarian", "Vegan", "Pescatarian", 
-    "Mediterranean", "Keto", "Paleo"
-]
-
-# Lifestyle selection
-selected_lifestyles = st.sidebar.multiselect(
-    "Select Nutritional Lifestyles",
-    all_options,
-    default=st.session_state.default_lifestyles,
-    key="nutritional_lifestyle"
-)
-st.session_state.default_lifestyles = selected_lifestyles
-
-# Process each selected lifestyle
-if selected_lifestyles:
-    with st.sidebar.expander("Track Consumption", expanded=True):
-        for lifestyle in selected_lifestyles:
-            st.subheader(lifestyle)
-            col1, col2 = st.columns(2)
-            
-            with col1:
-                freq = st.selectbox(
-                    "Frequency",
-                    ["Daily", "Weekly", "Monthly"],
-                    key=f"freq_{lifestyle}"
-                )
-            
-            with col2:
-                freq_label = "day" if freq == "Daily" else "week" if freq == "Weekly" else "month"
-                servings = st.number_input(
-                    f"Servings per {freq_label}:",
-                    min_value=1,
-                    max_value=100,
-                    value=1,
-                    key=f"servings_{lifestyle}"
-                )
-            
-            # Update session state
-            weekly = calculate_weekly_servings(freq, servings)
-            st.session_state.nutritional_data[lifestyle] = {
-                "frequency": freq,
-                "servings": servings,
-                "weekly_servings": weekly
-            }
-
-# Display score after processing inputs
-if st.session_state.nutritional_data:
-    nutritional_score = compute_nutritional_score()
-    st.sidebar.info(f"🍎 Nutritional Health Score: **{nutritional_score}/5**")         
-
-# --- Save Functionality ---
-if st.sidebar.button("Save Nutritional Data"):
-    if st.session_state.user.id is None:
-        st.sidebar.warning("Please log in to save nutritional data")
-    elif not st.session_state.nutritional_data:
-        st.sidebar.warning("No nutritional data to save")
-    else:
-        try:
-            nutrition_data = {
-                "user_id": st.session_state.user['id'] if st.session_state.get('user') else "anonymous",
-                "fruit_intake": fruit_intake,
-                "vegetable_intake": vegetable_intake,
-                "hydration_liters": hydration_liters,
-                "supplements_used": supplements_used,
-                "natural_herbs": natural_herbs,
-                "lifestyle_choices": ", ".join(st.session_state.nutritional_data.keys()),  # or JSON if preferred
-                "nutritional_score": compute_nutritional_score()
-            }
-
-            response = supabase.table("nutrition_tracker").insert(nutrition_data).execute()
-            if response.data:
-                st.success("Nutrition data saved!")
-            else:
-                st.error(f"Failed to save nutrition data: {response.error}")
-
-        except Exception as e:
-            st.error(f"Error saving nutrition data: {e}")
-
-
-            
 
 # --- About Section ---
 
@@ -693,7 +291,196 @@ def build_full_input(raw):
 # =======================
 # TAB 1: STROKE PREDICTION
 # =======================
-    def stroke_prediction_app():
+    
+             
+
+def build_full_input(raw):
+    # Map gender
+    gender = 1 if raw.get("gender") == "Male" else 0
+
+    # Head injury mapping
+    head_map = {"None": 0, "Accident": 1, "Violence": 2}
+    head_injury = head_map.get(raw.get("HeadInjury", "None"), 0)
+
+    # Cognitive symptoms mapping
+    option_map = {"Yes": 1, "No": 0, "Sometimes": 0.5}
+
+    full_input = {
+        "Age": raw.get("age", 65),
+        "Gender": gender,
+        "BMI": raw.get("bmi", 25.0),
+        "EducationLevel": raw.get("EducationLevel", 12),
+        "Smoking": int(raw.get("Smoking", 0)),
+        "AlcoholConsumption": raw.get("AlcoholConsumption", 2),
+        "PhysicalActivity": raw.get("PhysicalActivity", 3),
+        "DietQuality": raw.get("DietQuality", 3),
+        "SleepQuality": raw.get("SleepQuality", 3),
+        "FamilyHistoryAlzheimers": int(raw.get("FamilyHistoryAlzheimers", 0)),
+        "CardiovascularDisease": int(raw.get("CardiovascularDisease", 0)),
+        "Diabetes": int(raw.get("Diabetes", 0)),
+        "Depression": int(raw.get("Depression", 0)),
+        "Hypertension": int(raw.get("Hypertension", 0)),
+        "SystolicBP": raw.get("SystolicBP", 120),
+        "DiastolicBP": raw.get("DiastolicBP", 80),
+        "CholesterolTotal": raw.get("CholesterolTotal", 200),
+        "CholesterolLDL": raw.get("CholesterolLDL", 130),
+        "CholesterolHDL": raw.get("CholesterolHDL", 50),
+        "CholesterolTriglycerides": raw.get("CholesterolTriglycerides", 150),
+        "FunctionalAssessment": raw.get("FunctionalAssessment", 0),
+        "BehavioralProblems": int(raw.get("BehavioralProblems", 0)),
+        "ADL": raw.get("ADL", 6),
+        "Confusion": option_map.get(raw.get("Confusion", "No"), 0),
+        "Disorientation": option_map.get(raw.get("Disorientation", "No"), 0),
+        "PersonalityChanges": option_map.get(raw.get("PersonalityChanges", "No"), 0),
+        "DifficultyCompletingTasks": option_map.get(raw.get("DifficultyCompletingTasks", "No"), 0),
+        "Forgetfulness": option_map.get(raw.get("Forgetfulness", "No"), 0),
+        "MemoryComplaints": option_map.get(raw.get("MemoryComplaints", "No"), 0),
+        "HeadInjury": head_injury,
+        "ethnicity": raw.get("ethnicity", "Other"),
+        "Country": raw.get("Country", "Nigeria"),
+        "Province_Option": raw.get("Province_Option", "Lagos"),
+        "CustomStressScore": raw.get("CustomStressScore", 50)
+    }
+ # ---- Convert to DataFrame ----
+    alz_data_df = pd.DataFrame([full_input])
+    return alz_data_df
+
+
+def prepare_alz_data_robust(full_input):
+    """
+    Ensure Alzheimer's input is returned as a single-row DataFrame matching the model's expected format.
+    """
+
+    if isinstance(full_input, pd.DataFrame):
+        if len(full_input) == 1:
+            return full_input.reset_index(drop=True)
+        else:
+            raise ValueError("Expected a single-row DataFrame, got multiple rows.")
+
+    elif isinstance(full_input, dict):
+        return pd.DataFrame([full_input])
+
+    elif isinstance(full_input, list):
+        if len(full_input) == 1 and isinstance(full_input[0], dict):
+            return pd.DataFrame(full_input)
+        else:
+            raise ValueError("List input must contain exactly one dictionary.")
+
+    else:
+        raise TypeError("Input must be a dict, list of dicts, or single-row DataFrame.")
+
+
+# ----------------------------
+# SESSION STATE INIT
+# ----------------------------
+if "user" not in st.session_state or st.session_state.user is None:
+    st.session_state.user = {"id": None, "email": None}
+
+# ----------------------------
+# LOGIN FUNCTION
+# ----------------------------
+def login():
+    st.subheader("Login with Email & Password")
+    email = st.text_input("Email", key="login_email")
+    password = st.text_input("Password", type="password", key="login_password")
+
+    if st.button("Login", key="login_btn"):
+        try:
+            response = supabase.auth.sign_in_with_password({"email": email, "password": password})
+            if response.user:
+                st.session_state.user = {"id": response.user.id, "email": response.user.email}
+                st.success(f"Logged in as {st.session_state.user['email']}")
+            else:
+                st.error("Invalid login credentials")
+        except Exception as e:
+            st.error(f"Login error: {e}")
+
+    st.markdown("---")
+    st.subheader("Or Sign in with Google")
+    if st.button("Login with Google", key="google_btn"):
+        redirect_url = "https://ademideola.streamlit.app"
+        res = supabase.auth.sign_in_with_oauth(
+            {
+                "provider": "google",
+                "options": {"redirect_to": redirect_url}
+            }
+        )
+        st.markdown(f'<meta http-equiv="refresh" content="0; url={res.url}">', unsafe_allow_html=True)
+
+# ----------------------------
+# HANDLE OAUTH CALLBACK
+# ----------------------------
+query_params = st.query_params
+if "access_token" in query_params:
+    try:
+        user_session = supabase.auth.get_user()
+        if user_session.user:
+            st.session_state.user = {"id": user_session.user.id, "email": user_session.user.email}
+            st.success(f"Welcome, {st.session_state.user['email']}!")
+    except Exception as e:
+        st.error(f"OAuth login error: {e}")
+
+# ----------------------------
+# LOGOUT FUNCTION
+# ----------------------------
+def logout():
+    try:
+        supabase.auth.sign_out()
+        st.session_state.user = {"id": None, "email": None}
+        st.success("Logged out successfully.")
+    except Exception as e:
+        st.error(f"Logout error: {e}")
+
+# ----------------------------
+# REGISTER FUNCTION
+# ----------------------------
+def register():
+    st.subheader("Register")
+    email = st.text_input("New Email", key="register_email")
+    password = st.text_input("New Password", type="password", key="register_password")
+    confirm_password = st.text_input("Confirm Password", type="password", key="register_confirm_password")
+
+    if st.button("Register", key="register_btn"):
+        if password != confirm_password:
+            st.error("Passwords do not match")
+        else:
+            try:
+                response = supabase.auth.sign_up({"email": email, "password": password})
+                if response.user:
+                    st.success("Registration successful! Please check your email to confirm your account.")
+                else:
+                    st.error("Registration failed.")
+            except Exception as e:
+                st.error(f"Registration error: {e}")
+
+# ----------------------------
+# ABOUT FUNCTION
+# ----------------------------
+def about():
+    st.title("About African Neuro Health")
+    st.markdown("""
+This platform is a culturally attuned, context-aware diagnostic tool tailored for assessing neuro-health risks in African populations. 
+It blends conventional biomedical metrics with locally relevant stressors, lifestyle habits, and cultural practices to offer a truly holistic health assessment experience.
+
+**Key Features:**
+- Environmental exposures (e.g., noise, air pollution)
+- Dietary patterns (including traditional nutrition)
+- Sleep quality and hydration
+- Use of herbal or traditional remedies
+- Psychosocial stressors unique to African settings
+- Ethnocultural identity tracking for precision health insights
+
+**By:** Adebimpe-John Omolola E  
+**Supervisor:** Prof. Bamidele Owoyele Victor  
+**Institution:** University of Ilorin  
+**Principal Investigator:** Prof Mayowa Owolabi  
+**GRASP / NIH / DSI Collaborative Program**
+""")
+
+# ----------------------------
+# APP FEATURES
+# ----------------------------
+def stroke_prediction_app():
         st.header("Stroke Risk Prediction")
         st.title("🫀 Stroke Risk Predictor")
         st.warning("Complete all fields for accurate assessment")
@@ -889,91 +676,8 @@ def build_full_input(raw):
         except Exception as e:
                 st.error(f"Error during Stroke prediction or saving: {e}")
 
-             
-
-def build_full_input(raw):
-    # Map gender
-    gender = 1 if raw.get("gender") == "Male" else 0
-
-    # Head injury mapping
-    head_map = {"None": 0, "Accident": 1, "Violence": 2}
-    head_injury = head_map.get(raw.get("HeadInjury", "None"), 0)
-
-    # Cognitive symptoms mapping
-    option_map = {"Yes": 1, "No": 0, "Sometimes": 0.5}
-
-    full_input = {
-        "Age": raw.get("age", 65),
-        "Gender": gender,
-        "BMI": raw.get("bmi", 25.0),
-        "EducationLevel": raw.get("EducationLevel", 12),
-        "Smoking": int(raw.get("Smoking", 0)),
-        "AlcoholConsumption": raw.get("AlcoholConsumption", 2),
-        "PhysicalActivity": raw.get("PhysicalActivity", 3),
-        "DietQuality": raw.get("DietQuality", 3),
-        "SleepQuality": raw.get("SleepQuality", 3),
-        "FamilyHistoryAlzheimers": int(raw.get("FamilyHistoryAlzheimers", 0)),
-        "CardiovascularDisease": int(raw.get("CardiovascularDisease", 0)),
-        "Diabetes": int(raw.get("Diabetes", 0)),
-        "Depression": int(raw.get("Depression", 0)),
-        "Hypertension": int(raw.get("Hypertension", 0)),
-        "SystolicBP": raw.get("SystolicBP", 120),
-        "DiastolicBP": raw.get("DiastolicBP", 80),
-        "CholesterolTotal": raw.get("CholesterolTotal", 200),
-        "CholesterolLDL": raw.get("CholesterolLDL", 130),
-        "CholesterolHDL": raw.get("CholesterolHDL", 50),
-        "CholesterolTriglycerides": raw.get("CholesterolTriglycerides", 150),
-        "FunctionalAssessment": raw.get("FunctionalAssessment", 0),
-        "BehavioralProblems": int(raw.get("BehavioralProblems", 0)),
-        "ADL": raw.get("ADL", 6),
-        "Confusion": option_map.get(raw.get("Confusion", "No"), 0),
-        "Disorientation": option_map.get(raw.get("Disorientation", "No"), 0),
-        "PersonalityChanges": option_map.get(raw.get("PersonalityChanges", "No"), 0),
-        "DifficultyCompletingTasks": option_map.get(raw.get("DifficultyCompletingTasks", "No"), 0),
-        "Forgetfulness": option_map.get(raw.get("Forgetfulness", "No"), 0),
-        "MemoryComplaints": option_map.get(raw.get("MemoryComplaints", "No"), 0),
-        "HeadInjury": head_injury,
-        "ethnicity": raw.get("ethnicity", "Other"),
-        "Country": raw.get("Country", "Nigeria"),
-        "Province_Option": raw.get("Province_Option", "Lagos"),
-        "CustomStressScore": raw.get("CustomStressScore", 50)
-    }
- # ---- Convert to DataFrame ----
-    alz_data_df = pd.DataFrame([full_input])
-    return alz_data_df
-
-
-def prepare_alz_data_robust(full_input):
-    """
-    Ensure Alzheimer's input is returned as a single-row DataFrame matching the model's expected format.
-    """
-
-    if isinstance(full_input, pd.DataFrame):
-        if len(full_input) == 1:
-            return full_input.reset_index(drop=True)
-        else:
-            raise ValueError("Expected a single-row DataFrame, got multiple rows.")
-
-    elif isinstance(full_input, dict):
-        return pd.DataFrame([full_input])
-
-    elif isinstance(full_input, list):
-        if len(full_input) == 1 and isinstance(full_input[0], dict):
-            return pd.DataFrame(full_input)
-        else:
-            raise ValueError("List input must contain exactly one dictionary.")
-
-    else:
-        raise TypeError("Input must be a dict, list of dicts, or single-row DataFrame.")
-
-
-                            # --- Alzheimer Predictor ---#
-    st.title("🧠 Alzheimer Risk Predictor")
-
-# =======================#
-# TAB 1: ALZHEIMER FORM #
-# =======================#
-    
+def alzheimers_prediction_app():
+    st.header("Alzheimer's Prediction")
     st.warning("Complete all fields for accurate assessment")
     
     # Get nutritional score #
@@ -1323,6 +1027,147 @@ def prepare_alz_data_robust(full_input):
 
                 st.error(f"Error during alzheimers prediction or saving: {e}")
 
+
+
+def nutrition_tracker_app():
+    st.header("Nutrition Tracker")
+    def calculate_weekly_servings(freq, servings):
+    if freq == "Daily":
+        return servings * 7
+    elif freq == "Weekly":
+        return servings
+    elif freq == "Monthly":
+        return servings / 4
+    return 0
+
+def compute_nutritional_score():
+    if not st.session_state.nutritional_data:
+        return 3
+    
+    positive = ["Homemade Food", "Vegetarian", "Vegan", "Mediterranean", "Pescatarian"]
+    negative = ["Junk Food", "Fast Foods"]
+    
+    positive_score = sum(
+        data["weekly_servings"] * 0.5 
+        for lifestyle, data in st.session_state.nutritional_data.items() 
+        if lifestyle in positive
+    )
+    
+    negative_score = sum(
+        data["weekly_servings"] * 1.0 
+        for lifestyle, data in st.session_state.nutritional_data.items() 
+        if lifestyle in negative
+    )
+    
+    raw_score = 3 + (positive_score / 10) - (negative_score / 5)
+    return max(1, min(5, round(raw_score)))
+
+st.sidebar.header("🍽️ Nutritional Lifestyle Tracker")
+st.sidebar.header("Additional Nutrition Details")
+
+fruit_intake = st.sidebar.number_input(
+    "Fruit Intake (servings per day)", min_value=0, max_value=20, value=2, key="fruit_intake"
+)
+
+vegetable_intake = st.sidebar.number_input(
+    "Vegetable Intake (servings per day)", min_value=0, max_value=20, value=3, key="vegetable_intake"
+)
+
+hydration_liters = st.sidebar.number_input(
+    "Water Intake (liters per day)", min_value=0.0, max_value=10.0, value=2.0, key="hydration_liters"
+)
+
+supplements_used = st.sidebar.text_input(
+    "Supplements Used (e.g., Vitamin D, Omega-3)", key="supplements_used"
+)
+
+natural_herbs = st.sidebar.text_input(
+    "Natural Herbs Taken (e.g., Ginger, Turmeric)", key="natural_herbs"
+)
+
+# Available options
+all_options = [
+    "Local Bukka/Street Food", "Homemade Food", "Junk Food", 
+    "Fast Foods", "Vegetarian", "Vegan", "Pescatarian", 
+    "Mediterranean", "Keto", "Paleo"
+]
+
+# Lifestyle selection
+selected_lifestyles = st.sidebar.multiselect(
+    "Select Nutritional Lifestyles",
+    all_options,
+    default=st.session_state.default_lifestyles,
+    key="nutritional_lifestyle"
+)
+st.session_state.default_lifestyles = selected_lifestyles
+
+# Process each selected lifestyle
+if selected_lifestyles:
+    with st.sidebar.expander("Track Consumption", expanded=True):
+        for lifestyle in selected_lifestyles:
+            st.subheader(lifestyle)
+            col1, col2 = st.columns(2)
+            
+            with col1:
+                freq = st.selectbox(
+                    "Frequency",
+                    ["Daily", "Weekly", "Monthly"],
+                    key=f"freq_{lifestyle}"
+                )
+            
+            with col2:
+                freq_label = "day" if freq == "Daily" else "week" if freq == "Weekly" else "month"
+                servings = st.number_input(
+                    f"Servings per {freq_label}:",
+                    min_value=1,
+                    max_value=100,
+                    value=1,
+                    key=f"servings_{lifestyle}"
+                )
+            
+            # Update session state
+            weekly = calculate_weekly_servings(freq, servings)
+            st.session_state.nutritional_data[lifestyle] = {
+                "frequency": freq,
+                "servings": servings,
+                "weekly_servings": weekly
+            }
+
+# Display score after processing inputs
+if st.session_state.nutritional_data:
+    nutritional_score = compute_nutritional_score()
+    st.sidebar.info(f"🍎 Nutritional Health Score: **{nutritional_score}/5**")         
+
+# --- Save Functionality ---
+if st.sidebar.button("Save Nutritional Data"):
+    if st.session_state.user.id is None:
+        st.sidebar.warning("Please log in to save nutritional data")
+    elif not st.session_state.nutritional_data:
+        st.sidebar.warning("No nutritional data to save")
+    else:
+        try:
+            nutrition_data = {
+                "user_id": st.session_state.user['id'] if st.session_state.get('user') else "anonymous",
+                "fruit_intake": fruit_intake,
+                "vegetable_intake": vegetable_intake,
+                "hydration_liters": hydration_liters,
+                "supplements_used": supplements_used,
+                "natural_herbs": natural_herbs,
+                "lifestyle_choices": ", ".join(st.session_state.nutritional_data.keys()),  # or JSON if preferred
+                "nutritional_score": compute_nutritional_score()
+            }
+
+            response = supabase.table("nutrition_tracker").insert(nutrition_data).execute()
+            if response.data:
+                st.success("Nutrition data saved!")
+            else:
+                st.error(f"Failed to save nutrition data: {response.error}")
+
+        except Exception as e:
+            st.error(f"Error saving nutrition data: {e}")
+            
+
+
 # --- MAIN APP ROUTER ---
 st.title("African Neuro Health App")
 
@@ -1384,7 +1229,158 @@ It blends conventional biomedical metrics with locally relevant stressors, lifes
         about()
         st.stop()  # stop execution to prevent access
 
- 
+   
+
+# --- Load Models with error handling ---
+base_path = os.path.dirname(r"C:\Users\sibs2\african-neurohealth-dashboard\stroke_model_pipeline.pkl")  # script folder
+stroke_path = os.path.join(base_path, "stroke_model_pipeline.pkl")
+alz_path = os.path.join(base_path, "alz_model_pipeline.pkl")
+
+stroke_model = joblib.load(stroke_path)
+alz_model = joblib.load(alz_path)
+
+try:
+    # Use relative paths instead of absolute paths
+     stroke_model = joblib.load("stroke_model_pipeline.pkl")
+     alz_model = joblib.load("alz_model_pipeline.pkl")
+     models_loaded = True
+except FileNotFoundError as e:
+    st.error(f"Model files not found: {e}")
+    st.error("Please ensure model files are in the correct path.")
+    models_loaded = False
+except Exception as e:
+    st.error(f"Error loading models: {e}")
+    models_loaded = False
+# --- Initialize session state ---
+if "user" not in st.session_state:
+    st.session_state.user.id = None
+if "nutritional_data" not in st.session_state:
+    st.session_state.nutritional_data = {}
+if "default_lifestyles" not in st.session_state:
+    st.session_state.default_lifestyles = []
+if "stress_score" not in st.session_state:
+    st.session_state.stress_score = 0
+if "location_str" not in st.session_state:
+    st.session_state.location_str = {}
+
+
+countries_with_provinces = {
+    "Nigeria": [
+        "Abia", "Adamawa", "Akwa Ibom", "Anambra", "Bauchi", "Bayelsa", "Benue", "Borno", "Cross River", "Delta",
+        "Ebonyi", "Edo", "Ekiti", "Enugu", "FCT", "Gombe", "Imo", "Jigawa", "Kaduna", "Kano", "Katsina", "Kebbi",
+        "Kogi", "Kwara", "Lagos", "Nasarawa", "Niger", "Ogun", "Ondo", "Osun", "Oyo", "Plateau", "Rivers",
+        "Sokoto", "Taraba", "Yobe", "Zamfara"
+    ],
+    "Ghana": [
+        "Greater Accra", "Ashanti", "Western", "Eastern", "Volta", "Northern", "Upper East", "Upper West", "Bono",
+        "Ahafo", "Savannah", "Oti", "North East", "Western North", "Central"
+    ],
+    "Kenya": [
+        "Nairobi", "Mombasa", "Kisumu", "Nakuru", "Kiambu", "Machakos", "Uasin Gishu", "Meru", "Embu",
+        "Kakamega", "Bungoma", "Kisii"
+    ],
+    "South Africa": [
+        "Gauteng", "Western Cape", "Eastern Cape", "Northern Cape", "KwaZulu-Natal", "Free State", "North West",
+        "Mpumalanga", "Limpopo"
+    ],
+    "Uganda": ["Central", "Eastern", "Northern", "Western"],
+    "Tanzania": [
+        "Arusha", "Dar es Salaam", "Dodoma", "Geita", "Kagera", "Kigoma", "Kilimanjaro", "Lindi", "Manyara", "Mara",
+        "Mbeya", "Morogoro", "Mtwara", "Mwanza", "Njombe", "Pwani", "Rukwa", "Ruvuma", "Shinyanga", "Simiyu",
+        "Singida", "Tabora", "Tanga", "Zanzibar Central", "Zanzibar North", "Zanzibar South"
+    ],
+    "Ethiopia": [
+        "Addis Ababa", "Amhara", "Oromia", "Tigray", "Sidama", "Somali", "Benishangul-Gumuz", "SNNPR", "Afar",
+        "Gambela", "Harari"
+    ],
+    "Egypt": [
+        "Cairo", "Alexandria", "Giza", "Aswan", "Asyut", "Beheira", "Beni Suef", "Dakahlia", "Damietta", "Faiyum",
+        "Gharbia", "Ismailia", "Kafr El Sheikh", "Luxor", "Matruh", "Minya", "Monufia", "New Valley", "North Sinai",
+        "Port Said", "Qalyubia", "Qena", "Red Sea", "Sharqia", "Sohag", "South Sinai", "Suez"
+    ],
+    "Morocco": [
+        "Casablanca-Settat", "Rabat-Salé-Kénitra", "Fès-Meknès", "Marrakesh-Safi", "Tangier-Tetouan-Al Hoceima",
+        "Souss-Massa", "Oriental", "Beni Mellal-Khenifra", "Drâa-Tafilalet", "Guelmim-Oued Noun",
+        "Laâyoune-Sakia El Hamra", "Dakhla-Oued Ed-Dahab"
+    ],
+    "Cameroon": [
+        "Adamawa", "Centre", "East", "Far North", "Littoral", "North", "Northwest", "South", "Southwest", "West"
+    ],
+    "Zimbabwe": [
+        "Bulawayo", "Harare", "Manicaland", "Mashonaland Central", "Mashonaland East", "Mashonaland West",
+        "Masvingo", "Matabeleland North", "Matabeleland South", "Midlands"
+    ],
+    "Zambia": [
+        "Central", "Copperbelt", "Eastern", "Luapula", "Lusaka", "Muchinga", "Northern", "North-Western",
+        "Southern", "Western"
+    ],
+    "Rwanda": ["Kigali", "Eastern", "Northern", "Southern", "Western"],
+    "Sudan": [
+        "Khartoum", "North Darfur", "South Darfur", "East Darfur", "West Darfur", "Central Darfur",
+        "North Kordofan", "South Kordofan", "White Nile", "Blue Nile", "River Nile", "Red Sea", "Kassala",
+        "Gedaref", "Al Jazirah", "Sennar"
+    ],
+    "Namibia": [
+        "Erongo", "Hardap", "Karas", "Kavango East", "Kavango West", "Khomas", "Kunene", "Ohangwena", "Omaheke",
+        "Omusati", "Oshana", "Oshikoto", "Otjozondjupa", "Zambezi"
+    ],
+    "Botswana": [
+        "Central", "Ghanzi", "Kgalagadi", "Kgatleng", "Kweneng", "North-East", "North-West", "South-East", "Southern"
+    ],
+    "Algeria": [
+        "Algiers", "Oran", "Constantine", "Blida", "Annaba", "Batna", "Sétif", "Djelfa", "Tlemcen", "Tizi Ouzou",
+        "Béjaïa", "Skikda", "Mostaganem", "El Oued", "Laghouat", "Ouargla", "Biskra", "Chlef", "Ghardaïa", "Médéa"
+    ]
+}
+# Ethnic groups list
+region_with_ethnicity = {
+    "North Africa":[
+    "Amazigh (Berber)", "Arab", "Bedouin", "Coptic", "Nubian", "Tuareg", "Tebu", "Siwi", "Beja", "Riffian"],
+    
+    "West Africa":[
+    "Yoruba", "Hausa", "Igbo", "Fulani", "Akan", "Ashanti", "Ewe", "Fon", "Ga", "Mandinka", "Wolof", "Serer", 
+    "Toucouleur", "Mossi", "Dogon", "Songhai", "Senufo", "Gurma", "Dagomba", "Tiv", "Ijaw", "Ibibio", "Kanuri", 
+    "Nupe", "Teda", "Sara", "Beti-Pahuin", "Fang", "Bamileke", "Bamum", "Kirdi", "Kissi", "Limba", "Temne", 
+    "Mende", "Kpelle", "Vai", "Bassa", "Grebo", "Kru", "Malinke", "Susu", "Kissi", "Baga", "Landuma"],
+    
+    "Central Africa":[
+    "Bantu", "Kongo", "Luba", "Mongo", "Teke", "Sanga", "Pygmy (Aka, Baka, Mbuti)", "Fang", "Beti", "Bamileke", 
+    "Bamum", "Chokwe", "Ovimbundu", "Mbundu", "Lunda", "Gbagyi", "Zande", "Ngbaka", "Sara", "Kanuri", "Bagirmi", 
+    "Sango", "Gbaya", "Banda", "Azande", "Mangbetu", "Hema", "Lendu", "Tutsi", "Hutu", "Twa"],
+    
+    "East Africa":[ 
+    "Amhara", "Tigray", "Oromo", "Somali", "Afar", "Sidama", "Gurage", "Welayta", "Hadiya", "Kamba", "Kikuyu", 
+    "Luhya", "Luo", "Kalenjin", "Kisii", "Meru", "Maasai", "Chaga", "Sukuma", "Nyamwezi", "Haya", "Ganda", 
+    "Soga", "Nkole", "Toro", "Rundi", "Rwanda", "Tutsi", "Hutu", "Twa", "Dinka", "Nuer", "Shilluk", "Bari", 
+    "Lotuko", "Acholi", "Lango", "Karamojong", "Alur", "Lugbara", "Madi", "Kakwa", "Banyoro", "Baganda"],
+    
+    "Southern Africa":[
+    "Shona", "Ndebele", "Zulu", "Xhosa", "Sotho", "Tswana", "Swazi", "Venda", "Tsonga", "Pedi", "Nama", 
+    "Herero", "Himba", "Ovambo", "Kavango", "San (Bushmen)", "Khoikhoi", "Lozi", "Tonga", "Chewa", "Yao", 
+    "Lomwe", "Makua", "Ngoni", "Tumbuka", "Bemba", "Lunda", "Luvale", "Kaonde", "Tonga", "Nyanja", "Sena", 
+    "Chopi", "Shona", "Ndau", "Manyika", "Kalanga", "Kgalagadi", "Mbukushu", "Damara", "Basters", "Griqua"],
+    
+    "Indian Ocean Islands":[
+    "Merina", "Betsileo", "Betsimisaraka", "Sakalava", "Antandroy", "Antanosy", "Comorian", "Réunionese", 
+    "Mauritian", "Seychellois Creole", "Zanzibari"
+]}
+with st.sidebar:
+    st.header("🌍 Location Information")
+    selected_country = st.selectbox("Select Country", list(countries_with_provinces.keys()))
+    selected_province = st.selectbox("Select Province", countries_with_provinces[selected_country])
+    selected_region = st.selectbox("🌍 Select Region", list(region_with_ethnicity.keys()))
+    selected_ethnicity = st.selectbox("Select Ethnicity", region_with_ethnicity[selected_region])
+
+
+
+                            # --- Alzheimer Predictor ---#
+
+
+# =======================#
+# TAB 1: ALZHEIMER FORM #
+# =======================#
+    
+    
 
 
 
