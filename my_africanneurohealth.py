@@ -195,8 +195,6 @@ def custom_stress_score(prefix="", use_container=False):
         return level, label, total_score
     
 # =======================
-# SIMPLE USER STORE (TEMP)
-# =======================
 # =======================
 # SIMPLE USER STORE (TEMP)
 # =======================
@@ -245,7 +243,7 @@ def login():
 # ----------------------------
 # Handle OAuth callback
 # ----------------------------
-query_params = st.experimental_get_query_params()
+query_params = st.query_params
 if "access_token" in query_params:
     try:
         user_session = supabase.auth.get_user()
@@ -286,9 +284,7 @@ def register():
                 else:
                     st.error("Registration failed.")
             except Exception as e:
-                st.error(f"Registration error: {e}")
-
-        
+                st.error(f"Registration error: {e}")  
 
 tabs = ["About", "Stroke Risk Prediction", "Alzheimer Risk Prediction", "Nutrition Tracker"]
 selected_tab = st.sidebar.radio("Navigate", tabs)
@@ -1338,4 +1334,5 @@ with st.sidebar:
     selected_province = st.selectbox("Select Province", countries_with_provinces[selected_country])
     selected_region = st.selectbox("🌍 Select Region", list(region_with_ethnicity.keys()))
     selected_ethnicity = st.selectbox("Select Ethnicity", region_with_ethnicity[selected_region])
+
 
