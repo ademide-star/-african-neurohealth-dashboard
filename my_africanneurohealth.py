@@ -96,51 +96,30 @@ def custom_stress_score(prefix="", use_container=False):
 # --- Model paths ---
 base_path = r"C:\Users\sibs2\african-neurohealth-dashboard"
 model_files = {
-    "stroke": ["stroke_model_pipeline.joblib", "stroke_model_pipeline.pkl"],
-    "alz": ["alz_model_pipeline.joblib", "alz_model_pipeline.pkl"]
+    "stroke": "stroke_model_pipeline_v1.7.pkl",
+    "alz": "alz_model_pipeline_v1.7.pkl"
 }
 
 models = {}
 models_loaded = False
 
-def check_sklearn_version(model_path):
-    """Check the sklearn version used to save the model"""
-    try:
-        meta = joblib.load(model_path, mmap_mode=None)
-        if hasattr(meta, 'sklearn_version'):
-            return meta.sklearn_version
-    except Exception:
-        return None
-    return None
-
 try:
-    for name, files in model_files.items():
-        loaded = False
-        for file in files:
-            path = os.path.join(base_path, file)
-            if os.path.exists(path):
-                try:
-                    # Load the model
-                    models[name] = joblib.load(path)
+    for name, file in model_files.items():
+        path = os.path.join(base_path, file)
+        if os.path.exists(path):
+            try:
+                # Load with cloudpickle (works across sklearn versions)
+                with open(path, "rb") as f:
+                    models[name] = cloudpickle.load(f)
 
-                    # Check version
-                    saved_version = getattr(models[name], 'sklearn_version', None)
-                    current_version = sklearn.__version__
-                    if saved_version and saved_version != current_version:
-                        st.warning(
-                            f"Warning: {file} was saved with scikit-learn {saved_version}, "
-                            f"but you are using {current_version}. "
-                            "Consider re-saving the model with the current version to avoid errors."
-                        )
+                st.info(f"{file} loaded successfully with scikit-learn {sklearn.__version__}")
 
-                    loaded = True
-                    break
-                except AttributeError as e:
-                    st.error(f"Version mismatch error loading {file}: {e}")
-                    st.error("Check your scikit-learn version or re-save the model with the current version.")
-                    loaded = False
-        if not loaded:
-            raise FileNotFoundError(f"No valid model file found for {name}. Tried: {files}")
+            except Exception as e:
+                st.error(f"Error loading {file}: {e}")
+                raise
+        else:
+            raise FileNotFoundError(f"Model file not found: {path}")
+
     models_loaded = True
 
 except FileNotFoundError as e:
@@ -1345,3 +1324,4 @@ if app_mode == "Alzheimer Risk Prediction":
 
         except Exception as e:
                 st.error(f"Error during alzheimers prediction or saving: {e}")
+
