@@ -1211,16 +1211,16 @@ elif page == "Alzheimer's Prediction":
 elif page == "Nutrition Tracker":
     nutrition_tracker_page()
 
-    else:
+else:
     # Unauthenticated users
-        unauth_page = st.radio("Choose an option:", ["Login", "Register", "About"], key="unauth_nav")
-    if unauth_page == "Login":
-        login()
-    elif unauth_page == "Register":
-        register()
-    elif unauth_page == "About":
-        about()
-        st.stop()  # stop execution to prevent access
+    unauth_page = st.radio("Choose an option:", ["Login", "Register", "About"], key="unauth_nav")
+if unauth_page == "Login":
+    login()
+elif unauth_page == "Register":
+    register()
+elif unauth_page == "About":
+    about()
+    st.stop()  # stop execution to prevent access
 
    
 
@@ -1366,6 +1366,7 @@ with st.sidebar:
 
     
     
+
 
 
 
