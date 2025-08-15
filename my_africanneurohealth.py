@@ -112,13 +112,7 @@ def custom_stress_score(prefix="", use_container=False):
         """, unsafe_allow_html=True)
         
         return level, label, total_score
-# --- Nutritional Lifestyle Tracker ---
-
-# --- About Section ---
-
-if not models_loaded:
-    st.error("Cannot proceed without model files. Please check the file paths and restart the application.")
-    st.stop()
+    
 def map_salt_intake(val):
     keys = ['salt_intake_High', 'salt_intake_Moderate', 'salt_intake_Little', 'salt_intake_None']
     values = [0]*4
@@ -1255,7 +1249,10 @@ if "stress_score" not in st.session_state:
     st.session_state.stress_score = 0
 if "location_str" not in st.session_state:
     st.session_state.location_str = {}
-
+    
+if not models_loaded:
+    st.error("Cannot proceed without model files. Please check the file paths and restart the application.")
+    st.stop()
 
 countries_with_provinces = {
     "Nigeria": [
@@ -1366,6 +1363,7 @@ with st.sidebar:
 
     
     
+
 
 
 
