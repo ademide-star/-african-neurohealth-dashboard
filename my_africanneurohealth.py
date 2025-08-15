@@ -197,8 +197,11 @@ def custom_stress_score(prefix="", use_container=False):
 # =======================
 # SIMPLE USER STORE (TEMP)
 # =======================
-if "user.id" not in st.session_state:
-    st.session_state.user.id = {}  # {email: password}
+# =======================
+# SIMPLE USER STORE (TEMP)
+# =======================
+if "user" not in st.session_state:
+    st.session_state.user = {"id": None, "email": None}
 
 # =======================
 # AUTH FUNCTIONS
@@ -214,6 +217,7 @@ def login():
             if response.user:
                 st.session_state.user = {"id": response.user.id, "email": response.user.email}
                 st.success(f"Logged in as {st.session_state.user['email']}")
+                st.rerun()
             else:
                 st.error("Invalid login credentials")
         except Exception as e:
@@ -224,18 +228,24 @@ def login():
 
     if st.button("Login with Google", key="google_btn"):
         redirect_url = "https://ademideola.streamlit.app"
-        res = supabase.auth.sign_in_with_oauth(
-            {
-                "provider": "google",
-                "options": {"redirect_to": redirect_url}
-            }
-        )
-        st.markdown(f'<meta http-equiv="refresh" content="0; url={res.url}">', unsafe_allow_html=True)
+        try:
+            res = supabase.auth.sign_in_with_oauth(
+                {
+                    "provider": "google",
+                    "options": {"redirect_to": redirect_url}
+                }
+            )
+            if hasattr(res, "url") and res.url:
+                st.markdown(f'<meta http-equiv="refresh" content="0; url={res.url}">', unsafe_allow_html=True)
+            else:
+                st.error("Google login failed. No redirect URL returned.")
+        except Exception as e:
+            st.error(f"Google login error: {e}")
 
 # ----------------------------
 # Handle OAuth callback
 # ----------------------------
-query_params = st.query_params
+query_params = st.experimental_get_query_params()
 if "access_token" in query_params:
     try:
         user_session = supabase.auth.get_user()
@@ -251,12 +261,10 @@ if "access_token" in query_params:
 def logout():
     try:
         supabase.auth.sign_out()
-        # Always reset to dict, never None
-        st.session_state.user = {"id": None, "email": None}
-        st.success("Logged out successfully.")
-        st.experimental_rerun()
     except Exception as e:
         st.error(f"Logout error: {e}")
+    st.session_state.user = {"id": None, "email": None}
+    st.rerun()
 
 # ----------------------------
 # REGISTER FUNCTION
@@ -280,9 +288,6 @@ def register():
             except Exception as e:
                 st.error(f"Registration error: {e}")
 
-def logout():
-    st.session_state.user = {}
-    st.rerun()
         
 
 tabs = ["About", "Stroke Risk Prediction", "Alzheimer Risk Prediction", "Nutrition Tracker"]
@@ -1333,3 +1338,4 @@ with st.sidebar:
     selected_province = st.selectbox("Select Province", countries_with_provinces[selected_country])
     selected_region = st.selectbox("🌍 Select Region", list(region_with_ethnicity.keys()))
     selected_ethnicity = st.selectbox("Select Ethnicity", region_with_ethnicity[selected_region])
+
