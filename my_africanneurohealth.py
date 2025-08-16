@@ -99,8 +99,8 @@ def custom_stress_score(prefix="", use_container=False):
 
 # MODEL PATHS
 # ======================
-ALZ_MODEL_PATH = r"C:\Users\sibs2\african-neurohealth-dashboard\alz_latest.pkl"
-STROKE_MODEL_PATH = r"C:\Users\sibs2\african-neurohealth-dashboard\stroke_latest.pkl"
+ALZ_MODEL_PATH = r"C:\Users\sibs2\african-neurohealth-dashboard\alz_model_pipeline_v1.7.pkl"
+STROKE_MODEL_PATH = r"C:\Users\sibs2\african-neurohealth-dashboard\stroke_model_pipeline_v1.7.pkl"
 
 # ======================
 # CHECK SKLEARN VERSION
@@ -1319,3 +1319,4 @@ if app_mode == "Alzheimer Risk Prediction":
 
         except Exception as e:
                 st.error(f"Error during alzheimers prediction or saving: {e}")
+
