@@ -96,46 +96,29 @@ def custom_stress_score(prefix="", use_container=False):
 
 
 
-# --- Paths to forward-compatible models ---
-BASE_PATH = r"C:\Users\sibs2\african-neurohealth-dashboard"
-MODEL_FILES = {
-    "stroke": "stroke_model_pipeline_portable.pkl",
-    "alz": "alz_model_pipeline_portable.pkl"
-}
+import os
+import joblib
+import streamlit as st
+import sklearn
 
-models = {}
+# --- Initialize flag ---
 models_loaded = False
 
-# --- Function to load a cloudpickle model ---
-@st.cache_resource
-def load_model(path):
-    if not os.path.exists(path):
-        raise FileNotFoundError(f"Model file not found: {path}")
-    with open(path, "rb") as f:
-        return cloudpickle.load(f)
+# --- Load Models with error handling ---
+base_path = os.path.dirname(r"C:\Users\sibs2\african-neurohealth-dashboard\stroke_model_pipeline.pkl")  # script folder
+stroke_path = os.path.join(base_path, "stroke_model_pipeline.pkl")
+alz_path = os.path.join(base_path, "alz_model_pipeline.pkl")
 
-
-# --- Load models ---
 try:
-    for name, file in MODEL_FILES.items():
-        path = os.path.join(BASE_PATH, file)
-        models[name] = load_model(path)
-
-    stroke_model = models["stroke"]
-    alz_model = models["alz"]
-    st.success("✅ Models loaded successfully!")
-
-    for name in MODEL_FILES:
-        st.info(f"✅ {name.capitalize()} model loaded.")
-
+    stroke_model = joblib.load(stroke_path)
+    alz_model = joblib.load(alz_path)
+    models_loaded = True
 except FileNotFoundError as e:
     st.error(f"Model files not found: {e}")
-    for name in MODEL_FILES:
-        st.warning(f"⚠️ {name.capitalize()} model not loaded.")
+    st.error("Please ensure model files are in the correct path.")
 except Exception as e:
-    st.error(f"Unexpected error loading models: {e}")
-    for name in MODEL_FILES:
-        st.warning(f"⚠️ {name.capitalize()} model not loaded.")
+    st.error(f"Error loading models: {e}")
+    st.warning(f"scikit-learn version: {sklearn.__version__}")
 
 
 # --- Initialize session state ---
@@ -518,11 +501,6 @@ if st.sidebar.button("Save Nutritional Data"):
         except Exception as e:
             st.error(f"Error saving nutrition data: {e}")
 
-
-
-if not models_loaded:
-    st.error("Cannot proceed without model files. Please check the file paths and restart the application.")
-    st.stop()
 def map_salt_intake(val):
     keys = ['salt_intake_High', 'salt_intake_Moderate', 'salt_intake_Little', 'salt_intake_None']
     values = [0]*4
