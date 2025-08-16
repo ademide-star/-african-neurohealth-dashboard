@@ -10,11 +10,13 @@ import requests
 from dataclasses import dataclass
 from typing import Dict, List, Tuple, Optional
 import logging
+from sklearn import __version__ as sklearn_version
 import cloudpickle
 import math
 from uuid import UUID
 import json
 import jsonschema
+import sys
 import shap
 import sqlite3
 import logging
@@ -95,31 +97,41 @@ def custom_stress_score(prefix="", use_container=False):
         return level, label, total_score
 
 
-# ======================
 # MODEL PATHS
 # ======================
-ALZ_MODEL_PATH = r"C:\Users\sibs2\african-neurohealth-dashboard\alz_model_portable.pkl"
-STROKE_MODEL_PATH = r"C:\Users\sibs2\african-neurohealth-dashboard\stroke_model_portable.pkl"
+ALZ_MODEL_PATH = r"C:\Users\sibs2\african-neurohealth-dashboard\alz_latest.pkl"
+STROKE_MODEL_PATH = r"C:\Users\sibs2\african-neurohealth-dashboard\stroke_latest.pkl"
+
+# ======================
+# CHECK SKLEARN VERSION
+# ======================
+REQUIRED_SKLEARN_VERSION = "1.3.2"  # set to the version you trained your models with
+if sklearn_version != REQUIRED_SKLEARN_VERSION:
+    st.warning(f"⚠️ Your scikit-learn version is {sklearn_version}. "
+               f"Models were trained with {REQUIRED_SKLEARN_VERSION}. "
+               "Version mismatch may cause errors.")
 
 # ======================
 # LOAD FUNCTION
 # ======================
 def load_model(path):
-    with open(path, "rb") as f:
-        return cloudpickle.load(f)
+    if not os.path.exists(path):
+        st.error(f"❌ Model file not found: {path}. Please retrain and save using pickle.")
+        st.stop()
+    try:
+        with open(path, "rb") as f:
+            return pickle.load(f)
+    except Exception as e:
+        st.error(f"❌ Error loading model {os.path.basename(path)}: {str(e)}")
+        st.stop()
 
 # ======================
 # LOAD MODELS
 # ======================
-try:
-    stroke_model = load_model(STROKE_MODEL_PATH)
-    alz_model = load_model(ALZ_MODEL_PATH)
-except FileNotFoundError as e:
-    st.error(f"❌ Model file not found: {e.filename}. Please retrain and save using cloudpickle.")
-    st.stop()
-except Exception as e:
-    st.error(f"❌ Error loading models: {str(e)}")
-    st.stop()
+stroke_model = load_model(STROKE_MODEL_PATH)
+alz_model = load_model(ALZ_MODEL_PATH)
+
+st.success("✅ Models loaded successfully!")
 
 # --- Initialize session state ---
 if "user" not in st.session_state:
