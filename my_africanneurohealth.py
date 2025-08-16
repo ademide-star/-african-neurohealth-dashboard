@@ -10,6 +10,7 @@ import requests
 from dataclasses import dataclass
 from typing import Dict, List, Tuple, Optional
 import logging
+import cloudpickle
 import math
 from uuid import UUID
 import json
@@ -93,45 +94,49 @@ def custom_stress_score(prefix="", use_container=False):
         
         return level, label, total_score
 
-# --- Model paths ---
-base_path = r"C:\Users\sibs2\african-neurohealth-dashboard"
-model_files = {
-    "stroke": "stroke_model_pipeline_v1.7.pkl",
-    "alz": "alz_model_pipeline_v1.7.pkl"
+
+
+# --- Paths to forward-compatible models ---
+BASE_PATH = r"C:\Users\sibs2\african-neurohealth-dashboard"
+MODEL_FILES = {
+    "stroke": "stroke_model_pipeline_portable.pkl",
+    "alz": "alz_model_pipeline_portable.pkl"
 }
 
 models = {}
 models_loaded = False
 
+# --- Function to load a cloudpickle model ---
+@st.cache_resource
+def load_model(path):
+    if not os.path.exists(path):
+        raise FileNotFoundError(f"Model file not found: {path}")
+    with open(path, "rb") as f:
+        return cloudpickle.load(f)
+
+
+# --- Load models ---
 try:
-    for name, file in model_files.items():
-        path = os.path.join(base_path, file)
-        if os.path.exists(path):
-            try:
-                # Load with cloudpickle (works across sklearn versions)
-                with open(path, "rb") as f:
-                    models[name] = cloudpickle.load(f)
+    for name, file in MODEL_FILES.items():
+        path = os.path.join(BASE_PATH, file)
+        models[name] = load_model(path)
 
-                st.info(f"{file} loaded successfully with scikit-learn {sklearn.__version__}")
-
-            except Exception as e:
-                st.error(f"Error loading {file}: {e}")
-                raise
-        else:
-            raise FileNotFoundError(f"Model file not found: {path}")
-
-    models_loaded = True
-
-except FileNotFoundError as e:
-    st.error(f"Model file not found: {e}")
-except Exception as e:
-    st.error(f"Unexpected error loading models: {e}")
-
-# --- Access models ---
-if models_loaded:
     stroke_model = models["stroke"]
     alz_model = models["alz"]
-    st.success("Models loaded successfully!")
+    st.success("✅ Models loaded successfully!")
+
+    for name in MODEL_FILES:
+        st.info(f"✅ {name.capitalize()} model loaded.")
+
+except FileNotFoundError as e:
+    st.error(f"Model files not found: {e}")
+    for name in MODEL_FILES:
+        st.warning(f"⚠️ {name.capitalize()} model not loaded.")
+except Exception as e:
+    st.error(f"Unexpected error loading models: {e}")
+    for name in MODEL_FILES:
+        st.warning(f"⚠️ {name.capitalize()} model not loaded.")
+
 
 # --- Initialize session state ---
 if "user" not in st.session_state:
@@ -1324,4 +1329,3 @@ if app_mode == "Alzheimer Risk Prediction":
 
         except Exception as e:
                 st.error(f"Error during alzheimers prediction or saving: {e}")
-
