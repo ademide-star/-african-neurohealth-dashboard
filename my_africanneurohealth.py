@@ -95,31 +95,31 @@ def custom_stress_score(prefix="", use_container=False):
         return level, label, total_score
 
 
+# ======================
+# MODEL PATHS
+# ======================
+ALZ_MODEL_PATH = r"C:\Users\sibs2\african-neurohealth-dashboard\alz_model_portable.pkl"
+STROKE_MODEL_PATH = r"C:\Users\sibs2\african-neurohealth-dashboard\stroke_model_portable.pkl"
 
-import os
-import joblib
-import streamlit as st
-import sklearn
+# ======================
+# LOAD FUNCTION
+# ======================
+def load_model(path):
+    with open(path, "rb") as f:
+        return cloudpickle.load(f)
 
-# --- Initialize flag ---
-models_loaded = False
-
-# --- Load Models with error handling ---
-base_path = os.path.dirname(r"C:\Users\sibs2\african-neurohealth-dashboard\stroke_model_pipeline.pkl")  # script folder
-stroke_path = os.path.join(base_path, "stroke_model_pipeline.pkl")
-alz_path = os.path.join(base_path, "alz_model_pipeline.pkl")
-
+# ======================
+# LOAD MODELS
+# ======================
 try:
-    stroke_model = joblib.load(stroke_path)
-    alz_model = joblib.load(alz_path)
-    models_loaded = True
+    stroke_model = load_model(STROKE_MODEL_PATH)
+    alz_model = load_model(ALZ_MODEL_PATH)
 except FileNotFoundError as e:
-    st.error(f"Model files not found: {e}")
-    st.error("Please ensure model files are in the correct path.")
+    st.error(f"❌ Model file not found: {e.filename}. Please retrain and save using cloudpickle.")
+    st.stop()
 except Exception as e:
-    st.error(f"Error loading models: {e}")
-    st.warning(f"scikit-learn version: {sklearn.__version__}")
-
+    st.error(f"❌ Error loading models: {str(e)}")
+    st.stop()
 
 # --- Initialize session state ---
 if "user" not in st.session_state:
