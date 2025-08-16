@@ -11,6 +11,8 @@ jsonschema
 shap
 supabase
 postgrest
+cloudpickle
+
 
 
 
