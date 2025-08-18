@@ -10,13 +10,11 @@ import requests
 from dataclasses import dataclass
 from typing import Dict, List, Tuple, Optional
 import logging
-from sklearn import __version__ as sklearn_version
 import cloudpickle
 import math
 from uuid import UUID
 import json
 import jsonschema
-import sys
 import shap
 import sqlite3
 import logging
@@ -33,6 +31,25 @@ SUPABASE_KEY = st.secrets["SUPABASE_KEY"]
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 logging.basicConfig(level=logging.DEBUG)
 
+# Must be the first Streamlit command
+st.set_page_config(
+    page_title="AFRICAN NEUROHEALTH",
+    page_icon="📊",
+    layout="wide",
+    initial_sidebar_state="expanded",
+    menu_items={}
+)
+
+# Hide Streamlit style elements (footer, menu)
+hide_streamlit_style = """
+    <style>
+    #MainMenu {visibility: hidden;}  /* Hide hamburger menu */
+    footer {visibility: hidden;}    /* Hide Streamlit footer */
+    header {visibility: hidden;}    /* Hide Streamlit header */
+    </style>
+"""
+st.markdown(hide_streamlit_style, unsafe_allow_html=True)
+
 # --- Get User Location ---
 def get_user_location():
     try: 
@@ -42,6 +59,92 @@ def get_user_location():
     except Exception as e:
         print(f"Error fetching location: {e}")
         return "Unknown", "Unknown", "Unknown"
+
+# ----------------------------
+# LOGIN FUNCTION
+# ----------------------------
+def login():
+    st.subheader("Login with Email & Password")
+    email = st.text_input("Email", key="login_email")
+    password = st.text_input("Password", type="password", key="login_password")
+
+    if st.button("Login", key="login_btn"):
+        try:
+            response = supabase.auth.sign_in_with_password({"email": email, "password": password})
+            if response.user:
+                st.session_state.user = {"id": response.user.id, "email": response.user.email}
+                st.success(f"Logged in as {st.session_state.user['email']}")
+            else:
+                st.error("Invalid login credentials")
+        except Exception as e:
+            st.error(f"Login error: {e}")
+
+    st.markdown("---")
+    st.subheader("Or Sign in with Google")
+
+    if st.button("Login with Google", key="google_btn"):
+        redirect_url = "https://ademideola.streamlit.app"
+        res = supabase.auth.sign_in_with_oauth(
+            {
+                "provider": "google",
+                "options": {"redirect_to": redirect_url}
+            }
+        )
+        st.markdown(f'<meta http-equiv="refresh" content="0; url={res.url}">', unsafe_allow_html=True)
+
+# ----------------------------
+# Handle OAuth callback
+# ----------------------------
+query_params = st.query_params
+if "access_token" in query_params:
+    try:
+        user_session = supabase.auth.get_user()
+        if user_session.user:
+            st.session_state.user = {"id": user_session.user.id, "email": user_session.user.email}
+            st.success(f"Welcome, {st.session_state.user['email']}!")
+    except Exception as e:
+        st.error(f"OAuth login error: {e}")
+
+# ----------------------------
+# LOGOUT FUNCTION
+# ----------------------------
+def logout():
+    try:
+        supabase.auth.sign_out()
+        # Always reset to dict, never None
+        st.session_state.user = {"id": None, "email": None}
+        st.success("Logged out successfully.")
+        st.experimental_rerun()
+    except Exception as e:
+        st.error(f"Logout error: {e}")
+
+# ----------------------------
+# REGISTER FUNCTION
+# ----------------------------
+def register():
+    st.subheader("Register")
+    email = st.text_input("New Email", key="register_email")
+    password = st.text_input("New Password", type="password", key="register_password")
+    confirm_password = st.text_input("Confirm Password", type="password", key="register_confirm_password")
+
+    if st.button("Register", key="register_btn"):
+        if password != confirm_password:
+            st.error("Passwords do not match")
+        else:
+            try:
+                response = supabase.auth.sign_up({"email": email, "password": password})
+                if response.user:
+                    st.success("Registration successful! Please check your email to confirm your account.")
+                else:
+                    st.error("Registration failed.")
+            except Exception as e:
+                st.error(f"Registration error: {e}")
+
+# ----------------------------
+# ABOUT FUNCTION
+# ----------------------------
+def about():
+    st.title("About African Neuro Health")
 
 def custom_stress_score(prefix="", use_container=False):
     """Calculate stress score with option to avoid nested expanders"""
@@ -96,128 +199,69 @@ def custom_stress_score(prefix="", use_container=False):
         
         return level, label, total_score
 
+def smart_load_model(path):
+    """
+    Tries to load a model using joblib first, then falls back to cloudpickle.
+    Works for both .joblib and .pkl files.
+    """
+    if not os.path.exists(path):
+        raise FileNotFoundError(f"Model file not found: {path}")
 
+    try:
+        # Try joblib first (common for scikit-learn)
+        return joblib.load(path)
+    except (AttributeError, EOFError, ImportError, pickle.UnpicklingError):
+        # If joblib fails, try cloudpickle
+        with open(path, "rb") as f:
+            return cloudpickle.load(f)
+
+def smart_load_model(path):
+    """
+    Tries to load a model using joblib first, then falls back to cloudpickle.
+    Works for both .joblib and .pkl files.
+    """
+    if not os.path.exists(path):
+        raise FileNotFoundError(f"Model file not found: {path}")
+
+    try:
+        return joblib.load(path)
+    except Exception:
+        # If joblib fails (version mismatch, missing class, etc.), try cloudpickle
+        with open(path, "rb") as f:
+            return cloudpickle.load(f)
+
+# ======================
 # MODEL PATHS
 # ======================
-ALZ_MODEL_PATH = r"C:\Users\sibs2\african-neurohealth-dashboard\alz_model_pipeline_v1.7.pkl"
-STROKE_MODEL_PATH = r"C:\Users\sibs2\african-neurohealth-dashboard\stroke_model_pipeline_v1.7.pkl"
-
-# ======================
-# CHECK SKLEARN VERSION
-# ======================
-REQUIRED_SKLEARN_VERSION = "1.3.2"  # set to the version you trained your models with
-if sklearn_version != REQUIRED_SKLEARN_VERSION:
-    st.warning(f"⚠️ Your scikit-learn version is {sklearn_version}. "
-               f"Models were trained with {REQUIRED_SKLEARN_VERSION}. "
-               "Version mismatch may cause errors.")
+ALZ_MODEL_PATH = r"C:\Users\sibs2\african-neurohealth-dashboard\alz_model.joblib"
+STROKE_MODEL_PATH = r"C:\Users\sibs2\african-neurohealth-dashboard\stroke_model.joblib"
 
 # ======================
 # LOAD FUNCTION
 # ======================
-def load_model(path):
+def load_joblib(path, label=""):
     if not os.path.exists(path):
-        st.error(f"❌ Model file not found: {path}. Please retrain and save using pickle.")
+        st.error(f"❌ {label} file not found: {path}. Please retrain and save using joblib.")
         st.stop()
     try:
-        with open(path, "rb") as f:
-            return pickle.load(f)
+        return joblib.load(path)
     except Exception as e:
-        st.error(f"❌ Error loading model {os.path.basename(path)}: {str(e)}")
+        st.error(f"❌ Error loading {label}: {os.path.basename(path)}\n\n{str(e)}")
         st.stop()
 
 # ======================
-# LOAD MODELS
+# LOAD MODELS & PREPROCESSORS
 # ======================
-stroke_model = load_model(STROKE_MODEL_PATH)
-alz_model = load_model(ALZ_MODEL_PATH)
+alz_model = load_joblib(ALZ_MODEL_PATH, label="Alzheimer’s model")
 
-st.success("✅ Models loaded successfully!")
+stroke_model = load_joblib(STROKE_MODEL_PATH, label="Stroke model")
 
-# --- Initialize session state ---
+st.success("✅ Welcome Take a Moment to Know About The African Neurohealth Dashboard")
+
 if "user" not in st.session_state:
     st.session_state.user = None
-if "nutritional_data" not in st.session_state:
-    st.session_state.nutritional_data = {}
-if "default_lifestyles" not in st.session_state:
-    st.session_state.default_lifestyles = []
-if "stress_score" not in st.session_state:
-    st.session_state.stress_score = 0
-if "location_str" not in st.session_state:
-    st.session_state.location_str = {}
-
-# --- Auth Functions ---
-def login():
-    st.subheader("Login")
-    email = st.text_input("Email", key="login_email")
-    password = st.text_input("Password", type="password", key="login_password")
-
-    if st.button("Login", key="login_btn"):
-        try:
-            response = supabase.auth.sign_in_with_password({"email": email, "password": password})
-            if response.user:
-                st.session_state.user = response.user
-                st.success(f"Logged in as {email}")
-                st.experimental_rerun()
-            else:
-                st.error("Invalid login credentials")
-        except Exception as e:
-            st.error(f"Login error: {e}")
-
-    st.markdown("---")
-    st.subheader("Resend Magic Link")
-    resend_email = st.text_input("Enter your email to resend the magic link", key="resend_email")
-    if st.button("Resend Magic Link", key="resend_btn"):
-        if resend_email:
-            try:
-                response = supabase.auth.sign_in_with_password({"email": resend_email})
-                if response.get("error"):
-                    st.error(f"Error: {response['error']['message']}")
-                else:
-                    st.success("Magic link sent! Please check your email.")
-            except Exception as e:
-                st.error(f"Failed to send magic link: {e}")
-        else:
-            st.warning("Please enter your email.")
-
-def register():
-    st.subheader("Register")
-    email = st.text_input("New Email", key="register_email")
-    password = st.text_input("New Password", type="password", key="register_password")
-    confirm_password = st.text_input("Confirm Password", type="password", key="register_confirm_password")
-
-    if st.button("Register", key="register_btn"):
-        if password != confirm_password:
-            st.error("Passwords do not match")
-        else:
-            try:
-                response = supabase.auth.sign_up({"email": email, "password": password})
-                if response.user:
-                    st.success("Registration successful! Please check your email to confirm your account.")
-                else:
-                    st.error("Registration failed.")
-            except Exception as e:
-                st.error(f"Registration error: {e}")
-
-def logout():
-    supabase.auth.sign_out()
-    st.session_state.user = None
-    st.experimental_rerun()
 
 # --- App Feature Functions ---
-def stroke_prediction_app():
-    st.header("Stroke Risk Prediction")
-    st.title("🫀 Stroke Risk Predictor")
-    st.write("Stroke prediction UI and logic here...")
-
-def alzheimers_prediction_app():
-    st.header("Alzheimer's Prediction")
-    st.title("🧠 Alzheimer’s Predictor")
-    st.write("Alzheimer's prediction UI and logic here...")
-
-def nutrition_tracker_app():
-    st.header("Nutrition Tracker")
-    st.title("🥗 Nutrition Tracker")
-    st.write("Nutrition tracker UI and logic here...")
 
 # --- Main App Flow ---
 if st.session_state.user is None:
@@ -229,45 +273,30 @@ if st.session_state.user is None:
         else:
             register()
 
-    with st.expander("ℹ️ About This App 🧠 African NeuroHealth Dashboard"):
-        st.markdown("""
-This platform is a culturally attuned, context-aware diagnostic tool tailored for assessing neuro-health risks in African populations. 
-It blends conventional biomedical metrics with locally relevant stressors, lifestyle habits, and cultural practices to offer a truly holistic health assessment experience.
+    
+# -------------------
+# Initialize session state
+# -------------------
+session_keys = [
+    "user", "stroke_data", "alz_data", "nutritional_data",
+    "default_lifestyles", "memory_game", "auth_mode"
+]
+for key in session_keys:
+    if key not in st.session_state:
+        st.session_state[key] = {} if key.endswith("_data") else None
 
-**Key Features:**
-- Environmental exposures (e.g., noise, air pollution)
-- Dietary patterns (including traditional nutrition)
-- Sleep quality and hydration
-- Use of herbal or traditional remedies
-- Psychosocial stressors unique to African settings
-- Ethnocultural identity tracking for precision health insights
+if "auth_mode" not in st.session_state:
+    st.session_state.auth_mode = "login"  # login or signup
 
-**By:** Adebimpe-John Omolola E  
-**Supervisor:** Prof. Bamidele Owoyele Victor  
-**Institution:** University of Ilorin  
-**Principal Investigator:** Prof Mayowa Owolabi  
-**GRASP / NIH / DSI Collaborative Program**
-""")
-
-else:
-    # Authenticated users see app selection + tools
-    with st.sidebar:
-        st.write(f"👋 Welcome, {st.session_state.user.email}!")
-        app_choice = st.radio(
-            "Choose an App:",
-            ["Stroke Prediction", "Alzheimer's Prediction", "Nutrition Tracker"],
-            key="app_choice"
-        )
-        if st.button("Logout", key="logout_button"):
-            logout()
-
-    if app_choice == "Stroke Prediction":
-        stroke_prediction_app()
-    elif app_choice == "Alzheimer's Prediction":
-        alzheimers_prediction_app()
-    elif app_choice == "Nutrition Tracker":
-        nutrition_tracker_app()
-
+# -------------------
+# Utility Functions
+# -------------------
+def save_to_supabase(table_name, record):
+    try:
+        resp = supabase.table(table_name).insert(record).execute()
+        return resp.data is not None, resp.error
+    except Exception as e:
+        return False, str(e)
 
 countries_with_provinces = {
     "Nigeria": [
@@ -376,7 +405,9 @@ with st.sidebar:
     selected_region = st.selectbox("🌍 Select Region", list(region_with_ethnicity.keys()))
     selected_ethnicity = st.selectbox("Select Ethnicity", region_with_ethnicity[selected_region])
 
-
+def nutrition_tracker_app():
+    st.header("Nutrition Tracker")
+    st.title("🥗 Nutrition Tracker")
 # --- Nutritional Lifestyle Tracker ---
 def calculate_weekly_servings(freq, servings):
     if freq == "Daily":
@@ -512,6 +543,7 @@ if st.sidebar.button("Save Nutritional Data"):
 
         except Exception as e:
             st.error(f"Error saving nutrition data: {e}")
+
 
 def map_salt_intake(val):
     keys = ['salt_intake_High', 'salt_intake_Moderate', 'salt_intake_Little', 'salt_intake_None']
@@ -681,17 +713,11 @@ def build_full_input(raw):
 
     return input_df
 
-# --- Streamlit app ---
-# --- Stroke Predictor ---
-
-st.title("🧠 African NeuroHealth Dashboard")
-app_mode = st.selectbox("Choose Section", ["Stroke Risk Prediction", "Alzheimer Risk Prediction"])
-
-
 # =======================
 # TAB 1: STROKE PREDICTION
 # =======================
-if app_mode == "Stroke Risk Prediction":
+def stroke_prediction_app():
+    st.header("Stroke Risk Prediction")
     st.title("🫀 Stroke Risk Predictor")
     st.warning("Complete all fields for accurate assessment")
 # Get nutritional score
@@ -885,6 +911,7 @@ if app_mode == "Stroke Risk Prediction":
 
         except Exception as e:
                 st.error(f"Error during Stroke prediction or saving: {e}")
+        
 
              
 
@@ -964,16 +991,13 @@ def prepare_alz_data_robust(full_input):
         raise TypeError("Input must be a dict, list of dicts, or single-row DataFrame.")
 
 
-                            # --- Alzheimer Predictor ---#
-if app_mode == "Alzheimer Risk Prediction":
-    st.title("🧠 Alzheimer Risk Predictor")
-
 # =======================#
 # TAB 1: ALZHEIMER FORM #
 # =======================#
-    
+def alzheimers_prediction_app():
+    st.header("Alzheimer's Prediction")
+    st.title("🧠 Alzheimers Predictor")
     st.warning("Complete all fields for accurate assessment")
-    
     # Get nutritional score #
     nutritional_score = compute_nutritional_score()
     st.info(f"🍎 Nutritional Health Score: **{nutritional_score}/5**")
@@ -1319,4 +1343,60 @@ if app_mode == "Alzheimer Risk Prediction":
 
         except Exception as e:
                 st.error(f"Error during alzheimers prediction or saving: {e}")
+    
+# --- Initialize session state ---
+if "user" not in st.session_state:
+    st.session_state.user = None
+if "nutritional_data" not in st.session_state:
+    st.session_state.nutritional_data = {}
+if "default_lifestyles" not in st.session_state:
+    st.session_state.default_lifestyles = []
+if "stress_score" not in st.session_state:
+    st.session_state.stress_score = 0
+if "location_str" not in st.session_state:
+    st.session_state.location_str = {}
+
+    with st.header("ℹ️ About This App 🧠 African NeuroHealth Dashboard"):
+        st.title("🧠 African NeuroHealth Dashboard")
+        st.markdown("""
+This platform is a culturally attuned, context-aware diagnostic tool tailored for assessing neuro-health risks in African populations. 
+It blends conventional biomedical metrics with locally relevant stressors, lifestyle habits, and cultural practices to offer a truly holistic health assessment experience.
+
+**Key Features:**
+- Environmental exposures (e.g., noise, air pollution)
+- Dietary patterns (including traditional nutrition)
+- Sleep quality and hydration
+- Use of herbal or traditional remedies
+- Psychosocial stressors unique to African settings
+- Ethnocultural identity tracking for precision health insights
+
+**By:** Adebimpe-John Omolola E  
+**Supervisor:** Prof. Bamidele Owoyele Victor  
+**Institution:** University of Ilorin  
+**Principal Investigator:** Prof Mayowa Owolabi  
+**GRASP / NIH / DSI Collaborative Program**
+""")
+
+ # --- NAVIGATION AFTER LOGIN ---
+    page = st.sidebar.radio(
+        "Choose a feature:",
+        ["About", "Stroke Prediction", "Alzheimer's Prediction", "Nutrition Tracker", "Profile", "Settings"]
+    )
+
+    if page == "Stroke Prediction":
+        stroke_prediction_app()
+    elif page == "Alzheimer's Prediction":
+        alzheimers_prediction_app()
+    elif page == "Nutrition Tracker":
+        nutrition_tracker_app()
+    elif page == "Profile":
+        st.write(st.session_state.user)
+    elif page == "Settings":
+        st.write("Settings")
+
+else:
+    # Unauthenticated users
+    page = st.radio("Choose an option:", ["Login", "Register", "About"])
+    st.stop()  # Prevent access to app features
+
 
