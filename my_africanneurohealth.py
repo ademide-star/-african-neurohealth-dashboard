@@ -236,26 +236,6 @@ def smart_load_model(path):
 ALZ_MODEL_PATH = r"C:\Users\sibs2\african-neurohealth-dashboard\alz_model.joblib"
 STROKE_MODEL_PATH = r"C:\Users\sibs2\african-neurohealth-dashboard\stroke_model.joblib"
 
-# ======================
-# LOAD FUNCTION
-# ======================
-def load_joblib(path, label=""):
-    if not os.path.exists(path):
-        st.error(f"❌ {label} file not found: {path}. Please retrain and save using joblib.")
-        st.stop()
-    try:
-        return joblib.load(path)
-    except Exception as e:
-        st.error(f"❌ Error loading {label}: {os.path.basename(path)}\n\n{str(e)}")
-        st.stop()
-
-# ======================
-# LOAD MODELS & PREPROCESSORS
-# ======================
-alz_model = load_joblib(ALZ_MODEL_PATH, label="Alzheimer’s model")
-
-stroke_model = load_joblib(STROKE_MODEL_PATH, label="Stroke model")
-
 st.success("✅ Welcome Take a Moment to Know About The African Neurohealth Dashboard")
 
 if "user" not in st.session_state:
@@ -1398,6 +1378,7 @@ else:
     # Unauthenticated users
     page = st.radio("Choose an option:", ["Login", "Register", "About"])
     st.stop()  # Prevent access to app features
+
 
 
 
