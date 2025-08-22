@@ -1695,18 +1695,25 @@ if st.session_state.user is None:
     st.write("No user is logged in.")
 
 # --- NAVIGATION AFTER LOGIN ---
-    page = st.sidebar.radio(
-        "Choose a feature:",
-        ["About", "Stroke Prediction", "Alzheimer's Prediction"]
-    )
-    if page == "Stroke Prediction":
-        stroke_prediction_app()
-    elif page == "Alzheimer's Prediction":
-        alzheimers_prediction_app()
-    elif page == "Nutrition Tracker":
-        nutrition_tracker_app()
-    elif page == "About":
-        about()
+    page = st.sidebar.selectbox("Choose a page", ["About", "Alzheimer's", "Stroke"])
+alz_model, stroke_model, preprocessor = load_models()
+
+if page == "About":
+    st.write("Welcome to the African NeuroHealth Dashboard!")
+
+elif page == "Alzheimer's":
+    if alz_model is not None:
+        show_alzheimer_page(alz_model, preprocessor)
+    else:
+        st.warning("Alzheimer’s page unavailable. Model not loaded.")
+
+elif page == "Stroke":
+    if stroke_model is not None:
+        show_stroke_page(stroke_model)
+    else:
+        st.warning("Stroke page unavailable. Model not loaded.")
+
+
 
 
 
