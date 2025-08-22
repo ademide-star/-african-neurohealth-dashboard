@@ -577,52 +577,7 @@ It blends conventional biomedical metrics with locally relevant stressors, lifes
     """)
 
 
-# --- App Feature Functions ---
-
-# --- Main App Flow ---
-if st.session_state.user is None:
-    with st.sidebar:
-        st.header("🔐 User Authentication")
-        auth_option = st.radio("Select option:", ["Login", "Register"], key="auth_option")
-        if auth_option == "Login":
-            login()
-        else:
-            register()
-# --- Initialize session state ---
-if "user" not in st.session_state:
-    st.session_state.user = None
-if "nutritional_data" not in st.session_state:
-    st.session_state.nutritional_data = {}
-if "default_lifestyles" not in st.session_state:
-    st.session_state.default_lifestyles = []
-if "stress_score" not in st.session_state:
-    st.session_state.stress_score = 0
-if "location_str" not in st.session_state:
-    st.session_state.location_str = {}
-
-# --- Show message if no user is logged in ---
-if st.session_state.user is None:
-    st.write("No user is logged in.")
-    st.stop()  # Stop here so navigation doesn't show until login
-
-# --- NAVIGATION AFTER LOGIN ---
-page = st.sidebar.selectbox("Choose a page", ["About", "Alzheimer's", "Stroke"])
-alz_model, stroke_model, preprocessor = load_models()
-
-if page == "About":
-    st.write("Welcome to the African NeuroHealth Dashboard!")
-
-elif page == "Alzheimer's":
-    if alz_model is not None:
-        show_alzheimer_page(alz_model, preprocessor)
-    else:
-        st.warning("Alzheimer’s page unavailable. Model not loaded.")
-
-elif page == "Stroke":
-    if stroke_model is not None:
-        show_stroke_page(stroke_model)
-    else:
-        st.warning("Stroke page unavailable. Model not loaded.")
+# --- App Feature Functions -
     
 # -------------------
 # Initialize session state
