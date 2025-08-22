@@ -9,7 +9,6 @@ from dotenv import load_dotenv
 import requests
 from dataclasses import dataclass
 from typing import Dict, List, Tuple, Optional
-import logging
 import cloudpickle
 import math
 from uuid import UUID
@@ -24,6 +23,9 @@ from datetime import datetime
 import traceback
 from sklearn.pipeline import Pipeline
 from supabase import create_client, Client
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 # --- Load Environment Variables ---
 SUPABASE_URL = st.secrets["SUPABASE_URL"]
@@ -140,12 +142,61 @@ def register():
             except Exception as e:
                 st.error(f"Registration error: {e}")
 
-# ----------------------------
-# ABOUT FUNCTION
-# ----------------------------
-def about():
-    st.title("About African Neuro Health")
-
+# Ensure your insertion code matches the actual table structure
+def save_prediction_to_db(features, prediction, probability, memory_score=None):
+    try:
+        # Your database connection code
+        conn_params = {
+            'dbname': 'your_db_name',
+            'user': 'your_username',
+            'password': 'your_password',
+            'host': 'localhost'
+        }
+        
+        conn = psycopg2.connect(**conn_params)
+        cursor = conn.cursor()
+        
+        # Create insert statement that matches your table structure
+        columns = [ "Age", "Gender", "EducationLevel", "BMI", "Smoking",
+        "AlcoholConsumption", "PhysicalActivity", "DietQuality",
+        "SleepQuality", "FamilyHistoryAlzheimers", "CardiovascularDisease",
+        "Diabetes", "Depression", "HeadInjury", "Hypertension",
+        "SystolicBP", "DiastolicBP", "CholesterolTotal", "CholesterolLDL",
+        "CholesterolHDL", "CholesterolTriglycerides", "MMSE",
+        "FunctionalAssessment", "MemoryComplaints", "BehavioralProblems",
+        "ADL", "Confusion", "Disorientation", "PersonalityChanges",
+        "DifficultyCompletingTasks", "Forgetfulness", "PollutionScore",
+        "PollutionCategoryLow", "PollutionCategoryModerate", "PollutionCategoryHigh"  # Your actual column names
+            # ... include all other columns that actually exist
+        "prediction", "probability", "memory_score"  # If memory_score exists
+        ]
+        
+        # Prepare values in the same order
+        values = [
+            features['Age'].iloc[0],
+            features['Gender'].iloc[0],
+            features['EducationLevel'].iloc[0],
+            # ... other feature values
+            prediction[0],
+            probability[0][1],
+            memory_score  # This could be None if not available
+        ]
+        
+        # Create the SQL query
+        placeholders = ', '.join(['%s'] * len(values))
+        query = f"INSERT INTO alzheimers_predictions ({', '.join(columns)}) VALUES ({placeholders})"
+        
+        cursor.execute(query, values)
+        conn.commit()
+        
+    except Exception as e:
+        print(f"Error saving to database: {e}")
+        if conn:
+            conn.rollback()
+    finally:
+        if conn:
+            conn.close()
+            
 def custom_stress_score(prefix="", use_container=False):
     """Calculate stress score with option to avoid nested expanders"""
     title = f"🧮 {prefix} Stress Estimator Based on Cultural & Contextual Stress Factors" 
@@ -230,16 +281,236 @@ def smart_load_model(path):
         with open(path, "rb") as f:
             return cloudpickle.load(f)
 
+ALZ_MODEL_PATH = r"C:\Users\sibs2\african-neurohealth-dashboard\alzheimers_pipeline.joblib"
+STROKE_MODEL_PATH = r"C:\Users\sibs2\african-neurohealth-dashboard\stroke_pipeline.joblib"
+
+
+# Load models and preprocessor
+alz_model = joblib.load(ALZ_MODEL_PATH)
+stroke_model = joblib.load(STROKE_MODEL_PATH)
+# Load the pipeline
+pipeline = joblib.load(r"C:\Users\sibs2\african-neurohealth-dashboard\alzheimers_pipeline.joblib")
+preprocessor = joblib.load(r"C:\Users\sibs2\african-neurohealth-dashboard\alzheimers_preprocessor.joblib")
+
+DEFAULT_FIELDS = {
+    "user_id": 0,
+    "age": 0,
+    "gender": "None",
+    "heart_disease": 0,
+    "hypertension": 0,
+    "systolic_bp": 0,
+    "diastolic_bp": 0,
+    "avg_glucose_level": 0,
+    "bmi": 0,
+    "marital_status": "None",
+    "work_type": "None",
+    "residence_type": "None",
+    "smoking_status": "None",
+    "stress_level": 0,
+    "ptsd": 0,
+    "depression_level": 0,
+    "diabetes_type": "None",
+    "chronic_pain": "None",
+    "sleep_hours": 0,
+    "hypertension_treatment": "None",
+    "salt_intake": "None",
+    "noise_sources": "None",
+    "pollution_level_air": 0,
+    "pollution_level_water": 0,
+    "pollution_level_environmental": 0,
+    "custom_stress_score": 0,
+    "ethnicity": "None",
+    "country": "None",
+    "province_option": "None",
+}
+
+
+CATEGORY_MAPS = {
+    "gender": {"Male": 0, "Female": 1},
+    "marital_status": {"Single": 0, "Married": 1, "Divorced": 2, "Widowed": 3},
+    "work_type": {"Private": 0, "Self-employed": 1, "Govt job": 2, "Children": 3, "Never worked": 4},
+    "residence_type": {"Urban": 0, "Rural": 1},
+    "smoking_status": {"formerly smoked": 0, "never smoked": 1, "smokes": 2},
+    "stress_level": {0:0, 1:1, 2:2, 3:3},  # already numeric
+    "ptsd": {0:0, 1:1},
+    "depression_level": {0:0, 1:1, 2:2},
+    "diabetes_type": {"None": 0, "Type 1": 1, "Type 2": 2, "Gestational": 3},
+    "chronic_pain": {"None": 0, "Rheumatism": 1, "Osteoarthritis": 2, "Others": 3},
+    "hypertension_treatment": {"None": 0, "Herbal": 1, "Drugs": 2},
+    "salt_intake": {"None": 0, "Little": 1, "Moderate": 2, "High": 3},
+    "noise_sources": {
+        "Mosque": 0, "Church": 1, "Market": 2, "Block-Industry": 3, 
+        "Grinding-Machine": 4, "Welder": 5, "Club-House": 6, "Generator": 7, "None": 8
+    },
+    "pollution_level_air": {"None": 0, "Low": 1, "Moderate": 2, "High": 3},
+    "pollution_level_water": {"None": 0, "Low": 1, "Moderate": 2, "High": 3},
+    "pollution_level_environmental": {"None": 0, "Low": 1, "Moderate": 2, "High": 3},
+}
+
 # ======================
-# MODEL PATHS
+# Default numeric values
 # ======================
-ALZ_MODEL_PATH = r"C:\Users\sibs2\african-neurohealth-dashboard\alz_model.joblib"
-STROKE_MODEL_PATH = r"C:\Users\sibs2\african-neurohealth-dashboard\stroke_model.joblib"
+NUMERIC_DEFAULTS = {
+    "age": 45,
+    "systolic_bp": 120,
+    "diastolic_bp": 80,
+    "avg_glucose_level": 110.0,
+    "bmi": 25.0,
+    "sleep_hours": 7.0,
+    "CustomStressScore": 5,
+    "heart_disease": 0,
+    "hypertension": 0,
+}
+
+def save_prediction_to_supabase(features, prediction, probability, memory_score=None):
+    try:
+        # Prepare data for insertion
+        data = {
+            "age": int(features['Age'].iloc[0]) if not pd.isna(features['Age'].iloc[0]) else None,
+            "gender": int(features['Gender'].iloc[0]) if not pd.isna(features['Gender'].iloc[0]) else None,
+            "education_level": int(features['EducationLevel'].iloc[0]) if not pd.isna(features['EducationLevel'].iloc[0]) else None,
+            # Add all other features...
+            "prediction": int(prediction[0]),
+            "probability": float(probability[0][1]),
+        }
+        
+        # Only add memory_score if it's provided
+        if memory_score is not None:
+            data["memory_score"] = int(memory_score)
+        
+        # Insert into Supabase
+        response = supabase.table("alzheimers_predictions").insert(data).execute()
+        
+        logger.info("Prediction saved successfully to Supabase!")
+        return response
+        
+    except Exception as e:  # This defines 'e' in the except block
+        logger.error(f"Error saving to Supabase: {e}")
+        logger.error(traceback.format_exc())  # This will show the full traceback
+        
+        # If the error is about a missing column, try without the memory_score
+        if "memory_score" in str(e):
+            logger.warning("memory_score column might not exist, retrying without it...")
+            if "memory_score" in data:
+                del data["memory_score"]
+                try:
+                    response = supabase.table("alzheimers_predictions").insert(data).execute()
+                    logger.info("Prediction saved successfully without memory_score!")
+                    return response
+                except Exception as inner_e:
+                    logger.error(f"Error saving without memory_score: {inner_e}")
+                    raise inner_e
+        
+        # Re-raise the original exception if we can't handle it
+        raise e
+
+# Function to make predictions and handle errors properly
+def make_prediction(input_data):
+    try:
+                # Load the pipeline
+        pipeline = joblib.load(r"C:\Users\sibs2\african-neurohealth-dashboard\alzheimers_pipeline.joblib")
+        stroke_pipeline = joblib.load(r"C:\Users\sibs2\african-neurohealth-dashboard\stroke_pipeline.joblib")
+        preprocessor = joblib.load(r"C:\Users\sibs2\african-neurohealth-dashboard\alzheimers_preprocessor.joblib")
+        
+        # Make prediction
+        prediction = pipeline.predict(input_data)
+        probability = pipeline.predict_proba(input_data)
+        
+        # Save to Supabase
+        result = save_prediction_to_supabase(input_data, prediction, probability)
+        
+        return prediction, probability, result
+        
+    except Exception as e:  # This defines 'e' in the function scope
+        logger.error(f"Error during prediction: {e}")
+        logger.error(traceback.format_exc())
+        
+        # Re-raise or handle as needed
+        raise
+
+
+
+# ======================
+# Build stroke input dictionary from Streamlit widgets
+# ======================
+def build_stroke_input_from_ui(ui_input: dict) -> dict:
+    """
+    Converts Streamlit inputs into a numeric dictionary ready for prediction.
+    Handles categorical mappings and defaults.
+    """
+    input_dict = {}
+    
+    # Map numeric fields
+    for key, default in NUMERIC_DEFAULTS.items():
+        input_dict[key] = ui_input.get(key, default)
+    
+    # Map categorical fields
+    for key, mapping in CATEGORY_MAPS.items():
+        value = ui_input.get(key, "None")
+        # Handle unseen categories
+        input_dict[key] = mapping.get(value, mapping.get("None", 0))
+    
+    return input_dict
+
+# Validate input
+def prepare_stroke_input(raw_input) -> pd.DataFrame:
+    if isinstance(raw_input, pd.DataFrame):
+        if len(raw_input) != 1:
+            raise ValueError("Expected a single-row DataFrame.")
+        return raw_input.reset_index(drop=True)
+    elif isinstance(raw_input, dict):
+        return pd.DataFrame([raw_input])
+    elif isinstance(raw_input, list) and len(raw_input) == 1 and isinstance(raw_input[0], dict):
+        return pd.DataFrame(raw_input)
+    else:
+        raise TypeError("Input must be a dict, list of dicts, or single-row DataFrame.")
+
+# Predict stroke risk
+def predict_stroke(raw: dict) -> int:
+    """
+    Returns 0 (no stroke) or 1 (stroke risk)
+    """
+    # 1. Build full input
+    full_input_df = build_full_input(raw)
+
+    # 2. Validate
+    stroke_data_df = prepare_stroke_input(full_input_df)
+
+    # 3. Predict using pipeline (handles categorical encoding)
+    pred = stroke_model.predict(stroke_data_df)[0]
+
+    return int(pred)
+
 
 st.success("✅ Welcome Take a Moment to Know About The African Neurohealth Dashboard")
 
 if "user" not in st.session_state:
     st.session_state.user = None
+# ----------------------------
+# ABOUT FUNCTION
+# ----------------------------
+def about():
+    st.header("ℹ️ About This App")
+    st.title("🧠 African NeuroHealth Dashboard")
+    st.markdown("""
+This platform is a culturally attuned, context-aware diagnostic tool tailored for assessing neuro-health risks in African populations. 
+It blends conventional biomedical metrics with locally relevant stressors, lifestyle habits, and cultural practices to offer a truly holistic health assessment experience.
+
+**Key Features:**
+- Environmental exposures (e.g., noise, air pollution)
+- Dietary patterns (including traditional nutrition)
+- Sleep quality and hydration
+- Use of herbal or traditional remedies
+- Psychosocial stressors unique to African settings
+- Ethnocultural identity tracking for precision health insights
+
+**By:** Adebimpe-John Omolola E  
+**Supervisor:** Prof. Bamidele Owoyele Victor  
+**Institution:** University of Ilorin  
+**Principal Investigator:** Prof. Mayowa Owolabi  
+**GRASP / NIH / DSI Collaborative Program**
+    """)
+
 
 # --- App Feature Functions ---
 
@@ -378,12 +649,44 @@ region_with_ethnicity = {
     "Merina", "Betsileo", "Betsimisaraka", "Sakalava", "Antandroy", "Antanosy", "Comorian", "Réunionese", 
     "Mauritian", "Seychellois Creole", "Zanzibari"
 ]}
+
+    # Example encoding maps (assign integer codes)
+country_map = {country: i for i, country in enumerate(countries_with_provinces.keys())}
+
+# Since provinces depend on country, encode them dynamically
+province_map = {}
+for c, provinces in countries_with_provinces.items():
+    province_map.update({p: i for i, p in enumerate(provinces)})
+
+region_map = {region: i for i, region in enumerate(region_with_ethnicity.keys())}
+
+ethnicity_map = {}
+for r, ethnicities in region_with_ethnicity.items():
+    ethnicity_map.update({e: i for i, e in enumerate(ethnicities)})
+
+# Streamlit UI
 with st.sidebar:
     st.header("🌍 Location Information")
     selected_country = st.selectbox("Select Country", list(countries_with_provinces.keys()))
     selected_province = st.selectbox("Select Province", countries_with_provinces[selected_country])
     selected_region = st.selectbox("🌍 Select Region", list(region_with_ethnicity.keys()))
     selected_ethnicity = st.selectbox("Select Ethnicity", region_with_ethnicity[selected_region])
+# Convert selections to numerical codes
+    encoded_country = country_map[selected_country]
+    encoded_province = province_map[selected_province]
+    encoded_region = region_map[selected_region]
+    encoded_ethnicity = ethnicity_map[selected_ethnicity]
+
+# Use these in your payload
+payload = {
+    "country": encoded_country,
+    "province": encoded_province,
+    "region": encoded_region,
+    "ethnicity": encoded_ethnicity,
+    # include other fields...
+}
+
+    
 
 def nutrition_tracker_app():
     st.header("Nutrition Tracker")
@@ -524,7 +827,6 @@ if st.sidebar.button("Save Nutritional Data"):
         except Exception as e:
             st.error(f"Error saving nutrition data: {e}")
 
-
 def map_salt_intake(val):
     keys = ['salt_intake_High', 'salt_intake_Moderate', 'salt_intake_Little', 'salt_intake_None']
     values = [0]*4
@@ -610,7 +912,18 @@ def prepare_stroke_input_robust(raw_input):
     df = df[expected_columns]
 
     return df
-
+def validate_input_data(data):
+    # Check for required fields
+    required_fields = ['Age', 'BMI']  # Add your required fields
+    for field in required_fields:
+        if field not in data or pd.isna(data[field]):
+            raise ValueError(f"Missing required field: {field}")
+    
+    # Validate data types and ranges
+    if 'Age' in data and data['Age'] is not None:
+        if not (0 <= data['Age'] <= 120):
+            raise ValueError("Age must be between 0 and 120")
+        
 def build_full_input(raw):
     full_input = {}
 
@@ -693,11 +1006,13 @@ def build_full_input(raw):
 
     return input_df
 
+# --- Streamlit app ---
+# --- Stroke Predictor ---
+
 # =======================
 # TAB 1: STROKE PREDICTION
 # =======================
 def stroke_prediction_app():
-    st.header("Stroke Risk Prediction")
     st.title("🫀 Stroke Risk Predictor")
     st.warning("Complete all fields for accurate assessment")
 # Get nutritional score
@@ -768,9 +1083,9 @@ def stroke_prediction_app():
                 "pollution_level_air": pollution_level_air,
                 "pollution_level_water": pollution_level_water,
                 "pollution_level_environmental": pollution_level_environmental,
-                'ethnicity': selected_ethnicity,
-                'Country': selected_country,
-                'Province_Option': selected_province,
+                'ethnicity': encoded_ethnicity,
+                'Country': encoded_country,
+                'Province_Option': encoded_province,
                 'CustomStressScore': CustomStressScore
             }
 
@@ -787,9 +1102,9 @@ def stroke_prediction_app():
                 "gender": gender,
                 "heart_disease": heart_disease,
                 "hypertension": hypertension,
-                "systolic_bp": systolic_bp,
-                "diastolic_bp": diastolic_bp,
-                "avg_glucose": avg_glucose,
+                "systolicbp": systolic_bp,
+                "diastolicbp": diastolic_bp,
+                "avg_glucose_level": avg_glucose_level,
                 "bmi": bmi,
                 "marital_status": marital_status,
                 "work_type": work_type,
@@ -808,10 +1123,10 @@ def stroke_prediction_app():
                 "pollution_level_air": pollution_level_air,
                 "pollution_level_water": pollution_level_water,
                 "pollution_level_environmental": pollution_level_environmental,
-                "custom_stress_score": CustomStressScore,
-                "ethnicity": selected_ethnicity,
-                "country": selected_country,
-                "province_option": selected_province,
+                "customstressscore": CustomStressScore,
+                "ethnicity": encoded_ethnicity,
+                "country": encoded_country,
+                "province_option": encoded_province,
                 "prediction_result": float(pred)
         }
 
@@ -881,6 +1196,13 @@ def stroke_prediction_app():
         "location": location_str,
         "prediction_result": float(pred)
     }
+            
+            logging.basicConfig(level=logging.INFO)
+            logger = logging.getLogger(__name__)
+
+# Use logger instead of print statements
+            logger.info("Prediction saved successfully!")
+            logger.error(f"Error saving to database: {e}")
 
     # Save to Supabase#
             response = supabase.table("stroke_predictions").insert(inputs).execute()
@@ -891,9 +1213,7 @@ def stroke_prediction_app():
 
         except Exception as e:
                 st.error(f"Error during Stroke prediction or saving: {e}")
-        
 
-             
 
 def build_full_input(raw):
     # Map gender
@@ -906,11 +1226,20 @@ def build_full_input(raw):
     # Cognitive symptoms mapping
     option_map = {"Yes": 1, "No": 0, "Sometimes": 0.5}
 
+    # Map option_map and head_map
+    option_map = {"Yes": 1, "No": 0, "Sometimes": 0.5}
+    head_map = {"None": 0, "Accident": 1, "Violence": 2}
+
+    # Default MMSE if not in raw
+    mmse = raw.get("MMSE", 30)
+
+    # -----------------------------
+    # Numeric-only full input
     full_input = {
         "Age": raw.get("age", 65),
-        "Gender": gender,
-        "BMI": raw.get("bmi", 25.0),
-        "EducationLevel": raw.get("EducationLevel", 12),
+        "Gender": int(raw.get("Gender", 1)),
+        "EducationLevel": int(raw.get("EducationLevel", 1)),
+        "BMI": raw.get("BMI", 25.0),
         "Smoking": int(raw.get("Smoking", 0)),
         "AlcoholConsumption": raw.get("AlcoholConsumption", 2),
         "PhysicalActivity": raw.get("PhysicalActivity", 3),
@@ -920,33 +1249,72 @@ def build_full_input(raw):
         "CardiovascularDisease": int(raw.get("CardiovascularDisease", 0)),
         "Diabetes": int(raw.get("Diabetes", 0)),
         "Depression": int(raw.get("Depression", 0)),
-        "Hypertension": int(raw.get("Hypertension", 0)),
+        "HeadInjury": head_map.get(raw.get("HeadInjury","None"), 0),
+        "Hypertension": int(raw.get("Hypertension",0)),
         "SystolicBP": raw.get("SystolicBP", 120),
         "DiastolicBP": raw.get("DiastolicBP", 80),
         "CholesterolTotal": raw.get("CholesterolTotal", 200),
         "CholesterolLDL": raw.get("CholesterolLDL", 130),
         "CholesterolHDL": raw.get("CholesterolHDL", 50),
         "CholesterolTriglycerides": raw.get("CholesterolTriglycerides", 150),
+        "MMSE": mmse,
         "FunctionalAssessment": raw.get("FunctionalAssessment", 0),
-        "BehavioralProblems": int(raw.get("BehavioralProblems", 0)),
-        "ADL": raw.get("ADL", 6),
-        "Confusion": option_map.get(raw.get("Confusion", "No"), 0),
-        "Disorientation": option_map.get(raw.get("Disorientation", "No"), 0),
-        "PersonalityChanges": option_map.get(raw.get("PersonalityChanges", "No"), 0),
-        "DifficultyCompletingTasks": option_map.get(raw.get("DifficultyCompletingTasks", "No"), 0),
-        "Forgetfulness": option_map.get(raw.get("Forgetfulness", "No"), 0),
-        "MemoryComplaints": option_map.get(raw.get("MemoryComplaints", "No"), 0),
-        "HeadInjury": head_injury,
-        "ethnicity": raw.get("ethnicity", "Other"),
-        "Country": raw.get("Country", "Nigeria"),
-        "Province_Option": raw.get("Province_Option", "Lagos"),
-        "CustomStressScore": raw.get("CustomStressScore", 50)
+        "MemoryComplaints": option_map.get(raw.get("MemoryComplaints","No"),0),
+        "BehavioralProblems": int(raw.get("BehavioralProblems",0)),
+        "ADL": raw.get("ADL",6),
+        "Confusion": option_map.get(raw.get("Confusion","No"),0),
+        "Disorientation": option_map.get(raw.get("Disorientation","No"),0),
+        "PersonalityChanges": option_map.get(raw.get("PersonalityChanges","No"),0),
+        "DifficultyCompletingTasks": option_map.get(raw.get("DifficultyCompletingTasks","No"),0),
+        "Forgetfulness": option_map.get(raw.get("Forgetfulness","No"),0),
+        "PollutionScore": raw.get("PollutionScore", 3),
+        "PollutionCategoryLow": raw.get("PollutionCategoryLow", 0),
+        "PollutionCategoryModerate": raw.get("PollutionCategoryModerate", 0),
+        "PollutionCategoryHigh": raw.get("PollutionCategoryHigh", 0)
     }
- # ---- Convert to DataFrame ----
+
+# Keep the input data for reference/logging
     alz_data_df = pd.DataFrame([full_input])
-    return alz_data_df
+      # ---- Convert to DataFrame ----
+    alz_data_df = alz_data_df.reindex(columns=[
+        "Age", "Gender", "EducationLevel", "BMI", "Smoking",
+        "AlcoholConsumption", "PhysicalActivity", "DietQuality",
+        "SleepQuality", "FamilyHistoryAlzheimers", "CardiovascularDisease",
+        "Diabetes", "Depression", "HeadInjury", "Hypertension",
+        "SystolicBP", "DiastolicBP", "CholesterolTotal", "CholesterolLDL",
+        "CholesterolHDL", "CholesterolTriglycerides", "MMSE",
+        "FunctionalAssessment", "MemoryComplaints", "BehavioralProblems",
+        "ADL", "Confusion", "Disorientation", "PersonalityChanges",
+        "DifficultyCompletingTasks", "Forgetfulness", "PollutionScore",
+        "PollutionCategoryLow", "PollutionCategoryModerate", "PollutionCategoryHigh"
+    ])
 
 
+# full_input is a dict of features
+    full_input_df = pd.DataFrame([full_input])  # always wrap in a list
+    prediction = alz_model.predict(full_input_df)[0]
+
+    return prediction, alz_data_df
+
+
+# -----------------------------
+# Predict
+# prediction = alz_model.predict(alz_data_df)[0] # This line is misplaced and should be called where the function is used.
+
+ 
+
+def validate_input_data(data):
+    # Check for required fields
+    required_fields = ['Age', 'BMI']  # Add your required fields
+    for field in required_fields:
+        if field not in data or pd.isna(data[field]):
+            raise ValueError(f"Missing required field: {field}")
+    
+    # Validate data types and ranges
+    if 'Age' in data and data['Age'] is not None:
+        if not (0 <= data['Age'] <= 120):
+            raise ValueError("Age must be between 0 and 120")
+        
 def prepare_alz_data_robust(full_input):
     """
     Ensure Alzheimer's input is returned as a single-row DataFrame matching the model's expected format.
@@ -971,12 +1339,10 @@ def prepare_alz_data_robust(full_input):
         raise TypeError("Input must be a dict, list of dicts, or single-row DataFrame.")
 
 
-# =======================#
-# TAB 1: ALZHEIMER FORM #
-# =======================#
+
+# TAB 2: ALZHEIMER FORM #
 def alzheimers_prediction_app():
-    st.header("Alzheimer's Prediction")
-    st.title("🧠 Alzheimers Predictor")
+    st.title("🧠 Alzheimer's Predictor")
     st.warning("Complete all fields for accurate assessment")
     # Get nutritional score #
     nutritional_score = compute_nutritional_score()
@@ -993,13 +1359,12 @@ def alzheimers_prediction_app():
         physical_activity = st.slider("Physical Activity (hrs/week)", 0, 20, 3, key='alz_activity')
         diet_quality = nutritional_score
         sleep_quality = st.slider("Sleep Quality (1-5)", 1, 5, 3, key='alz_sleep')
-        family_history_alz = st.selectbox("Family History of Alzheimer's", [0, 1], format_func=lambda x: ["Yes", "No"][x], key='alz_family')
-        cardiovascular_disease = st.selectbox("Cardiovascular Disease", [0, 1], format_func=lambda x: ["Yes", "No"][x], key='alz_cardio')
+        family_history_alz = st.selectbox("Family History of Alzheimer's", [0, 1], key='alz_family')
+        cardiovascular_disease = st.selectbox("Cardiovascular Disease", [0, 1], key='alz_cardio')
 
-
-        diabetes = st.selectbox("Diabetes", [0, 1], format_func=lambda x: ["Yes", "No"][x], key='alz_diabetes')
-        depression = st.selectbox("Depression", [0, 1], format_func=lambda x: ["Yes", "No"][x], key='alz_depression')
-        hypertension = st.selectbox("Hypertension", [0, 1], format_func=lambda x: ["Yes", "No"][x], key='alz_hypertension')
+        diabetes = st.selectbox("Diabetes", [0, 1], key='alz_diabetes')
+        depression = st.selectbox("Depression", [0, 1], key='alz_depression')
+        hypertension = st.selectbox("Hypertension", [0, 1], key='alz_hypertension')
         systolic_bp = st.number_input("Systolic BP", 80, 220, 120, key='alz_systolic')
         diastolic_bp = st.number_input("Diastolic BP", 50, 150, 80, key='alz_diastolic')
         cholesterol_total = st.number_input("Total Cholesterol", 100, 400, 200, key='alz_chol_total')
@@ -1007,24 +1372,30 @@ def alzheimers_prediction_app():
         cholesterol_hdl = st.number_input("HDL", 20, 100, 50, key='alz_hdl')
         cholesterol_triglycerides = st.number_input("Triglycerides", 50, 500, 150, key='alz_trig')
         functional_assessment = st.slider("Functional Assessment (0-5)", 0, 5, 0, key='alz_func')
-        behavioral_problems = st.selectbox("Behavioral Problems", [0, 1], format_func=lambda x: ["Yes", "No"][x], key='alz_behavior')
+        behavioral_problems = st.selectbox("Behavioral Problems", [0, 1], key='alz_behavior')
         adl = st.slider("ADL Score (Activities of Daily Living)", 0, 6, 6, key='alz_adl')
-    
-        st.subheader("Cognitive Assessment")
-        cognitive_col, ethnic_col = st.columns(2)
-    
-        # Cognitive symptoms mapping #
+
+# Add MMSE input
+        mmse = st.slider("MMSE Score (0-30)", 0, 30, 24, key='alz_mmse')
+
+# Add Pollution inputs
+        pollution_score = st.slider("Pollution Score (0-100)", 0, 100, 50, key='alz_pollution_score')
+        pollution_choice = st.selectbox("Pollution Category", ["Low", "Moderate", "High"], key='alz_pollution_cat')
+        pollution_map = {"Low": [1, 0, 0], "Moderate": [0, 1, 0], "High": [0, 0, 1]}
+        pollution_moderate, pollution_high, pollution_low = pollution_map[pollution_choice]
+
+# ============================ #
+# Cognitive Assessment
+# ============================ #
         option_map = {"Yes": 1, "No": 0, "Sometimes": 0.5}
         confusion = option_map[st.selectbox("Confusion", ["Yes", "No", "Sometimes"], key='alz_confusion')]
         disorientation = option_map[st.selectbox("Disorientation", ["Yes", "No", "Sometimes"], key='alz_disorien')]
-        personality_changes = option_map[st.selectbox("Personality Changes", ["Yes", "No", "Sometimes"],   
-                                                      key='alz_personality')]
-        difficulty_tasks = option_map[st.selectbox("Difficulty Completing Tasks", ["Yes", "No", "Sometimes"], 
-                                                   key='alz_tasks')]
+        personality_changes = option_map[st.selectbox("Personality Changes", ["Yes", "No", "Sometimes"], key='alz_personality')]
+        difficulty_tasks = option_map[st.selectbox("Difficulty Completing Tasks", ["Yes", "No", "Sometimes"], key='alz_tasks')]
         forgetfulness = option_map[st.selectbox("Forgetfulness", ["Yes", "No", "Sometimes"], key='alz_forget')]
         memory_complaints = option_map[st.selectbox("Memory Complaints", ["Yes", "No", "Sometimes"], key='alz_memory')]
-        
-        # Head injury mapping #
+
+# Head injury
         head_map = {"None": 0, "Accident": 1, "Violence": 2}
         head_injury = head_map[st.selectbox("Head Injury", ["None", "Accident", "Violence"], key='alz_head')]
         
@@ -1091,27 +1462,136 @@ def alzheimers_prediction_app():
         st.session_state.stress_score = stress_score
 
         submit_alz = st.form_submit_button("🔍 Predict Alzheimer Risk")
+    
+        if submit_alz:
+            try:
+                # Prepare data for prediction
+                alz_inputs = {
+                    "Age": age,
+                    "Gender": gender,
+                    "BMI": bmi,
+                    "EducationLevel": education_years,
+                    "Smoking": is_smoker,
+                    "AlcoholConsumption": alcohol_consumption,
+                    "PhysicalActivity": physical_activity,
+                    "DietQuality": diet_quality,
+                    "SleepQuality": sleep_quality,
+                    "FamilyHistoryAlzheimers": family_history_alz,
+                    "CardiovascularDisease": cardiovascular_disease,
+                    "Diabetes": diabetes,
+                    "Depression": depression,
+                    "Hypertension": hypertension,
+                    "SystolicBP": systolic_bp,
+                    "DiastolicBP": diastolic_bp,
+                    "CholesterolTotal": cholesterol_total,
+                    "CholesterolLDL": cholesterol_ldl,
+                    "CholesterolHDL": cholesterol_hdl,
+                    "CholesterolTriglycerides": cholesterol_triglycerides,
+                    "MMSE": mmse,
+                    "FunctionalAssessment": functional_assessment,
+                    "BehavioralProblems": behavioral_problems,
+                    "ADL": adl,
+                    "Confusion": confusion,
+                    "Disorientation": disorientation,
+                    "PersonalityChanges": personality_changes,
+                    "DifficultyCompletingTasks": difficulty_tasks,
+                    "Forgetfulness": forgetfulness,
+                    "MemoryComplaints": memory_complaints,
+                    "MemoryScore": st.session_state.get("memory_score", 1.0),
+                    "HeadInjury": head_injury,
+                    "Ethnicity": encoded_ethnicity,
+                    "Country": encoded_country,
+                    "Province_Option": encoded_province,
+                    "PollutionScore": pollution_score,
+                    "PollutionCategoryLow": pollution_low,
+                    "PollutionCategoryModerate": pollution_moderate,
+                    "PollutionCategoryHigh": pollution_high,
+                    "CustomStressScore": st.session_state.stress_score
+                }
+                # Convert raw inputs into proper DataFrame for prediction
+                prediction, alz_inputs_df = build_full_input(alz_inputs)
+            
+                # The build_full_input function now returns the prediction and the dataframe
+                # We can use the prediction directly.
+                pred = int(prediction)
 
-    if submit_alz:
-        pred = 1 if mmse < 24 or stress_score > 6 else 0
+                if pred == 1:
+                    st.error("⚠️ HIGH ALZHEIMER RISK DETECTED")
+                    st.markdown("""## 🚨 Immediate Action Recommended:
+        - **Consult a healthcare provider immediately**
+        - Begin cognitive training exercises
+        - Review family medical history
+        - 🧩 Do mental exercises (e.g., puzzles, memory games)
+        - 🏃 Stay physically active (exercise increases brain health)
+        - 🧘 Reduce stress — practice mindfulness or prayer
+        - 👥 Stay socially engaged — talk to friends, join a group
+        - 🥦 Eat brain-healthy foods (nuts, omega-3s, leafy greens)
+        - 🌿 **Use cinnamon regularly** – may protect memory and reduce inflammation
+        - 🚭 Avoid smoking and limit alcohol
+        - 💤 Prioritize sleep and manage depression
+        """)
+                else:
+                    st.success("✅ LOW ALZHEIMER'S RISK DETECTED")
 
-        if pred == 1:
-            st.error("⚠️ HIGH ALZHEIMER RISK DETECTED")
-            st.markdown("""## 🚨 Immediate Action Recommended:
-- **Consult a healthcare provider immediately**
-- Begin cognitive training exercises
-- Review family medical history
-- 🧩 Do mental exercises (e.g., puzzles, memory games)
-- 🏃 Stay physically active (exercise increases brain health)
-- 🧘 Reduce stress — practice mindfulness or prayer
-- 👥 Stay socially engaged — talk to friends, join a group
-- 🥦 Eat brain-healthy foods (nuts, omega-3s, leafy greens)
-- 🌿 **Use cinnamon regularly** – may protect memory and reduce inflammation
-- 🚭 Avoid smoking and limit alcohol
-- 💤 Prioritize sleep and manage depression
-""")
-        else:
-            st.success("✅ LOW ALZHEIMER'S RISK DETECTED")
+                # Get user location
+                city, region, country = get_user_location()
+                location_str = f"{city}, {region}, {country}"
+
+                # Prepare data dict for database save
+                alz_data = {
+                    "user_id": st.session_state.user['id'] if st.session_state.get('user') else "anonymous",
+                    "age": age,
+                    "gender": gender,  # 1 = Male, 0 = Female
+                    "bmi": bmi,
+                    "education_level": education_years,
+                    "smoking": is_smoker,
+                    "alcohol_consumption": alcohol_consumption,
+                    "physical_activity": physical_activity,
+                    "diet_quality": diet_quality,
+                    "sleep_quality": sleep_quality,
+                    "family_history_alzheimers": family_history_alz,
+                    "cardiovascular_disease": cardiovascular_disease,
+                    "diabetes": diabetes,
+                    "depression": depression,
+                    "hypertension": hypertension,
+                    "systolic_bp": systolic_bp,
+                    "diastolic_bp": diastolic_bp,
+                    "cholesterol_total": cholesterol_total,
+                    "cholesterol_ldl": cholesterol_ldl,
+                    "cholesterol_hdl": cholesterol_hdl,
+                    "cholesterol_triglycerides": cholesterol_triglycerides,
+                    "functional_assessment": functional_assessment,
+                    "behavioral_problems": behavioral_problems,
+                    "adl": adl,
+                    "confusion": confusion,
+                    "disorientation": disorientation,
+                    "personality_changes": personality_changes,
+                    "difficulty_completing_tasks": difficulty_tasks,
+                    "forgetfulness": forgetfulness,
+                    "memory_complaints": memory_complaints,
+                    "head_injury": head_injury,
+                    "pollution_score": pollution_score,
+                    "pollution_category_Low": pollution_low,
+                    "pollution_category_Moderate": pollution_moderate,
+                    "pollution_category_High": pollution_high,
+                    "ethnicity": encoded_ethnicity,
+                    "country": encoded_country,
+                    "province_option": encoded_province,
+                    "memory_score": st.session_state.get("memory_score", 1.0),  # <-- Save memory game score
+                    "custom_stress_score": st.session_state.get("stress_score", None),
+                    "location": location_str,
+                    "prediction_result": int(pred)
+                }
+             
+                      
+                response = supabase.table("alzheimers_predictions").insert(alz_data).execute()
+                if response.data:
+                    st.success("alzheimers prediction saved to database!")
+                else:
+                    st.error(f"Failed to save alzheimers prediction: {response.error}")
+
+            except Exception as e:
+                    st.error(f"Error during alzheimers prediction or saving: {e}")
 
         # ===========================
         # 🛠️ Cognitive Health Advice
@@ -1145,33 +1625,34 @@ def alzheimers_prediction_app():
 # ============================#
     st.subheader("🎮 Memory Recall Game")
 
-    WORD_POOL = [
-        "apple", "table", "river", "mountain", "sun", "flower",
-        "clock", "phone", "book", "star", "moon", "chair",
-        "pencil", "car", "glass", "tree", "music", "house",
-        "cloud", "lamp", "keyboard", "shoe", "bottle", "ring"
-    ]
-
-    if 'memory_game' not in st.session_state:
+# Initialize memory game state if not already in session_state
+    if "memory_game" not in st.session_state or st.session_state.memory_game is None:
         st.session_state.memory_game = {
-            "state": "start",
-            "words": [],
-            "start_time": None,
-            "level": 1,
-            "score_history": []
-        }
+    "state": "start",
+    "words": [],
+    "start_time": None,
+    "level": 1,
+    "score_history": []  # <-- Initialize score history
+}
+
+    WORD_POOL = [
+    "apple", "table", "river", "mountain", "sun", "flower",
+    "clock", "phone", "book", "star", "moon", "chair",
+    "pencil", "car", "glass", "tree", "music", "house",
+    "cloud", "lamp", "keyboard", "shoe", "bottle", "ring"
+]
 
     game = st.session_state.memory_game
 
     if game["state"] == "start":
         st.markdown(f"**Level {game['level']}** - You will see {4 + game['level']} words.")
-        if st.button("Start Memory Exercise"):
-            num_words = 4 + game["level"]
-            words = random.sample(WORD_POOL, num_words)
-            game["words"] = words
-            game["start_time"] = time.time()
-            game["state"] = "showing"
-            st.rerun()
+    if st.button("Start Memory Exercise"):
+        num_words = 4 + game["level"]
+        words = random.sample(WORD_POOL, num_words)
+        game["words"] = words
+        game["start_time"] = time.time()
+        game["state"] = "showing"
+        st.experimental_rerun()  # <-- updated rerun method
 
     elif game["state"] == "showing":
         st.write("Memorize these words (5 seconds):")
@@ -1179,150 +1660,47 @@ def alzheimers_prediction_app():
 
         if time.time() - game["start_time"] > 5:
             game["state"] = "recalling"
-            st.rerun()
+            st.experimental_rerun()
 
     elif game["state"] == "recalling":
         with st.form("recall_form"):
             recalled_input = st.text_input("Type the words you remember, separated by commas:")
-            submit = st.form_submit_button("Submit Recall")
+        submit = st.form_submit_button("Submit Recall")
 
-            if submit:
-                recalled = [w.strip().lower() for w in recalled_input.split(",") if w.strip()]
-                correct_words = set(w.lower() for w in game["words"])
-                recalled_set = set(recalled)
+        if submit:
+            recalled = [w.strip().lower() for w in recalled_input.split(",") if w.strip()]
+            correct_words = set(w.lower() for w in game["words"])
+            recalled_set = set(recalled)
 
-                correct_count = len(correct_words & recalled_set)
+            correct_count = len(correct_words & recalled_set)
 
-                st.success(f"You recalled {correct_count} out of {len(game['words'])} correctly.")
+            st.success(f"You recalled {correct_count} out of {len(game['words'])} correctly.")
 
-                if correct_count >= len(game['words']) - 1:
-                    st.balloons()
-                    st.info("🎉 Great job! You advance to the next level.")
-                    game["level"] += 1
-                else:
-                    st.warning("You'll stay on the same level to improve.")
-
-                game["score_history"].append({
-                    "level": game["level"],
-                    "correct": correct_count,
-                    "total": len(game["words"]),
-                    "words": game["words"],
-                    "recalled": recalled
-                })
-
-                game["state"] = "start"
-                game["words"] = []
-                game["start_time"] = None
-                st.rerun()
-
-        if game["score_history"]:
-            with st.expander("📊 Score History"):
-                for i, score in enumerate(reversed(game["score_history"])):
-                    st.write(f"**Round {len(game['score_history']) - i}**: Level {score['level']} - {score['correct']}/{score['total']} correct")
-
-# ================
-# 🧮 Prediction Logic
-# ================
-    if submit_alz:
-            # Prepare data for prediction
-        alz_inputs = {
-                "Age": age,
-                "Gender": gender,
-                "BMI": bmi,
-                "EducationLevel": education_years,
-                "Smoking": is_smoker,
-                "AlcoholConsumption": alcohol_consumption,
-                "PhysicalActivity": physical_activity,
-                "DietQuality": diet_quality,
-                "SleepQuality": sleep_quality,
-                "FamilyHistoryAlzheimers": family_history_alz,
-                "CardiovascularDisease": cardiovascular_disease,
-                "Diabetes": diabetes,
-                "Depression": depression,
-                "Hypertension": hypertension,
-                "SystolicBP": systolic_bp,
-                "DiastolicBP": diastolic_bp,
-                "CholesterolTotal": cholesterol_total,
-                "CholesterolLDL": cholesterol_ldl,
-                "CholesterolHDL": cholesterol_hdl,
-                "CholesterolTriglycerides": cholesterol_triglycerides,
-                "MMSE": mmse,
-                "FunctionalAssessment": functional_assessment,
-                "BehavioralProblems": behavioral_problems,
-                "ADL": adl,
-                "Confusion": confusion,
-                "Disorientation": disorientation,
-                "PersonalityChanges": personality_changes,
-                "DifficultyCompletingTasks": difficulty_tasks,
-                "Forgetfulness": forgetfulness,
-                "MemoryComplaints": memory_complaints,
-                "HeadInjury": head_injury,
-                "ethnicity": selected_ethnicity,
-                "Country": selected_country,
-                "Province_Option": selected_province,
-                "CustomStressScore": st.session_state.stress_score
-            }
-    if submit_alz:
-        try:
-            # Convert raw inputs into proper DataFrame for prediction
-            alz_inputs_df = prepare_alz_data_robust(alz_inputs)
-
-            # Predict Alzheimer’s risk
-            pred = int(alz_model.predict(alz_inputs_df)[0])
-
-            # Get user location
-            city, region, country = get_user_location()
-            location_str = f"{city}, {region}, {country}"
-
-            # Prepare data dict for database save
-            alz_data = {
-                "user_id": st.session_state.user['id'] if st.session_state.get('user') else "anonymous",
-                "age": age,
-                "gender": gender,  # 1 = Male, 0 = Female
-                "bmi": bmi,
-                "education_level": education_years,
-                "smoking": is_smoker,
-                "alcohol_consumption": alcohol_consumption,
-                "physical_activity": physical_activity,
-                "diet_quality": diet_quality,
-                "sleep_quality": sleep_quality,
-                "family_history_alzheimers": family_history_alz,
-                "cardiovascular_disease": cardiovascular_disease,
-                "diabetes": diabetes,
-                "depression": depression,
-                "hypertension": hypertension,
-                "systolic_bp": systolic_bp,
-                "diastolic_bp": diastolic_bp,
-                "cholesterol_total": cholesterol_total,
-                "cholesterol_ldl": cholesterol_ldl,
-                "cholesterol_hdl": cholesterol_hdl,
-                "cholesterol_triglycerides": cholesterol_triglycerides,
-                "functional_assessment": functional_assessment,
-                "behavioral_problems": behavioral_problems,
-                "adl": adl,
-                "confusion": confusion,
-                "disorientation": disorientation,
-                "personality_changes": personality_changes,
-                "difficulty_completing_tasks": difficulty_tasks,
-                "forgetfulness": forgetfulness,
-                "memory_complaints": memory_complaints,
-                "head_injury": head_injury,
-                "ethnicity": selected_ethnicity,
-                "country": selected_country,
-                "province_option": selected_province,
-                "custom_stress_score": st.session_state.get("stress_score", None),
-                "location": location_str,
-                "prediction_result": int(pred)
-        }
-
-            response = supabase.table("alzheimers_predictions").insert(alz_data).execute()
-            if response.data:
-                st.success("alzheimers prediction saved to database!")
+            if correct_count >= len(game['words']) - 1:
+                st.balloons()
+                st.info("🎉 Great job! You advance to the next level.")
+                game["level"] += 1
             else:
-                st.error(f"Failed to save alzheimers prediction: {response.error}")
+                st.warning("You'll stay on the same level to improve.")
 
-        except Exception as e:
-                st.error(f"Error during alzheimers prediction or saving: {e}")
+            game["score_history"].append({
+                "level": game["level"],
+                "correct": correct_count,
+                "total": len(game["words"]),
+                "words": game["words"],
+                "recalled": recalled
+            })
+
+            game["state"] = "start"
+            game["words"] = []
+            game["start_time"] = None
+            st.experimental_rerun()
+
+# Display score history if available
+    if game["score_history"]:
+        with st.expander("📊 Score History"):
+            for i, score in enumerate(reversed(game["score_history"])):
+                st.write(f"**Round {len(game['score_history']) - i}**: "f"Level {score['level']} - {score['correct']}/{score['total']} correct")
     
 # --- Initialize session state ---
 if "user" not in st.session_state:
@@ -1335,49 +1713,22 @@ if "stress_score" not in st.session_state:
     st.session_state.stress_score = 0
 if "location_str" not in st.session_state:
     st.session_state.location_str = {}
+if st.session_state.user is None:
+    st.write("No user is logged in.")
 
-    with st.header("ℹ️ About This App 🧠 African NeuroHealth Dashboard"):
-        st.title("🧠 African NeuroHealth Dashboard")
-        st.markdown("""
-This platform is a culturally attuned, context-aware diagnostic tool tailored for assessing neuro-health risks in African populations. 
-It blends conventional biomedical metrics with locally relevant stressors, lifestyle habits, and cultural practices to offer a truly holistic health assessment experience.
-
-**Key Features:**
-- Environmental exposures (e.g., noise, air pollution)
-- Dietary patterns (including traditional nutrition)
-- Sleep quality and hydration
-- Use of herbal or traditional remedies
-- Psychosocial stressors unique to African settings
-- Ethnocultural identity tracking for precision health insights
-
-**By:** Adebimpe-John Omolola E  
-**Supervisor:** Prof. Bamidele Owoyele Victor  
-**Institution:** University of Ilorin  
-**Principal Investigator:** Prof Mayowa Owolabi  
-**GRASP / NIH / DSI Collaborative Program**
-""")
-
- # --- NAVIGATION AFTER LOGIN ---
+# --- NAVIGATION AFTER LOGIN ---
     page = st.sidebar.radio(
         "Choose a feature:",
-        ["About", "Stroke Prediction", "Alzheimer's Prediction", "Nutrition Tracker", "Profile", "Settings"]
+        ["About", "Stroke Prediction", "Alzheimer's Prediction"]
     )
-
     if page == "Stroke Prediction":
         stroke_prediction_app()
     elif page == "Alzheimer's Prediction":
         alzheimers_prediction_app()
     elif page == "Nutrition Tracker":
         nutrition_tracker_app()
-    elif page == "Profile":
-        st.write(st.session_state.user)
-    elif page == "Settings":
-        st.write("Settings")
-
-else:
-    # Unauthenticated users
-    page = st.radio("Choose an option:", ["Login", "Register", "About"])
-    st.stop()  # Prevent access to app features
+    elif page == "About":
+        about()
 
 
 
