@@ -282,13 +282,7 @@ def smart_load_model(path):
         with open(path, "rb") as f:
             return cloudpickle.load(f)
 
-# Get the current directory
-try:
-    # This works when running as a script
-    current_dir = Path(__file__).parent
-except NameError:
-    # Fallback for interactive environments (like Streamlit sharing)
-    current_dir = Path.cwd()
+current_dir = Path(__file__).resolve().parent
 
 # Define model paths using relative paths
 ALZ_MODEL_PATH = current_dir / "alzheimers_pipeline.joblib"
@@ -1767,6 +1761,7 @@ if st.session_state.user is None:
         nutrition_tracker_app()
     elif page == "About":
         about()
+
 
 
 
