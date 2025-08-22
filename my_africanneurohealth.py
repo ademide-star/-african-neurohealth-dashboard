@@ -1133,29 +1133,29 @@ if submit_stroke_inputs:
         st.error(f"Error during stroke prediction or saving: {e}")
 
     # Prepare database dictionary (separate from stroke_df)
-            db_payload = {
-        "user_id": st.session_state.user['id'] if st.session_state.get('user') else "anonymous",
-        "raw_inputs": inputs,
-        "location": location_str,
-        "prediction_result": float(pred)
+        db_payload = {
+            "user_id": st.session_state.user['id'] if st.session_state.get('user') else "anonymous",
+            "raw_inputs": inputs,
+            "location": location_str,
+            "prediction_result": float(pred)
     }
             
-            logging.basicConfig(level=logging.INFO)
-            logger = logging.getLogger(__name__)
+        logging.basicConfig(level=logging.INFO)
+        logger = logging.getLogger(__name__)
 
 # Use logger instead of print statements
-            logger.info("Prediction saved successfully!")
-            logger.error(f"Error saving to database: {e}")
+        logger.info("Prediction saved successfully!")
+        logger.error(f"Error saving to database: {e}")
 
     # Save to Supabase#
-            response = supabase.table("stroke_predictions").insert(inputs).execute()
-            if response.data:
-                st.success("Stroke prediction saved to database!")
-            else:
-                st.error(f"Failed to save Stroke prediction: {response.error}")
+        response = supabase.table("stroke_predictions").insert(inputs).execute()
+        if response.data:
+            st.success("Stroke prediction saved to database!")
+        else:
+            st.error(f"Failed to save Stroke prediction: {response.error}")
 
-        except Exception as e:
-                st.error(f"Error during Stroke prediction or saving: {e}")
+    except Exception as e:
+            st.error(f"Error during Stroke prediction or saving: {e}")
 
 
 def build_full_input(raw):
@@ -1672,6 +1672,7 @@ if st.session_state.user is None:
         nutrition_tracker_app()
     elif page == "About":
         about()
+
 
 
 
