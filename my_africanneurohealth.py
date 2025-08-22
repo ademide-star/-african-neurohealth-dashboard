@@ -1691,11 +1691,14 @@ if "stress_score" not in st.session_state:
     st.session_state.stress_score = 0
 if "location_str" not in st.session_state:
     st.session_state.location_str = {}
+
+# --- Show message if no user is logged in ---
 if st.session_state.user is None:
     st.write("No user is logged in.")
+    st.stop()  # Stop here so navigation doesn't show until login
 
 # --- NAVIGATION AFTER LOGIN ---
-    page = st.sidebar.selectbox("Choose a page", ["About", "Alzheimer's", "Stroke"])
+page = st.sidebar.selectbox("Choose a page", ["About", "Alzheimer's", "Stroke"])
 alz_model, stroke_model, preprocessor = load_models()
 
 if page == "About":
@@ -1708,10 +1711,8 @@ elif page == "Alzheimer's":
         st.warning("Alzheimer’s page unavailable. Model not loaded.")
 
 elif page == "Stroke":
-    if stroke_model is not None:
-        show_stroke_page(stroke_model)
-    else:
-        st.warning("Stroke page unavailable. Model not loaded.")
+    if stroke_model is not_
+
 
 
 
