@@ -34,11 +34,7 @@ SUPABASE_KEY = st.secrets["SUPABASE_KEY"]
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 logging.basicConfig(level=logging.DEBUG)
 
-
-
-# -------------------------------
-# 1️⃣ Page config
-# -------------------------------
+# Must be the first Streamlit command
 st.set_page_config(
     page_title="AFRICAN NEUROHEALTH",
     page_icon="📊",
@@ -47,128 +43,15 @@ st.set_page_config(
     menu_items={}
 )
 
-
-# -------------------------------
-# 3️⃣ Define model paths
-# -------------------------------
-BASE_DIR = Path(__file__).parent
-ALZ_MODEL_PATH = BASE_DIR / "alzheimers_pipeline.joblib"
-STROKE_MODEL_PATH = BASE_DIR / "stroke_pipeline.joblib"
-ALZ_PREPROCESSOR_PATH = BASE_DIR / "alzheimers_preprocessor.joblib"
-
-# -------------------------------
-# 4️⃣ Load models safely
-# -------------------------------
-def load_models():
-    try:
-        if not ALZ_MODEL_PATH.exists():
-            st.warning(f"Alzheimer's model not found at {ALZ_MODEL_PATH}")
-            return None, None, None
-        if not STROKE_MODEL_PATH.exists():
-            st.warning(f"Stroke model not found at {STROKE_MODEL_PATH}")
-            return None, None, None
-        if not ALZ_PREPROCESSOR_PATH.exists():
-            st.warning(f"Preprocessor not found at {ALZ_PREPROCESSOR_PATH}")
-            return None, None, None
-
-        alz_model = joblib.load(ALZ_MODEL_PATH)
-        stroke_model = joblib.load(STROKE_MODEL_PATH)
-        preprocessor = joblib.load(ALZ_PREPROCESSOR_PATH)
-        st.success("✅ Models loaded successfully!")
-        return alz_model, stroke_model, preprocessor
-
-    except Exception as e:
-        st.error(f"Failed to load models: {e}")
-        return None, None, None
-
-alz_model, stroke_model, preprocessor = load_models()
-
-# -------------------------------
-# 5️⃣ Initialize session state
-# -------------------------------
-if "user" not in st.session_state:
-    st.session_state.user = None
-if "nutritional_data" not in st.session_state:
-    st.session_state.nutritional_data = {}
-if "default_lifestyles" not in st.session_state:
-    st.session_state.default_lifestyles = []
-if "stress_score" not in st.session_state:
-    st.session_state.stress_score = 0
-if "location_str" not in st.session_state:
-    st.session_state.location_str = {}
-
-# -------------------------------
-# 6️⃣ Authentication functions
-# -------------------------------
-def login():
-    st.subheader("Login")
-    username = st.text_input("Username", key="login_user")
-    password = st.text_input("Password", type="password", key="login_pass")
-    if st.button("Login"):
-        if username and password:  # Replace with real validation
-            st.session_state.user = username
-            st.experimental_rerun()  # refresh app
-        else:
-            st.warning("Enter valid credentials")
-
-def register():
-    st.subheader("Register")
-    username = st.text_input("Choose a username", key="reg_user")
-    password = st.text_input("Choose a password", type="password", key="reg_pass")
-    if st.button("Register"):
-        if username and password:
-            # Add registration logic here
-            st.session_state.user = username
-            st.success(f"User {username} registered successfully!")
-            st.experimental_rerun()
-        else:
-            st.warning("Enter valid credentials")
-
-# -------------------------------
-# 7️⃣ Sidebar authentication & navigation
-# -------------------------------
-with st.sidebar:
-    if st.session_state.user is None:
-        st.header("🔐 User Authentication")
-        auth_option = st.radio("Select option:", ["Login", "Register"], key="auth_option")
-        if auth_option == "Login":
-            login()
-        else:
-            register()
-    else:
-        st.write(f"👤 Logged in as: {st.session_state.user}")
-        page = st.selectbox("Choose a page", ["About", "Alzheimer's", "Stroke"], key="page")
-
-# -------------------------------
-# 8️⃣ Main app content
-# -------------------------------
-if st.session_state.user is not None:
-    # If page not yet selected, default to About
-    if "page" not in st.session_state:
-        st.session_state.page = "About"
-
-    page = st.session_state.get("page", "About")
-
-    if page == "About":
-        st.header("Welcome to the African NeuroHealth Dashboard!")
-        st.write("Use the sidebar to navigate to Alzheimer’s or Stroke prediction pages.")
-
-    elif page == "Alzheimer's":
-        if alz_model is not None:
-            show_alzheimer_page(alz_model, preprocessor)
-        else:
-            st.warning("Alzheimer’s page unavailable. Model not loaded.")
-
-    elif page == "Stroke":
-        if stroke_model is not None:
-            show_stroke_page(stroke_model)
-        else:
-            st.warning("Stroke page unavailable. Model not loaded.")
-
-else:
-    st.info("Please log in to access the dashboard features.")
-
-
+# Hide Streamlit style elements (footer, menu)
+hide_streamlit_style = """
+    <style>
+    #MainMenu {visibility: hidden;}  /* Hide hamburger menu */
+    footer {visibility: hidden;}    /* Hide Streamlit footer */
+    header {visibility: hidden;}    /* Hide Streamlit header */
+    </style>
+"""
+st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
 # --- Get User Location ---
 def get_user_location():
@@ -179,43 +62,6 @@ def get_user_location():
     except Exception as e:
         print(f"Error fetching location: {e}")
         return "Unknown", "Unknown", "Unknown"
-# -------------------------------
-# 6️⃣ Demo Authentication
-# -------------------------------
-# Predefined demo users (username: password)
-DEMO_USERS = {
-    "demo_user": "password123",
-    "test_user": "testpass"
-}
-
-def login():
-    st.subheader("Login")
-    username = st.text_input("Username", key="login_user")
-    password = st.text_input("Password", type="password", key="login_pass")
-    if st.button("Login"):
-        if username in DEMO_USERS and DEMO_USERS[username] == password:
-            st.session_state.user = username
-            st.success(f"Logged in as {username}")
-            st.experimental_rerun()
-        else:
-            st.warning("Invalid username or password")
-
-def register():
-    st.subheader("Register (Demo Only)")
-    username = st.text_input("Choose a username", key="reg_user")
-    password = st.text_input("Choose a password", type="password", key="reg_pass")
-    if st.button("Register"):
-        if username and password:
-            if username in DEMO_USERS:
-                st.warning("Username already exists")
-            else:
-                # Add to demo users (only in current session)
-                DEMO_USERS[username] = password
-                st.session_state.user = username
-                st.success(f"User {username} registered successfully!")
-                st.experimental_rerun()
-        else:
-            st.warning("Enter valid credentials")
 
 # ----------------------------
 # LOGIN FUNCTION
@@ -644,7 +490,18 @@ It blends conventional biomedical metrics with locally relevant stressors, lifes
     """)
 
 
-# --- App Feature Functions -
+# --- App Feature Functions ---
+
+# --- Main App Flow ---
+if st.session_state.user is None:
+    with st.sidebar:
+        st.header("🔐 User Authentication")
+        auth_option = st.radio("Select option:", ["Login", "Register"], key="auth_option")
+        if auth_option == "Login":
+            login()
+        else:
+            register()
+
     
 # -------------------
 # Initialize session state
@@ -1823,18 +1680,33 @@ def alzheimers_prediction_app():
             for i, score in enumerate(reversed(game["score_history"])):
                 st.write(f"**Round {len(game['score_history']) - i}**: "f"Level {score['level']} - {score['correct']}/{score['total']} correct")
     
+# --- Initialize session state ---
+if "user" not in st.session_state:
+    st.session_state.user = None
+if "nutritional_data" not in st.session_state:
+    st.session_state.nutritional_data = {}
+if "default_lifestyles" not in st.session_state:
+    st.session_state.default_lifestyles = []
+if "stress_score" not in st.session_state:
+    st.session_state.stress_score = 0
+if "location_str" not in st.session_state:
+    st.session_state.location_str = {}
+if st.session_state.user is None:
+    st.write("No user is logged in.")
 
-
-
-
-
-
-
-
-
-
-
-
+# --- NAVIGATION AFTER LOGIN ---
+    page = st.sidebar.radio(
+        "Choose a feature:",
+        ["About", "Stroke Prediction", "Alzheimer's Prediction"]
+    )
+    if page == "Stroke Prediction":
+        stroke_prediction_app()
+    elif page == "Alzheimer's Prediction":
+        alzheimers_prediction_app()
+    elif page == "Nutrition Tracker":
+        nutrition_tracker_app()
+    elif page == "About":
+        about()
 
 
 
