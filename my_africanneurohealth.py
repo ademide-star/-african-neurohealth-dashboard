@@ -9,6 +9,7 @@ from dotenv import load_dotenv
 import requests
 from dataclasses import dataclass
 from typing import Dict, List, Tuple, Optional
+from pathlib import Path
 import cloudpickle
 import math
 from uuid import UUID
@@ -250,7 +251,21 @@ def custom_stress_score(prefix="", use_container=False):
         
         return level, label, total_score
 
+def smart_load_model(path):
+    """
+    Tries to load a model using joblib first, then falls back to cloudpickle.
+    Works for both .joblib and .pkl files.
+    """
+    if not os.path.exists(path):
+        raise FileNotFoundError(f"Model file not found: {path}")
 
+    try:
+        # Try joblib first (common for scikit-learn)
+        return joblib.load(path)
+    except (AttributeError, EOFError, ImportError, pickle.UnpicklingError):
+        # If joblib fails, try cloudpickle
+        with open(path, "rb") as f:
+            return cloudpickle.load(f)
 
 def smart_load_model(path):
     """
@@ -267,18 +282,55 @@ def smart_load_model(path):
         with open(path, "rb") as f:
             return cloudpickle.load(f)
 
-ALZ_MODEL_PATH = r"C:\Users\sibs2\african-neurohealth-dashboard\alzheimers_pipeline.joblib"
-STROKE_MODEL_PATH = r"C:\Users\sibs2\african-neurohealth-dashboard\stroke_pipeline.joblib"
+# Get the current directory
+try:
+    # This works when running as a script
+    current_dir = Path(__file__).parent
+except NameError:
+    # Fallback for interactive environments (like Streamlit sharing)
+    current_dir = Path.cwd()
 
+# Define model paths using relative paths
+ALZ_MODEL_PATH = current_dir / "alzheimers_pipeline.joblib"
+STROKE_MODEL_PATH = current_dir / "stroke_pipeline.joblib"
+ALZ_PREPROCESSOR_PATH = current_dir / "alzheimers_preprocessor.joblib"
 
-# Load models and preprocessor
-alz_model = joblib.load(ALZ_MODEL_PATH)
-stroke_model = joblib.load(STROKE_MODEL_PATH)
-# Load the pipeline
-pipeline = joblib.load(r"C:\Users\sibs2\african-neurohealth-dashboard\alzheimers_pipeline.joblib")
-preprocessor = joblib.load(r"C:\Users\sibs2\african-neurohealth-dashboard\alzheimers_preprocessor.joblib")
+# Function to load models with error handling
+@st.cache_resource
+def load_models():
+    try:
+        # Check if files exist
+        if not ALZ_MODEL_PATH.exists():
+            st.error(f"Alzheimer's model file not found at {ALZ_MODEL_PATH}")
+            return None, None, None
+            
+        if not STROKE_MODEL_PATH.exists():
+            st.error(f"Stroke model file not found at {STROKE_MODEL_PATH}")
+            return None, None, None
+            
+        if not ALZ_PREPROCESSOR_PATH.exists():
+            st.error(f"Preprocessor file not found at {ALZ_PREPROCESSOR_PATH}")
+            return None, None, None
+            
+        # Load the models
+        alz_model = joblib.load(ALZ_MODEL_PATH)
+        stroke_model = joblib.load(STROKE_MODEL_PATH)
+        preprocessor = joblib.load(ALZ_PREPROCESSOR_PATH)
+        
+        st.success("Models loaded successfully!")
+        return alz_model, stroke_model, preprocessor
+        
+    except Exception as e:
+        st.error(f"Error loading models: {e}")
+        return None, None, None
 
-print("✅ All models loaded successfully!")
+# Load models
+alz_model, stroke_model, preprocessor = load_models()
+
+# Check if models loaded successfully
+if alz_model is None or stroke_model is None or preprocessor is None:
+    st.error("Failed to load models. Please check if the model files are in the correct location.")
+    st.stop()
 
 DEFAULT_FIELDS = {
     "user_id": 0,
@@ -396,9 +448,7 @@ def save_prediction_to_supabase(features, prediction, probability, memory_score=
 def make_prediction(input_data):
     try:
                 # Load the pipeline
-        pipeline = joblib.load(r"C:\Users\sibs2\african-neurohealth-dashboard\alzheimers_pipeline.joblib")
-        stroke_pipeline = joblib.load(r"C:\Users\sibs2\african-neurohealth-dashboard\stroke_pipeline.joblib")
-        preprocessor = joblib.load(r"C:\Users\sibs2\african-neurohealth-dashboard\alzheimers_preprocessor.joblib")
+        pipeline = alz_model  # Assuming alz_model is already loaded as a Pipeline
         
         # Make prediction
         prediction = pipeline.predict(input_data)
@@ -1717,11 +1767,6 @@ if st.session_state.user is None:
         nutrition_tracker_app()
     elif page == "About":
         about()
-
-
-
-
-
 
 
 
