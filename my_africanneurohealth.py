@@ -1035,10 +1035,10 @@ def stroke_prediction_app():
             submit_stroke_inputs = st.form_submit_button("Predict Stroke Risk")
 
             # Collect raw inputs
-if submit_stroke_inputs:
-    try:
+    if submit_stroke_inputs:
+        try:
         # 1️⃣ Build inputs dictionary once
-        raw_inputs = {
+            raw_inputs = {
             'age': age,
             'avg_glucose_level': avg_glucose_level,
             'bmi': bmi,
@@ -1672,6 +1672,7 @@ if st.session_state.user is None:
         nutrition_tracker_app()
     elif page == "About":
         about()
+
 
 
 
