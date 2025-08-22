@@ -250,19 +250,37 @@ def custom_stress_score(prefix="", use_container=False):
         
         return level, label, total_score
 
-import os
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+BASE_DIR = os.path.dirname(os.path.abspath("C:/Users/sibs2/african-neurohealth-dashboard"))
 
+# Build paths dynamically
 ALZ_MODEL_PATH = os.path.join(BASE_DIR, "alzheimers_pipeline.joblib")
 STROKE_MODEL_PATH = os.path.join(BASE_DIR, "stroke_pipeline.joblib")
 PREPROCESSOR_PATH = os.path.join(BASE_DIR, "alzheimers_preprocessor.joblib")
 
-# Load models
-alz_model = joblib.load(ALZ_MODEL_PATH)
-stroke_model = joblib.load(STROKE_MODEL_PATH)
-pipeline = joblib.load(ALZ_MODEL_PATH)  # if it's the same as ALZ_MODEL_PATH
-preprocessor = joblib.load(PREPROCESSOR_PATH)
+def safe_load(path, name):
+    """Safely load a joblib file with friendly error messages."""
+    if not os.path.exists(path):
+        raise FileNotFoundError(
+            f"❌ Could not find {name} at {path}\n"
+            f"👉 Make sure the file is in the same folder as this script or update the path."
+        )
+    try:
+        return joblib.load(path)
+    except Exception as e:
+        raise RuntimeError(
+            f"⚠️ Failed to load {name} from {path}\n"
+            f"Error: {str(e)}\n"
+            f"👉 This may be due to scikit-learn version mismatch or a corrupted file."
+        ) from e
+
+# Load models and preprocessor with safety
+alz_model = safe_load(ALZ_MODEL_PATH, "Alzheimer's model")
+stroke_model = safe_load(STROKE_MODEL_PATH, "Stroke model")
+pipeline = safe_load(ALZ_MODEL_PATH, "Alzheimer's pipeline")   # if pipeline == alz_model
+preprocessor = safe_load(PREPROCESSOR_PATH, "Preprocessor")
+
+print("✅ All models loaded successfully!")
 
 DEFAULT_FIELDS = {
     "user_id": 0,
@@ -1701,6 +1719,7 @@ if st.session_state.user is None:
         nutrition_tracker_app()
     elif page == "About":
         about()
+
 
 
 
