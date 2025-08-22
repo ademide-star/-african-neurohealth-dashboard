@@ -251,34 +251,32 @@ def custom_stress_score(prefix="", use_container=False):
         return level, label, total_score
 
 
-BASE_DIR = os.path.dirname(os.path.abspath("C:/Users/sibs2/african-neurohealth-dashboard"))
 
-# Build paths dynamically
-ALZ_MODEL_PATH = os.path.join(BASE_DIR, "alzheimers_pipeline.joblib")
-STROKE_MODEL_PATH = os.path.join(BASE_DIR, "stroke_pipeline.joblib")
-PREPROCESSOR_PATH = os.path.join(BASE_DIR, "alzheimers_preprocessor.joblib")
-
-def safe_load(path, name):
-    """Safely load a joblib file with friendly error messages."""
+def smart_load_model(path):
+    """
+    Tries to load a model using joblib first, then falls back to cloudpickle.
+    Works for both .joblib and .pkl files.
+    """
     if not os.path.exists(path):
-        raise FileNotFoundError(
-            f"❌ Could not find {name} at {path}\n"
-            f"👉 Make sure the file is in the same folder as this script or update the path."
-        )
+        raise FileNotFoundError(f"Model file not found: {path}")
+
     try:
         return joblib.load(path)
-    except Exception as e:
-        raise RuntimeError(
-            f"⚠️ Failed to load {name} from {path}\n"
-            f"Error: {str(e)}\n"
-            f"👉 This may be due to scikit-learn version mismatch or a corrupted file."
-        ) from e
+    except Exception:
+        # If joblib fails (version mismatch, missing class, etc.), try cloudpickle
+        with open(path, "rb") as f:
+            return cloudpickle.load(f)
 
-# Load models and preprocessor with safety
-alz_model = safe_load(ALZ_MODEL_PATH, "Alzheimer's model")
-stroke_model = safe_load(STROKE_MODEL_PATH, "Stroke model")
-pipeline = safe_load(ALZ_MODEL_PATH, "Alzheimer's pipeline")   # if pipeline == alz_model
-preprocessor = safe_load(PREPROCESSOR_PATH, "Preprocessor")
+ALZ_MODEL_PATH = r"C:\Users\sibs2\african-neurohealth-dashboard\alzheimers_pipeline.joblib"
+STROKE_MODEL_PATH = r"C:\Users\sibs2\african-neurohealth-dashboard\stroke_pipeline.joblib"
+
+
+# Load models and preprocessor
+alz_model = joblib.load(ALZ_MODEL_PATH)
+stroke_model = joblib.load(STROKE_MODEL_PATH)
+# Load the pipeline
+pipeline = joblib.load(r"C:\Users\sibs2\african-neurohealth-dashboard\alzheimers_pipeline.joblib")
+preprocessor = joblib.load(r"C:\Users\sibs2\african-neurohealth-dashboard\alzheimers_preprocessor.joblib")
 
 print("✅ All models loaded successfully!")
 
@@ -1719,6 +1717,7 @@ if st.session_state.user is None:
         nutrition_tracker_app()
     elif page == "About":
         about()
+
 
 
 
