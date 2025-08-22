@@ -259,22 +259,6 @@ def smart_load_model(path):
         raise FileNotFoundError(f"Model file not found: {path}")
 
     try:
-        # Try joblib first (common for scikit-learn)
-        return joblib.load(path)
-    except (AttributeError, EOFError, ImportError, pickle.UnpicklingError):
-        # If joblib fails, try cloudpickle
-        with open(path, "rb") as f:
-            return cloudpickle.load(f)
-
-def smart_load_model(path):
-    """
-    Tries to load a model using joblib first, then falls back to cloudpickle.
-    Works for both .joblib and .pkl files.
-    """
-    if not os.path.exists(path):
-        raise FileNotFoundError(f"Model file not found: {path}")
-
-    try:
         return joblib.load(path)
     except Exception:
         # If joblib fails (version mismatch, missing class, etc.), try cloudpickle
@@ -1729,6 +1713,7 @@ if st.session_state.user is None:
         nutrition_tracker_app()
     elif page == "About":
         about()
+
 
 
 
