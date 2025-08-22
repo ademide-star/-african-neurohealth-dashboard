@@ -283,7 +283,8 @@ def smart_load_model(path):
             return cloudpickle.load(f)
 
 current_dir = Path(__file__).resolve().parent
-Custom unpickler to handle version differences
+
+#Custom unpickler to handle version differences
 class CustomUnpickler(joblib.Unpickler):
     def find_class(self, module, name):
         if module == "sklearn.compose._column_transformer" and name == "_RemainderColsList":
@@ -1777,6 +1778,7 @@ if st.session_state.user is None:
         nutrition_tracker_app()
     elif page == "About":
         about()
+
 
 
 
