@@ -283,7 +283,23 @@ def smart_load_model(path):
             return cloudpickle.load(f)
 
 current_dir = Path(__file__).resolve().parent
+Custom unpickler to handle version differences
+class CustomUnpickler(joblib.Unpickler):
+    def find_class(self, module, name):
+        if module == "sklearn.compose._column_transformer" and name == "_RemainderColsList":
+            # Return a dummy class that mimics the expected behavior
+            class _RemainderColsList(list):
+                pass
+            return _RemainderColsList
+        return super().find_class(module, name)
 
+# Try to load with the custom unpickler
+try:
+    with open("alzheimers_pipeline.joblib", 'rb') as f:
+        alz_model = CustomUnpickler(f).load()
+    st.success("Model loaded successfully with custom unpickler!")
+except Exception as e:
+    st.error(f"Failed to load with custom unpickler: {e}")
 # Define model paths using relative paths
 ALZ_MODEL_PATH = current_dir / "alzheimers_pipeline.joblib"
 STROKE_MODEL_PATH = current_dir / "stroke_pipeline.joblib"
@@ -1761,6 +1777,7 @@ if st.session_state.user is None:
         nutrition_tracker_app()
     elif page == "About":
         about()
+
 
 
 
