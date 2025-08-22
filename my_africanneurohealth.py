@@ -250,16 +250,19 @@ def custom_stress_score(prefix="", use_container=False):
         
         return level, label, total_score
 
-ALZ_MODEL_PATH = r"C:\Users\sibs2\african-neurohealth-dashboard\alzheimers_pipeline.joblib"
-STROKE_MODEL_PATH = r"C:\Users\sibs2\african-neurohealth-dashboard\stroke_pipeline.joblib"
+import os
 
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
-# Load models and preprocessor
+ALZ_MODEL_PATH = os.path.join(BASE_DIR, "alzheimers_pipeline.joblib")
+STROKE_MODEL_PATH = os.path.join(BASE_DIR, "stroke_pipeline.joblib")
+PREPROCESSOR_PATH = os.path.join(BASE_DIR, "alzheimers_preprocessor.joblib")
+
+# Load models
 alz_model = joblib.load(ALZ_MODEL_PATH)
 stroke_model = joblib.load(STROKE_MODEL_PATH)
-# Load the pipeline
-pipeline = joblib.load(r"C:\Users\sibs2\african-neurohealth-dashboard\alzheimers_pipeline.joblib")
-preprocessor = joblib.load(r"C:\Users\sibs2\african-neurohealth-dashboard\alzheimers_preprocessor.joblib")
+pipeline = joblib.load(ALZ_MODEL_PATH)  # if it's the same as ALZ_MODEL_PATH
+preprocessor = joblib.load(PREPROCESSOR_PATH)
 
 DEFAULT_FIELDS = {
     "user_id": 0,
@@ -1698,6 +1701,7 @@ if st.session_state.user is None:
         nutrition_tracker_app()
     elif page == "About":
         about()
+
 
 
 
