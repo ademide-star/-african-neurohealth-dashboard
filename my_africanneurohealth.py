@@ -47,17 +47,6 @@ st.set_page_config(
     menu_items={}
 )
 
-# -------------------------------
-# 2️⃣ Hide Streamlit style elements
-# -------------------------------
-hide_streamlit_style = """
-    <style>
-    #MainMenu {visibility: hidden;}
-    footer {visibility: hidden;}
-    header {visibility: hidden;}
-    </style>
-"""
-st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
 # -------------------------------
 # 3️⃣ Define model paths
@@ -1834,6 +1823,7 @@ def alzheimers_prediction_app():
             for i, score in enumerate(reversed(game["score_history"])):
                 st.write(f"**Round {len(game['score_history']) - i}**: "f"Level {score['level']} - {score['correct']}/{score['total']} correct")
     
+
 
 
 
