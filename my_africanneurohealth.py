@@ -34,7 +34,7 @@ SUPABASE_KEY = st.secrets["SUPABASE_KEY"]
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 logging.basicConfig(level=logging.DEBUG)
 
-# Must be the first Streamlit command
+
 import streamlit as st
 from pathlib import Path
 import joblib
@@ -55,9 +55,9 @@ st.set_page_config(
 # -------------------------------
 hide_streamlit_style = """
     <style>
-    #MainMenu {visibility: hidden;}  /* Hide hamburger menu */
-    footer {visibility: hidden;}     /* Hide Streamlit footer */
-    header {visibility: hidden;}     /* Hide Streamlit header */
+    #MainMenu {visibility: hidden;}
+    footer {visibility: hidden;}
+    header {visibility: hidden;}
     </style>
 """
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
@@ -76,19 +76,18 @@ ALZ_PREPROCESSOR_PATH = BASE_DIR / "alzheimers_preprocessor.joblib"
 def load_models():
     try:
         if not ALZ_MODEL_PATH.exists():
-            st.error(f"Alzheimer's model file not found at {ALZ_MODEL_PATH}")
+            st.warning(f"Alzheimer's model not found at {ALZ_MODEL_PATH}")
             return None, None, None
         if not STROKE_MODEL_PATH.exists():
-            st.error(f"Stroke model file not found at {STROKE_MODEL_PATH}")
+            st.warning(f"Stroke model not found at {STROKE_MODEL_PATH}")
             return None, None, None
         if not ALZ_PREPROCESSOR_PATH.exists():
-            st.error(f"Preprocessor file not found at {ALZ_PREPROCESSOR_PATH}")
+            st.warning(f"Preprocessor not found at {ALZ_PREPROCESSOR_PATH}")
             return None, None, None
 
         alz_model = joblib.load(ALZ_MODEL_PATH)
         stroke_model = joblib.load(STROKE_MODEL_PATH)
         preprocessor = joblib.load(ALZ_PREPROCESSOR_PATH)
-        st.success("✅ Models loaded successfully!")
         return alz_model, stroke_model, preprocessor
 
     except Exception as e:
@@ -112,33 +111,62 @@ if "location_str" not in st.session_state:
     st.session_state.location_str = {}
 
 # -------------------------------
-# 6️⃣ Show message if no user is logged in
+# 6️⃣ Authentication functions
 # -------------------------------
-if st.session_state.user is None:
-    st.write("No user is logged in.")
-    st.stop()  # Stop app until user logs in
+def login():
+    username = st.text_input("Username")
+    password = st.text_input("Password", type="password")
+    if st.button("Login"):
+        # TODO: Add real authentication logic here
+        st.session_state.user = username
+        st.experimental_rerun()  # refresh app to show navigation
+
+def register():
+    username = st.text_input("Choose a username")
+    password = st.text_input("Choose a password", type="password")
+    if st.button("Register"):
+        # TODO: Add registration logic here
+        st.session_state.user = username
+        st.experimental_rerun()
 
 # -------------------------------
-# 7️⃣ Sidebar navigation
+# 7️⃣ Sidebar content
 # -------------------------------
-page = st.sidebar.selectbox("Choose a page", ["About", "Alzheimer's", "Stroke"])
-
-if page == "About":
-    st.write("Welcome to the African NeuroHealth Dashboard!")
-
-elif page == "Alzheimer's":
-    if alz_model is not None:
-        show_alzheimer_page(alz_model, preprocessor)
+with st.sidebar:
+    if st.session_state.user is None:
+        st.header("🔐 User Authentication")
+        auth_option = st.radio("Select option:", ["Login", "Register"], key="auth_option")
+        if auth_option == "Login":
+            login()
+        else:
+            register()
     else:
-        st.warning("Alzheimer’s page unavailable. Model not loaded.")
+        st.write(f"👤 Logged in as: {st.session_state.user}")
 
-elif page == "Stroke":
-    if stroke_model is not None:
-        show_stroke_page(stroke_model)
-    else:
-        st.warning("Stroke page unavailable. Model not loaded.")
+# -------------------------------
+# 8️⃣ Main navigation
+# -------------------------------
+if st.session_state.user is not None:
+    page = st.sidebar.selectbox("Choose a page", ["About", "Alzheimer's", "Stroke"])
 
-st.markdown(hide_streamlit_style, unsafe_allow_html=True)
+    if page == "About":
+        st.header("Welcome to the African NeuroHealth Dashboard!")
+        st.write("Use the sidebar to navigate to Alzheimer’s or Stroke prediction pages.")
+
+    elif page == "Alzheimer's":
+        if alz_model is not None:
+            show_alzheimer_page(alz_model, preprocessor)
+        else:
+            st.warning("Alzheimer’s page unavailable. Model not loaded.")
+
+    elif page == "Stroke":
+        if stroke_model is not None:
+            show_stroke_page(stroke_model)
+        else:
+            st.warning("Stroke page unavailable. Model not loaded.")
+else:
+    st.info("Please log in to access the dashboard features.")
+
 
 # --- Get User Location ---
 def get_user_location():
@@ -1756,6 +1784,7 @@ def alzheimers_prediction_app():
             for i, score in enumerate(reversed(game["score_history"])):
                 st.write(f"**Round {len(game['score_history']) - i}**: "f"Level {score['level']} - {score['correct']}/{score['total']} correct")
     
+
 
 
 
