@@ -1711,7 +1711,12 @@ elif page == "Alzheimer's":
         st.warning("Alzheimer’s page unavailable. Model not loaded.")
 
 elif page == "Stroke":
-    if stroke_model is not_
+    if stroke_model is not None:
+        show_stroke_page(stroke_model)
+    else:
+        st.warning("Stroke page unavailable. Model not loaded.")
+
+
 
 
 
