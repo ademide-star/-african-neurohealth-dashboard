@@ -142,66 +142,11 @@ def register():
                     st.error("Registration failed.")
             except Exception as e:
                 st.error(f"Registration error: {e}")
+                st.error(f"Registration error: {e}")
 
-# Ensure your insertion code matches the actual table structure
-def save_prediction_to_db(features, prediction, probability, memory_score=None):
-    try:
-        # Your database connection code
-        conn_params = {
-            'dbname': 'your_db_name',
-            'user': 'your_username',
-            'password': 'your_password',
-            'host': 'localhost'
-        }
-        
-        conn = psycopg2.connect(**conn_params)
-        cursor = conn.cursor()
-        
-        # Create insert statement that matches your table structure
-        columns = [ "Age", "Gender", "EducationLevel", "BMI", "Smoking",
-        "AlcoholConsumption", "PhysicalActivity", "DietQuality",
-        "SleepQuality", "FamilyHistoryAlzheimers", "CardiovascularDisease",
-        "Diabetes", "Depression", "HeadInjury", "Hypertension",
-        "SystolicBP", "DiastolicBP", "CholesterolTotal", "CholesterolLDL",
-        "CholesterolHDL", "CholesterolTriglycerides", "MMSE",
-        "FunctionalAssessment", "MemoryComplaints", "BehavioralProblems",
-        "ADL", "Confusion", "Disorientation", "PersonalityChanges",
-        "DifficultyCompletingTasks", "Forgetfulness", "PollutionScore",
-        "PollutionCategoryLow", "PollutionCategoryModerate", "PollutionCategoryHigh"  # Your actual column names
-            # ... include all other columns that actually exist
-        "prediction", "probability", "memory_score"  # If memory_score exists
-        ]
-        
-        # Prepare values in the same order
-        values = [
-            features['Age'].iloc[0],
-            features['Gender'].iloc[0],
-            features['EducationLevel'].iloc[0],
-            # ... other feature values
-            prediction[0],
-            probability[0][1],
-            memory_score  # This could be None if not available
-        ]
-        
-        # Create the SQL query
-        placeholders = ', '.join(['%s'] * len(values))
-        query = f"INSERT INTO alzheimers_predictions ({', '.join(columns)}) VALUES ({placeholders})"
-        
-        cursor.execute(query, values)
-        conn.commit()
-        
-    except Exception as e:
-        print(f"Error saving to database: {e}")
-        if conn:
-            conn.rollback()
-    finally:
-        if conn:
-            conn.close()
-            
 def custom_stress_score(prefix="", use_container=False):
     """Calculate stress score with option to avoid nested expanders"""
     title = f"🧮 {prefix} Stress Estimator Based on Cultural & Contextual Stress Factors" 
-    
     # Create either a container or expander based on context
     if use_container:
         container = st.container()
@@ -283,12 +228,7 @@ def smart_load_model(path):
             return cloudpickle.load(f)
 
 # Get the current directory
-try:
-    # This works when running as a script
-    current_dir = Path(__file__).parent
-except NameError:
-    # Fallback for interactive environments (like Streamlit sharing)
-    current_dir = Path.cwd()
+current_dir = Path(__file__).resolve().parent
 
 # Define model paths using relative paths
 ALZ_MODEL_PATH = current_dir / "alzheimers_pipeline.joblib"
