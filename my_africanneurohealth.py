@@ -35,9 +35,6 @@ supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 logging.basicConfig(level=logging.DEBUG)
 
 
-import streamlit as st
-from pathlib import Path
-import joblib
 
 # -------------------------------
 # 1️⃣ Page config
@@ -193,6 +190,43 @@ def get_user_location():
     except Exception as e:
         print(f"Error fetching location: {e}")
         return "Unknown", "Unknown", "Unknown"
+# -------------------------------
+# 6️⃣ Demo Authentication
+# -------------------------------
+# Predefined demo users (username: password)
+DEMO_USERS = {
+    "demo_user": "password123",
+    "test_user": "testpass"
+}
+
+def login():
+    st.subheader("Login")
+    username = st.text_input("Username", key="login_user")
+    password = st.text_input("Password", type="password", key="login_pass")
+    if st.button("Login"):
+        if username in DEMO_USERS and DEMO_USERS[username] == password:
+            st.session_state.user = username
+            st.success(f"Logged in as {username}")
+            st.experimental_rerun()
+        else:
+            st.warning("Invalid username or password")
+
+def register():
+    st.subheader("Register (Demo Only)")
+    username = st.text_input("Choose a username", key="reg_user")
+    password = st.text_input("Choose a password", type="password", key="reg_pass")
+    if st.button("Register"):
+        if username and password:
+            if username in DEMO_USERS:
+                st.warning("Username already exists")
+            else:
+                # Add to demo users (only in current session)
+                DEMO_USERS[username] = password
+                st.session_state.user = username
+                st.success(f"User {username} registered successfully!")
+                st.experimental_rerun()
+        else:
+            st.warning("Enter valid credentials")
 
 # ----------------------------
 # LOGIN FUNCTION
@@ -1800,6 +1834,7 @@ def alzheimers_prediction_app():
             for i, score in enumerate(reversed(game["score_history"])):
                 st.write(f"**Round {len(game['score_history']) - i}**: "f"Level {score['level']} - {score['correct']}/{score['total']} correct")
     
+
 
 
 
