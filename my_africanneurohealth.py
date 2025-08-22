@@ -1035,127 +1035,151 @@ def stroke_prediction_app():
             submit_stroke_inputs = st.form_submit_button("Predict Stroke Risk")
 
             # Collect raw inputs
-    if submit_stroke_inputs:
+   if submit_stroke_inputs:
         try:
-        # 1️⃣ Build inputs dictionary once
+            stroke_inputs_df = prepare_stroke_input_robust(raw_inputs)      
             raw_inputs = {
-            'age': age,
-            'avg_glucose_level': avg_glucose_level,
-            'bmi': bmi,
-            'stress_level': stress_level,
-            'ptsd': 1 if ptsd == "Yes" else 0,
-            'depression_level': depression_level,
-            'diabetes_type': 0 if diabetes_type == "None" else 1,
-            'sleep_hours': sleep_hours,
-            'gender': gender,
-            'work_type': work_type,
-            'residence_type': residence_type,  # unified naming
-            'smoking_status': smoking_status,
-            "systolicbp": systolic_bp,  # consistent lowercase
-            "diastolicbp": diastolic_bp,
-            'salt_intake': salt_intake,
-            'noise_sources': noise_sources,
-            "hypertension": hypertension,
+                'age': age,
+                'avg_glucose_level': avg_glucose_level,
+                'bmi': bmi,
+                'stress_level': stress_level,
+                'ptsd': 1 if ptsd == "Yes" else 0,
+                'depression_level': depression_level,
+                'diabetes_type': 0 if diabetes_type == "None" else 1,
+                'sleep_hours': sleep_hours,
+                'gender': gender,
+                'work_type': work_type,
+                'Residence_type': residence_type,
+                'smoking_status': smoking_status,
+                "SystolicBP": systolic_bp,
+                "DiastolicBP": diastolic_bp,
+                'salt_intake': salt_intake,
+                'noise_sources': noise_sources,
+                "hypertension": hypertension,
+                "heart_disease": heart_disease,
+                "marital_status": marital_status,
+                "chronic_pain": chronic_pain,
+                "hypertension_treatment": hypertension_treatment,
+                "pollution_level_air": pollution_level_air,
+                "pollution_level_water": pollution_level_water,
+                "pollution_level_environmental": pollution_level_environmental,
+                'ethnicity': encoded_ethnicity,
+                'Country': encoded_country,
+                'Province_Option': encoded_province,
+                'CustomStressScore': CustomStressScore
+            }
+
+            # You may need to update the above dictionary to include all required fields
+
+    # 2️⃣ Make prediction using your model
+            if 'stroke_model' in st.session_state:
+                pred = st.session_state.stroke_model.predict(stroke_inputs_df)[0]
+            else:
+                st.error("Model not loaded. Please initialize the model first.")
+                st.stop()
+
+        # 3️⃣ Build inputs dict AFTER pred is defined
+            inputs = {
+            "user_id": st.session_state.user['id'] if st.session_state.get('user') else "anonymous",
+            "age": age,
+            "gender": gender,
             "heart_disease": heart_disease,
+            "hypertension": hypertension,
+            "systolicbp": systolic_bp,
+            "diastolicbp": diastolic_bp,
+            "avg_glucose_level": avg_glucose_level,
+            "bmi": bmi,
             "marital_status": marital_status,
+            "work_type": work_type,
+            "residence_type": residence_type,
+            "smoking_status": smoking_status,
+            "stress_level": stress_level,
+            "ptsd": ptsd,
+            "depression_level": depression_level,
+            "diabetes_type": diabetes_type,
             "chronic_pain": chronic_pain,
+            "sleep_hours": sleep_hours,
             "hypertension_treatment": hypertension_treatment,
+            "salt_intake": salt_intake,
+            "noise_sources": noise_sources,
             "pollution_level_air": pollution_level_air,
             "pollution_level_water": pollution_level_water,
             "pollution_level_environmental": pollution_level_environmental,
-            'customstressscore': CustomStressScore,  # unified lowercase
-            'ethnicity': encoded_ethnicity,
-            'country': encoded_country,
-            'province_option': encoded_province
+            "customstressscore": CustomStressScore,
+            "ethnicity": encoded_ethnicity,
+            "country": encoded_country,
+            "province_option": encoded_province,
+            "prediction_result": float(pred)
         }
 
-        # 2️⃣ Convert to DataFrame
-        stroke_inputs_df = prepare_stroke_input_robust(raw_inputs)
-
-        # 3️⃣ Predict
-        pred = stroke_model.predict(stroke_inputs_df)[0]
-
-        # 4️⃣ Get location string (optional use)
-        city, region, country_name = get_user_location()
-        location_str = f"{city}, {region}, {country_name}"
+        # 4️⃣ Location
+            city, region, country = get_user_location()
+            location_str = f"{city}, {region}, {country}"
 
         # 5️⃣ Display prediction result
-        if pred == 1:
-            st.error("⚠️ HIGH STROKE RISK DETECTED")
-            st.markdown("""
-                ## 🚨 Immediate Action Recommended:
-                - **Consult a healthcare provider immediately**
-                - **Add Saigon Cinnamon and Alligator Pepper to diet**
-                - Monitor blood pressure daily
-                - Avoid strenuous activities
-                - Reduce salt intake to <5g/day
-                - Increase consumption of leafy greens
-                - Limit fried foods and processed meals
-                - Eat more fruits and vegetables (rich in potassium and fiber)
-                - Maintain regular sleep schedule
-                - ⚖️ Maintain a healthy weight (avoid obesity)
+            if pred == 1:
+                st.error("⚠️ HIGH STROKE RISK DETECTED")
+                st.markdown("""
+            ## 🚨 Immediate Action Recommended:
+            - **Consult a healthcare provider immediately**
+            - **Add Saigon Cinnamon and Alligator Pepper to diet**
+            - Monitor blood pressure daily
+            - Avoid strenuous activities
+            - Reduce salt intake to <5g/day
+            - Increase consumption of leafy greens
+            - Limit fried foods and processed meals
+            - Eat more fruits and vegetables (rich in potassium and fiber)
+            - Maintain regular sleep schedule
+            - ⚖️ Maintain a healthy weight (avoid obesity)
             """)
-        else:
-            st.success("✅ LOW STROKE RISK DETECTED")
+            else:
+                st.success("✅ LOW STROKE RISK DETECTED")
 
-        # 6️⃣ Lifestyle suggestions
-        with st.expander("🛠️ Lifestyle Suggestions for Stroke Prevention"):
-            st.markdown("""
-                ### 🍽️ Dietary Recommendations:
-                - Reduce salt intake to <5g/day
-                - Increase consumption of leafy greens
-                - Limit fried foods and processed meals
-                - Eat more fruits and vegetables (rich in potassium and fiber)
-
-                ### 🏃 Physical Activity:
-                - Brisk walking 30 minutes/day
-                - Light stretching morning and evening
-                - Avoid prolonged sitting
-
-                ### 😌 Stress Management:
-                - Practice deep breathing, prayer, or yoga
-                - Maintain regular sleep schedule
-                - Engage in community activities
-
-                ### 🩺 Medical Follow-up:
-                - BP check every 2 weeks
-                - Annual glucose screening
-                - Medication adherence if prescribed
-
-                🧘 Prioritize 7–8 hours of sleep per night  
-                🌿 **Take cinnamon (e.g., Saigon cinnamon) regularly**  
-                🧪 *Helps reduce blood sugar, inflammation, and oxidative stress*  
-                🚭 Stop smoking and reduce alcohol intake  
-                ⚖️ Maintain a healthy weight
+        # Lifestyle suggestions expander
+            with st.expander("🛠️ Lifestyle Suggestions for Stroke Prevention"):
+                st.markdown("""
+            ### 🍽️ Dietary Recommendations:
+            - Reduce salt intake to <5g/day
+            - Increase consumption of leafy greens
+            - Limit fried foods and processed meals
+            - Eat more fruits and vegetables (rich in potassium and fiber)
+            ### 🏃 Physical Activity:
+            - Brisk walking 30 minutes/day
+            - Light stretching morning and evening
+            - Avoid prolonged sitting
+            ### 😌 Stress Management:
+            - Practice deep breathing exercises (e.g., prayer, yoga, deep breathing)
+            - Maintain regular sleep schedule
+            - Engage in community activities
+            ### 🩺 Medical Follow-up:
+            - BP check every 2 weeks
+            - Annual glucose screening
+            - Medication adherence if prescribed
+            🧘 Prioritize 7–8 hours of sleep per night  
+            🌿 **Take cinnamon (e.g., Saigon cinnamon) regularly**  
+            🧪 *Reduces blood sugar, inflammation, and oxidative stress*  
+            🩺 *Supports brain and heart health naturally*  
+            🚭 Stop smoking and reduce alcohol intake  
+            ⚖️ Maintain a healthy weight (avoid obesity)
             """)
+      
 
-    except Exception as e:
-        st.error(f"Error during stroke prediction or saving: {e}")
-
-    # Prepare database dictionary (separate from stroke_df)
-        db_payload = {
+        # 6️⃣ Save to Supabase
+            db_payload = {
             "user_id": st.session_state.user['id'] if st.session_state.get('user') else "anonymous",
             "raw_inputs": inputs,
             "location": location_str,
             "prediction_result": float(pred)
-    }
-            
-        logging.basicConfig(level=logging.INFO)
-        logger = logging.getLogger(__name__)
+        }
+            response = supabase.table("stroke_predictions").insert(db_payload).execute()
 
-# Use logger instead of print statements
-        logger.info("Prediction saved successfully!")
-        logger.error(f"Error saving to database: {e}")
-
-    # Save to Supabase#
-        response = supabase.table("stroke_predictions").insert(inputs).execute()
-        if response.data:
-            st.success("Stroke prediction saved to database!")
-        else:
-            st.error(f"Failed to save Stroke prediction: {response.error}")
-
-    except Exception as e:
+            if response.data:
+                st.success("Stroke prediction saved to database!")
+            elif response.error:
+                st.error(f"Failed to save Stroke prediction: {response.error}")
+        except Exception as e:
             st.error(f"Error during Stroke prediction or saving: {e}")
+   
 
 
 def build_full_input(raw):
@@ -1672,6 +1696,7 @@ if st.session_state.user is None:
         nutrition_tracker_app()
     elif page == "About":
         about()
+
 
 
 
