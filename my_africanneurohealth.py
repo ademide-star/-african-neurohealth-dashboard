@@ -88,6 +88,7 @@ def load_models():
         alz_model = joblib.load(ALZ_MODEL_PATH)
         stroke_model = joblib.load(STROKE_MODEL_PATH)
         preprocessor = joblib.load(ALZ_PREPROCESSOR_PATH)
+        st.success("✅ Models loaded successfully!")
         return alz_model, stroke_model, preprocessor
 
     except Exception as e:
@@ -114,23 +115,31 @@ if "location_str" not in st.session_state:
 # 6️⃣ Authentication functions
 # -------------------------------
 def login():
-    username = st.text_input("Username")
-    password = st.text_input("Password", type="password")
+    st.subheader("Login")
+    username = st.text_input("Username", key="login_user")
+    password = st.text_input("Password", type="password", key="login_pass")
     if st.button("Login"):
-        # TODO: Add real authentication logic here
-        st.session_state.user = username
-        st.experimental_rerun()  # refresh app to show navigation
+        if username and password:  # Replace with real validation
+            st.session_state.user = username
+            st.experimental_rerun()  # refresh app
+        else:
+            st.warning("Enter valid credentials")
 
 def register():
-    username = st.text_input("Choose a username")
-    password = st.text_input("Choose a password", type="password")
+    st.subheader("Register")
+    username = st.text_input("Choose a username", key="reg_user")
+    password = st.text_input("Choose a password", type="password", key="reg_pass")
     if st.button("Register"):
-        # TODO: Add registration logic here
-        st.session_state.user = username
-        st.experimental_rerun()
+        if username and password:
+            # Add registration logic here
+            st.session_state.user = username
+            st.success(f"User {username} registered successfully!")
+            st.experimental_rerun()
+        else:
+            st.warning("Enter valid credentials")
 
 # -------------------------------
-# 7️⃣ Sidebar content
+# 7️⃣ Sidebar authentication & navigation
 # -------------------------------
 with st.sidebar:
     if st.session_state.user is None:
@@ -142,12 +151,17 @@ with st.sidebar:
             register()
     else:
         st.write(f"👤 Logged in as: {st.session_state.user}")
+        page = st.selectbox("Choose a page", ["About", "Alzheimer's", "Stroke"], key="page")
 
 # -------------------------------
-# 8️⃣ Main navigation
+# 8️⃣ Main app content
 # -------------------------------
 if st.session_state.user is not None:
-    page = st.sidebar.selectbox("Choose a page", ["About", "Alzheimer's", "Stroke"])
+    # If page not yet selected, default to About
+    if "page" not in st.session_state:
+        st.session_state.page = "About"
+
+    page = st.session_state.get("page", "About")
 
     if page == "About":
         st.header("Welcome to the African NeuroHealth Dashboard!")
@@ -164,8 +178,10 @@ if st.session_state.user is not None:
             show_stroke_page(stroke_model)
         else:
             st.warning("Stroke page unavailable. Model not loaded.")
+
 else:
     st.info("Please log in to access the dashboard features.")
+
 
 
 # --- Get User Location ---
@@ -1784,6 +1800,7 @@ def alzheimers_prediction_app():
             for i, score in enumerate(reversed(game["score_history"])):
                 st.write(f"**Round {len(game['score_history']) - i}**: "f"Level {score['level']} - {score['correct']}/{score['total']} correct")
     
+
 
 
 
