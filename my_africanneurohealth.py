@@ -264,83 +264,18 @@ def load_models():
         st.error(f"Error loading models: {e}")
         return None, None, None
 
-# Load models
-alz_model, stroke_model, preprocessor = load_models()
-
-# Check if models loaded successfully
-if alz_model is None or stroke_model is None or preprocessor is None:
-    st.error("Failed to load models. Please check if the model files are in the correct location.")
-    st.stop()
-
-DEFAULT_FIELDS = {
-    "user_id": 0,
-    "age": 0,
-    "gender": "None",
-    "heart_disease": 0,
-    "hypertension": 0,
-    "systolic_bp": 0,
-    "diastolic_bp": 0,
-    "avg_glucose_level": 0,
-    "bmi": 0,
-    "marital_status": "None",
-    "work_type": "None",
-    "residence_type": "None",
-    "smoking_status": "None",
-    "stress_level": 0,
-    "ptsd": 0,
-    "depression_level": 0,
-    "diabetes_type": "None",
-    "chronic_pain": "None",
-    "sleep_hours": 0,
-    "hypertension_treatment": "None",
-    "salt_intake": "None",
-    "noise_sources": "None",
-    "pollution_level_air": 0,
-    "pollution_level_water": 0,
-    "pollution_level_environmental": 0,
-    "custom_stress_score": 0,
-    "ethnicity": "None",
-    "country": "None",
-    "province_option": "None",
-}
+    # Load models into session state once
+if "stroke_model" not in st.session_state or "alz_model" not in st.session_state:
+    alz_model, stroke_model, preprocessor = load_models()
+    
+    if alz_model and stroke_model and preprocessor:
+        st.session_state.alz_model = alz_model
+        st.session_state.stroke_model = stroke_model
+        st.session_state.preprocessor = preprocessor
+    else:
+        st.stop()  # Prevent app from running without models
 
 
-CATEGORY_MAPS = {
-    "gender": {"Male": 0, "Female": 1},
-    "marital_status": {"Single": 0, "Married": 1, "Divorced": 2, "Widowed": 3},
-    "work_type": {"Private": 0, "Self-employed": 1, "Govt job": 2, "Children": 3, "Never worked": 4},
-    "residence_type": {"Urban": 0, "Rural": 1},
-    "smoking_status": {"formerly smoked": 0, "never smoked": 1, "smokes": 2},
-    "stress_level": {0:0, 1:1, 2:2, 3:3},  # already numeric
-    "ptsd": {0:0, 1:1},
-    "depression_level": {0:0, 1:1, 2:2},
-    "diabetes_type": {"None": 0, "Type 1": 1, "Type 2": 2, "Gestational": 3},
-    "chronic_pain": {"None": 0, "Rheumatism": 1, "Osteoarthritis": 2, "Others": 3},
-    "hypertension_treatment": {"None": 0, "Herbal": 1, "Drugs": 2},
-    "salt_intake": {"None": 0, "Little": 1, "Moderate": 2, "High": 3},
-    "noise_sources": {
-        "Mosque": 0, "Church": 1, "Market": 2, "Block-Industry": 3, 
-        "Grinding-Machine": 4, "Welder": 5, "Club-House": 6, "Generator": 7, "None": 8
-    },
-    "pollution_level_air": {"None": 0, "Low": 1, "Moderate": 2, "High": 3},
-    "pollution_level_water": {"None": 0, "Low": 1, "Moderate": 2, "High": 3},
-    "pollution_level_environmental": {"None": 0, "Low": 1, "Moderate": 2, "High": 3},
-}
-
-# ======================
-# Default numeric values
-# ======================
-NUMERIC_DEFAULTS = {
-    "age": 45,
-    "systolic_bp": 120,
-    "diastolic_bp": 80,
-    "avg_glucose_level": 110.0,
-    "bmi": 25.0,
-    "sleep_hours": 7.0,
-    "CustomStressScore": 5,
-    "heart_disease": 0,
-    "hypertension": 0,
-}
 
 def save_prediction_to_supabase(features, prediction, probability, memory_score=None):
     try:
@@ -664,8 +599,6 @@ payload = {
     # include other fields...
 }
 
-    
-
 def nutrition_tracker_app():
     st.header("Nutrition Tracker")
     st.title("🥗 Nutrition Tracker")
@@ -804,6 +737,23 @@ if st.sidebar.button("Save Nutritional Data"):
 
         except Exception as e:
             st.error(f"Error saving nutrition data: {e}")
+            st.stop()
+
+def validate_input_data(data):
+    # Check for required fields
+    required_fields = ['age', 'bmi']  # Add your required fields
+    for field in required_fields:
+        if field not in data or pd.isna(data[field]):
+            raise ValueError(f"Missing required field: {field}")
+    
+    # Validate data types and ranges
+    if 'age' in data and data['age'] is not None:
+        if not (0 <= data['age'] <= 120):
+            raise ValueError("Age must be between 0 and 120")
+        
+# -------------------
+# TAB 1: Stroke Prediction
+# -------------------  
 
 def map_salt_intake(val):
     keys = ['salt_intake_High', 'salt_intake_Moderate', 'salt_intake_Little', 'salt_intake_None']
@@ -838,7 +788,7 @@ def map_noise_source(val):
 
 # Add other mapping functions similarly if needed (nutritional_lifestyle, hypertension_treatment, chronic_pain)...
 
-def prepare_stroke_input_robust(raw_input):
+def prepare_stroke_input_numeric(raw_input):
     numeric_features = ['age', 'avg_glucose_level', 'bmi', 'stress_level',
                         'ptsd', 'depression_level', 'diabetes_type', 'sleep_hours']
     
@@ -890,18 +840,7 @@ def prepare_stroke_input_robust(raw_input):
     df = df[expected_columns]
 
     return df
-def validate_input_data(data):
-    # Check for required fields
-    required_fields = ['Age', 'BMI']  # Add your required fields
-    for field in required_fields:
-        if field not in data or pd.isna(data[field]):
-            raise ValueError(f"Missing required field: {field}")
-    
-    # Validate data types and ranges
-    if 'Age' in data and data['Age'] is not None:
-        if not (0 <= data['Age'] <= 120):
-            raise ValueError("Age must be between 0 and 120")
-        
+
 def build_full_input(raw):
     full_input = {}
 
@@ -974,15 +913,37 @@ def build_full_input(raw):
 
     # ---- Custom stress score (optional) ----
     full_input["CustomStressScore"] = float(raw.get("CustomStressScore", 0))
+    
+       # 4️⃣ Create DataFrame
+    stroke_inputs_df = pd.DataFrame([full_input])
 
-    # ---- Convert to DataFrame ----
-    input_df = pd.DataFrame([full_input])
+    # 5️⃣ Ensure all expected columns exist
+    for col in expected_columns:
+        if col not in stroke_inputs_df.columns:
+            stroke_inputs_df[col] = 0
 
-    # ---- Reorder and reindex to match model input if needed ----
-    # Optional: if you have a saved list of expected columns (from training), you can do:
-    # input_df = input_df.reindex(columns=expected_columns, fill_value=0)
+    stroke_inputs_df = stroke_inputs_df[expected_columns]
 
-    return input_df
+    return stroke_inputs_df
+
+          # Collect raw inputs
+    # Utility functions to safely convert inputs
+def safe_int(val, default=None):
+    try:
+        if val is None or val == "None" or val == "":
+            return default
+        return int(val)
+    except (ValueError, TypeError):
+        return default
+
+def safe_float(val, default=None):
+    try:
+        if val is None or val == "None" or val == "":
+            return default
+        return float(val)
+    except (ValueError, TypeError):
+        return default
+
 
 # --- Streamlit app ---
 # --- Stroke Predictor ---
@@ -1003,7 +964,6 @@ def stroke_prediction_app():
             hypertension = st.selectbox("Hypertension", [0, 1], format_func=lambda x: ["Yes", "No"][x])
             systolic_bp = st.number_input("Systolic BP", 80, 220, 120, key='stroke_systolic')
             diastolic_bp = st.number_input("Diastolic BP", 50, 150, 80, key='stroke_diastolic')
-            avg_glucose = st.number_input("Average Glucose Level", min_value=50.0, max_value=300.0, value=110.0)
             bmi = st.number_input("BMI", min_value=10.0, max_value=60.0, value=25.0)
             marital_status = st.selectbox("Marital Status", ["Single", "Married", "Divorced", "Widowed"])
             work_type = st.selectbox("Work Type", ["Private", "Self-employed", "Govt job", "Children", "Never worked"])
@@ -1034,52 +994,51 @@ def stroke_prediction_app():
 
             submit_stroke_inputs = st.form_submit_button("Predict Stroke Risk")
 
-            # Collect raw inputs
+  
     if submit_stroke_inputs:
         try:
-            stroke_inputs_df = prepare_stroke_input_robust(raw_inputs)      
+        # 1️⃣ Collect raw inputs safely
             raw_inputs = {
-                'age': age,
-                'avg_glucose_level': avg_glucose_level,
-                'bmi': bmi,
-                'stress_level': stress_level,
-                'ptsd': 1 if ptsd == "Yes" else 0,
-                'depression_level': depression_level,
-                'diabetes_type': 0 if diabetes_type == "None" else 1,
-                'sleep_hours': sleep_hours,
-                'gender': gender,
-                'work_type': work_type,
-                'Residence_type': residence_type,
-                'smoking_status': smoking_status,
-                "SystolicBP": systolic_bp,
-                "DiastolicBP": diastolic_bp,
-                'salt_intake': salt_intake,
-                'noise_sources': noise_sources,
-                "hypertension": hypertension,
-                "heart_disease": heart_disease,
-                "marital_status": marital_status,
-                "chronic_pain": chronic_pain,
-                "hypertension_treatment": hypertension_treatment,
-                "pollution_level_air": pollution_level_air,
-                "pollution_level_water": pollution_level_water,
-                "pollution_level_environmental": pollution_level_environmental,
-                'ethnicity': encoded_ethnicity,
-                'Country': encoded_country,
-                'Province_Option': encoded_province,
-                'CustomStressScore': CustomStressScore
-            }
+            'age': safe_int(age),
+            'avg_glucose_level': safe_float(avg_glucose_level),
+            'bmi': safe_float(bmi),
+            'ptsd': 1 if ptsd == "Yes" else 0,
+            'depression_level': safe_int(depression_level),
+            'sleep_hours': safe_int(sleep_hours),
+            'gender': 1 if gender == "Male" else 0,
+            'ethnicity': encoded_ethnicity,  # required
+            'country': encoded_country,      # required
+            'province': encoded_province,    # required
+            'ever_married': 1 if marital_status=="Yes" else 0,
+            'work_type': safe_int(work_type),
+            'residence_type': safe_int(residence_type),
+            'smoking_status': safe_int(smoking_status),
+            'salt_intake': safe_int(salt_intake),
+            'noise_sources': safe_int(noise_sources),
+            'stress_level': safe_int(stress_level),
+            'chronic_pain': safe_int(chronic_pain),
+            'hypertension_treatment': safe_int(hypertension_treatment),
+            'diabetes_type': safe_int(diabetes_type),
+            'hypertension': 1 if hypertension else 0,
+            'heart_disease': 1 if heart_disease else 0,
+            'CustomStressScore': safe_float(CustomStressScore),
+            'location_str': raw_inputs.get('location_str', None) if 'raw_inputs' in locals() else None
+        }
 
-            # You may need to update the above dictionary to include all required fields
+        # 2️⃣ Create DataFrame from raw_inputs
+            stroke_inputs_df = prepare_stroke_input_numeric(raw_inputs)
 
-    # 2️⃣ Make prediction using your model
-            if 'stroke_model' in st.session_state:
+
+        # 3️⃣ Make prediction
+            if "stroke_model" in st.session_state:
                 pred = st.session_state.stroke_model.predict(stroke_inputs_df)[0]
             else:
                 st.error("Model not loaded. Please initialize the model first.")
                 st.stop()
 
-        # 3️⃣ Build inputs dict AFTER pred is defined
-            inputs = {
+
+        # 4️⃣ Build inputs dict AFTER pred is defined
+            db_payload = {
             "user_id": st.session_state.user['id'] if st.session_state.get('user') else "anonymous",
             "age": age,
             "gender": gender,
@@ -1105,16 +1064,16 @@ def stroke_prediction_app():
             "pollution_level_air": pollution_level_air,
             "pollution_level_water": pollution_level_water,
             "pollution_level_environmental": pollution_level_environmental,
-            "customstressscore": CustomStressScore,
+            "custom_stress_score": CustomStressScore,
             "ethnicity": encoded_ethnicity,
             "country": encoded_country,
-            "province_option": encoded_province,
+            "province": encoded_province,
             "prediction_result": float(pred)
         }
 
         # 4️⃣ Location
             city, region, country = get_user_location()
-            location_str = f"{city}, {region}, {country}"
+            location_str = f"{city}, {region}, {province_map}, {country}, Africa"
 
         # 5️⃣ Display prediction result
             if pred == 1:
@@ -1163,23 +1122,42 @@ def stroke_prediction_app():
             ⚖️ Maintain a healthy weight (avoid obesity)
             """)
       
+            pred = st.session_state.stroke_model.predict(stroke_inputs_df)[0]
 
-        # 6️⃣ Save to Supabase
-            db_payload = {
-            "user_id": st.session_state.user['id'] if st.session_state.get('user') else "anonymous",
-            "raw_inputs": inputs,
-            "location": location_str,
-            "prediction_result": float(pred)
-        }
+        # 4️⃣ Build payload for Supabase
+        # Only include columns that exist in the table
+            stroke_table_columns = [
+            "user_id","gender","ethnicity","country","prediction_result","age","BMI","avg_glucose_level","SystolicBP",
+            "DiastolicBP","sleep_hours","salt_intake","stress_level","custom_stress_score",
+            "depression_level","ptsd","chronic_pain","diabetes_type","hypertension",
+            "hypertension_treatment","heart_disease","smoking_status","work_type",
+            "residence_type","noise_sources","pollution_level_air","pollution_level_water",
+            "pollution_level_environmental","marital_status"
+        ]
+
+            db_payload = {"user_id": st.session_state.user['id'] if st.session_state.get('user') else "anonymous",
+                      "prediction_result": float(pred)}
+
+            for col in stroke_table_columns:
+                if col in raw_inputs:
+                    db_payload[col] = raw_inputs[col]
+
+        # Optional: include raw_inputs jsonb if the column exists
+            if 'raw_inputs' in stroke_table_columns:
+                db_payload['raw_inputs'] = raw_inputs
+# Optional: include location_str if column exists
+            if 'location_str' in stroke_table_columns:
+                db_payload['location_str'] = raw_inputs.get('location_str')
+        # 5️⃣ Save to Supabase
             response = supabase.table("stroke_predictions").insert(db_payload).execute()
 
             if response.data:
-                st.success("Stroke prediction saved to database!")
+                st.success("Stroke prediction saved successfully!")
             elif response.error:
-                st.error(f"Failed to save Stroke prediction: {response.error}")
+                st.error(f"Failed to save stroke prediction: {response.error}")
+
         except Exception as e:
-            st.error(f"Error during Stroke prediction or saving: {e}")
-   
+            st.error(f"Error during stroke prediction or saving: {e}")
 
 
 def build_full_input(raw):
@@ -1240,75 +1218,84 @@ def build_full_input(raw):
         "PollutionCategoryHigh": raw.get("PollutionCategoryHigh", 0)
     }
 
-# Keep the input data for reference/logging
-    alz_data_df = pd.DataFrame([full_input])
-      # ---- Convert to DataFrame ----
-    alz_data_df = alz_data_df.reindex(columns=[
-        "Age", "Gender", "EducationLevel", "BMI", "Smoking",
-        "AlcoholConsumption", "PhysicalActivity", "DietQuality",
-        "SleepQuality", "FamilyHistoryAlzheimers", "CardiovascularDisease",
-        "Diabetes", "Depression", "HeadInjury", "Hypertension",
-        "SystolicBP", "DiastolicBP", "CholesterolTotal", "CholesterolLDL",
-        "CholesterolHDL", "CholesterolTriglycerides", "MMSE",
-        "FunctionalAssessment", "MemoryComplaints", "BehavioralProblems",
-        "ADL", "Confusion", "Disorientation", "PersonalityChanges",
-        "DifficultyCompletingTasks", "Forgetfulness", "PollutionScore",
-        "PollutionCategoryLow", "PollutionCategoryModerate", "PollutionCategoryHigh"
-    ])
-
-
-# full_input is a dict of features
-    full_input_df = pd.DataFrame([full_input])  # always wrap in a list
-    prediction = alz_model.predict(full_input_df)[0]
-
-    return prediction, alz_data_df
-
-
-# -----------------------------
-# Predict
-# prediction = alz_model.predict(alz_data_df)[0] # This line is misplaced and should be called where the function is used.
-
- 
-
-def validate_input_data(data):
-    # Check for required fields
-    required_fields = ['Age', 'BMI']  # Add your required fields
-    for field in required_fields:
-        if field not in data or pd.isna(data[field]):
-            raise ValueError(f"Missing required field: {field}")
+def prepare_alzheimers_input_numeric(raw_inputs):
+    # Ensure raw_inputs is always a dictionary, even if None is passed
+    if raw_inputs is None:
+        raw_inputs = {}
     
-    # Validate data types and ranges
-    if 'Age' in data and data['Age'] is not None:
-        if not (0 <= data['Age'] <= 120):
-            raise ValueError("Age must be between 0 and 120")
-        
-def prepare_alz_data_robust(full_input):
-    """
-    Ensure Alzheimer's input is returned as a single-row DataFrame matching the model's expected format.
-    """
-
-    if isinstance(full_input, pd.DataFrame):
-        if len(full_input) == 1:
-            return full_input.reset_index(drop=True)
-        else:
-            raise ValueError("Expected a single-row DataFrame, got multiple rows.")
-
-    elif isinstance(full_input, dict):
-        return pd.DataFrame([full_input])
-
-    elif isinstance(full_input, list):
-        if len(full_input) == 1 and isinstance(full_input[0], dict):
-            return pd.DataFrame(full_input)
-        else:
-            raise ValueError("List input must contain exactly one dictionary.")
-
-    else:
-        raise TypeError("Input must be a dict, list of dicts, or single-row DataFrame.")
-
-
-
+    # Define all expected columns for the Alzheimer's model
+    expected_columns = [
+        'FunctionalAssessment', 'PhysicalActivity', 'Smoking', 'AlcoholConsumption', 
+        'Gender', 'PersonalityChanges', 'EducationLevel', 'FamilyHistoryAlzheimers', 
+        'Confusion', 'Hypertension', 'Disorientation', 'Forgetfulness', 'ADL', 
+        'CholesterolHDL', 'BehavioralProblems', 'DiastolicBP', 'CardiovascularDisease', 
+        'BMI', 'Depression', 'DietQuality', 'SystolicBP', 'Diabetes', 'CholesterolTotal', 
+        'MMSE', 'MemoryComplaints', 'Age', 'CholesterolTriglycerides', 'SleepQuality', 
+        'HeadInjury', 'CholesterolLDL', 'DifficultyCompletingTasks'
+    ]
+    
+    # Create a dictionary with default values for all expected columns
+    default_values = {
+        'FunctionalAssessment': 0, 'PhysicalActivity': 0, 'Smoking': 0, 
+        'AlcoholConsumption': 0, 'Gender': 0, 'PersonalityChanges': 0, 
+        'EducationLevel': 0, 'FamilyHistoryAlzheimers': 0, 'Confusion': 0, 
+        'Hypertension': 0, 'Disorientation': 0, 'Forgetfulness': 0, 'ADL': 0, 
+        'CholesterolHDL': 0.0, 'BehavioralProblems': 0, 'DiastolicBP': 0, 
+        'CardiovascularDisease': 0, 'BMI': 0.0, 'Depression': 0, 'DietQuality': 0, 
+        'SystolicBP': 0, 'Diabetes': 0, 'CholesterolTotal': 0.0, 'MMSE': 0, 
+        'MemoryComplaints': 0, 'Age': 0, 'CholesterolTriglycerides': 0.0, 
+        'SleepQuality': 0, 'HeadInjury': 0, 'CholesterolLDL': 0.0, 
+        'DifficultyCompletingTasks': 0
+    }
+    
+    # Initialize the full input with default values
+    full_input = default_values.copy()
+    
+    # Update with actual values from raw_inputs where available
+    for col in expected_columns:
+        if col in raw_inputs:
+            # Handle different data types appropriately
+            if col in ['Age', 'BMI', 'CholesterolHDL', 'CholesterolTotal', 
+                      'CholesterolTriglycerides', 'CholesterolLDL']:
+                try:
+                    full_input[col] = float(raw_inputs[col])
+                except (ValueError, TypeError):
+                    full_input[col] = default_values[col]
+            elif col in ['MMSE', 'EducationLevel', 'SystolicBP', 'DiastolicBP']:
+                try:
+                    full_input[col] = int(raw_inputs[col])
+                except (ValueError, TypeError):
+                    full_input[col] = default_values[col]
+            elif col == 'Gender':
+                # Convert gender to numeric (0 for Female, 1 for Male)
+                gender_val = raw_inputs.get('Gender', 'Female')
+                full_input['Gender'] = 1 if str(gender_val).lower() == 'male' else 0
+            else:
+                # For binary/categorical features
+                val = raw_inputs[col]
+                if str(val).lower() in ['1', 'true', 'yes', 'y']:
+                    full_input[col] = 1
+                else:
+                    try:
+                        full_input[col] = int(val)
+                    except (ValueError, TypeError):
+                        full_input[col] = default_values[col]
+    
+    # Create DataFrame
+    alzheimer_inputs_df = pd.DataFrame([full_input])
+    
+    # Ensure all expected columns are present
+    alzheimer_inputs_df = alzheimer_inputs_df[expected_columns]
+    
+    return alzheimer_inputs_df
+    
+    
+    
 # TAB 2: ALZHEIMER FORM #
 def alzheimers_prediction_app():
+    pred = None
+    alzheimer_inputs_df = None
+    raw_inputs = {}  # Ensure raw_inputs is always a dictionary
     st.title("🧠 Alzheimer's Predictor")
     st.warning("Complete all fields for accurate assessment")
     # Get nutritional score #
@@ -1430,10 +1417,10 @@ def alzheimers_prediction_app():
 
         submit_alz = st.form_submit_button("🔍 Predict Alzheimer Risk")
     
-        if submit_alz:
+    if submit_alz:
             try:
                 # Prepare data for prediction
-                alz_inputs = {
+                raw_inputs = {
                     "Age": age,
                     "Gender": gender,
                     "BMI": bmi,
@@ -1476,11 +1463,16 @@ def alzheimers_prediction_app():
                     "CustomStressScore": st.session_state.stress_score
                 }
                 # Convert raw inputs into proper DataFrame for prediction
-                prediction, alz_inputs_df = build_full_input(alz_inputs)
-            
+                alzheimer_inputs_df = prepare_alzheimers_input_numeric(alzheimer_inputs_df)
+                if st.session_state.alz_model is None:
+                    st.error("Alzheimer's model not loaded. Please initialize the model first.")
+                    st.stop()
+
+                pred = st.session_state.alz_model.predict(alzheimer_inputs_df)[0]
+
                 # The build_full_input function now returns the prediction and the dataframe
                 # We can use the prediction directly.
-                pred = int(prediction)
+                pred = int(pred)
 
                 if pred == 1:
                     st.error("⚠️ HIGH ALZHEIMER RISK DETECTED")
@@ -1549,16 +1541,68 @@ def alzheimers_prediction_app():
                     "location": location_str,
                     "prediction_result": int(pred)
                 }
-             
-                      
-                response = supabase.table("alzheimers_predictions").insert(alz_data).execute()
-                if response.data:
-                    st.success("alzheimers prediction saved to database!")
+                if not raw_inputs:
+                    st.error("Please provide all required inputs.")
+                    return
+            
+        # Prepare the input data
+                alzheimer_inputs_df = prepare_alzheimers_input_numeric(raw_inputs)
+        
+        # Check if DataFrame was created successfully
+                if alzheimer_inputs_df is None or alzheimer_inputs_df.empty:
+                    st.error("Failed to prepare input data for prediction.")
+                    return
+            
+        # Make prediction using your model
+                if 'alzheimer_model' in st.session_state:
+            # Get prediction from model
+                    prediction_result = st.session_state.alzheimer_model.predict(alzheimer_inputs_df)
+            
+            # Check if we got a valid prediction
+                if prediction_result is not None and len(prediction_result) > 0:
+                    pred = prediction_result[0]
+                
+                # Only proceed if we have a valid prediction
+                if pred is not None:
+                    # Prepare database dictionary
+                    db_payload = {
+                        "user_id": st.session_state.user['id'] if st.session_state.get('user') else "anonymous",
+                        "raw_inputs": raw_inputs,
+                        "prediction_result": float(pred)
+                    }
+                    
+                    # Save to database
+                    response = supabase.table("alzheimer_predictions").insert(db_payload).execute()
+                    if response.data:
+                        st.success("Alzheimer's prediction saved to database!")
+                    else:
+                        st.error(f"Failed to save Alzheimer's prediction: {response.error}")
                 else:
-                    st.error(f"Failed to save alzheimers prediction: {response.error}")
-
+                    st.error("Prediction returned no result.")
+                    return
             except Exception as e:
-                    st.error(f"Error during alzheimers prediction or saving: {e}")
+        # Check if the error occurred during DataFrame creation or prediction
+                if alzheimer_inputs_df is None:
+                    st.error(f"Error during input preparation for Alzheimer's prediction: {e}")
+            else:
+                st.error(f"Error during Alzheimer's prediction: {e}")
+                return
+    
+    # Now safely check the prediction result
+    if pred is not None:
+        try:
+            # Convert to float first, then to int for comparison
+            pred_value = float(pred)
+            if int(pred_value) == 1:
+                st.warning("The model predicts a high risk of Alzheimer's disease.")
+                # Display additional information or recommendations
+            else:
+                st.success("The model predicts a low risk of Alzheimer's disease.")
+                # Display additional information or recommendations
+        except (ValueError, TypeError):
+            st.error(f"Invalid prediction value: {pred}")
+    else:
+        st.error("Prediction was not completed successfully. Please check the inputs and try again.")
 
         # ===========================
         # 🛠️ Cognitive Health Advice
@@ -1696,12 +1740,6 @@ if st.session_state.user is None:
         nutrition_tracker_app()
     elif page == "About":
         about()
-
-
-
-
-
-
 
 
 
