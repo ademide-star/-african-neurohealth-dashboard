@@ -48,7 +48,7 @@ logging.basicConfig(level=logging.DEBUG)
 hide_streamlit_style = """
     <style>
     /* Hide Streamlit default header, footer, and menu */
-    #MainMenu {visibility: hidden;}
+    #MainMenu {visibility: visible;}
     footer {visibility: hidden;}
     header {visibility: hidden;}
 
@@ -1781,6 +1781,7 @@ if st.session_state.user is None:
         nutrition_tracker_app()
     elif page == "About":
         about()
+
 
 
 
