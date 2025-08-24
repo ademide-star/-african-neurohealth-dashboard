@@ -1,4 +1,15 @@
 import streamlit as st
+import streamlit as st
+
+# Must be the very first Streamlit command
+st.set_page_config(
+    page_title="AFRICAN NEUROHEALTH",
+    page_icon="📊",
+    layout="wide",
+    initial_sidebar_state="expanded",
+)
+
+
 import pandas as pd
 import numpy as np
 import joblib
@@ -34,14 +45,6 @@ SUPABASE_KEY = st.secrets["SUPABASE_KEY"]
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 logging.basicConfig(level=logging.DEBUG)
 
-# Must be the first Streamlit command
-st.set_page_config(
-    page_title="AFRICAN NEUROHEALTH",
-    page_icon="📊",
-    layout="wide",
-    initial_sidebar_state="expanded",
-    menu_items={}
-)
 
 # Hide Streamlit style elements (footer, menu)
 hide_streamlit_style = """
@@ -1760,5 +1763,6 @@ if st.session_state.user is None:
         nutrition_tracker_app()
     elif page == "About":
         about()
+
 
 
