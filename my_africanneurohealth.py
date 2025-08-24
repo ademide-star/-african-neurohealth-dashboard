@@ -1181,41 +1181,7 @@ def build_full_input(raw):
     # -----------------------------
     # Numeric-only full input
     full_input = {
-        "Age": raw.get("age", 65),
-        "Gender": int(raw.get("Gender", 1)),
-        "EducationLevel": int(raw.get("EducationLevel", 1)),
-        "BMI": raw.get("BMI", 25.0),
-        "Smoking": int(raw.get("Smoking", 0)),
-        "AlcoholConsumption": raw.get("AlcoholConsumption", 2),
-        "PhysicalActivity": raw.get("PhysicalActivity", 3),
-        "DietQuality": raw.get("DietQuality", 3),
-        "SleepQuality": raw.get("SleepQuality", 3),
-        "FamilyHistoryAlzheimers": int(raw.get("FamilyHistoryAlzheimers", 0)),
-        "CardiovascularDisease": int(raw.get("CardiovascularDisease", 0)),
-        "Diabetes": int(raw.get("Diabetes", 0)),
-        "Depression": int(raw.get("Depression", 0)),
-        "HeadInjury": head_map.get(raw.get("HeadInjury","None"), 0),
-        "Hypertension": int(raw.get("Hypertension",0)),
-        "SystolicBP": raw.get("SystolicBP", 120),
-        "DiastolicBP": raw.get("DiastolicBP", 80),
-        "CholesterolTotal": raw.get("CholesterolTotal", 200),
-        "CholesterolLDL": raw.get("CholesterolLDL", 130),
-        "CholesterolHDL": raw.get("CholesterolHDL", 50),
-        "CholesterolTriglycerides": raw.get("CholesterolTriglycerides", 150),
-        "MMSE": mmse,
-        "FunctionalAssessment": raw.get("FunctionalAssessment", 0),
-        "MemoryComplaints": option_map.get(raw.get("MemoryComplaints","No"),0),
-        "BehavioralProblems": int(raw.get("BehavioralProblems",0)),
-        "ADL": raw.get("ADL",6),
-        "Confusion": option_map.get(raw.get("Confusion","No"),0),
-        "Disorientation": option_map.get(raw.get("Disorientation","No"),0),
-        "PersonalityChanges": option_map.get(raw.get("PersonalityChanges","No"),0),
-        "DifficultyCompletingTasks": option_map.get(raw.get("DifficultyCompletingTasks","No"),0),
-        "Forgetfulness": option_map.get(raw.get("Forgetfulness","No"),0),
-        "PollutionScore": raw.get("PollutionScore", 3),
-        "PollutionCategoryLow": raw.get("PollutionCategoryLow", 0),
-        "PollutionCategoryModerate": raw.get("PollutionCategoryModerate", 0),
-        "PollutionCategoryHigh": raw.get("PollutionCategoryHigh", 0)
+        
     }
 
 def prepare_alzheimers_input_numeric(raw_inputs):
@@ -1288,14 +1254,57 @@ def prepare_alzheimers_input_numeric(raw_inputs):
     alzheimer_inputs_df = alzheimer_inputs_df[expected_columns]
     
     return alzheimer_inputs_df
-    
-    
-    
+
+
+def raw_inputs_collection():
+        # Collect all required inputs
+        raw_inputs = {}
+        # Numeric inputs
+        raw_inputs['Age'] = st.number_input('Age', min_value=0, max_value=120, value=50)
+        raw_inputs['BMI'] = st.number_input('BMI', min_value=10.0, max_value=50.0, value=25.0)
+        raw_inputs['MMSE'] = st.number_input('MMSE Score', min_value=0, max_value=30, value=25)
+        raw_inputs['EducationLevel'] = st.number_input('Education Level', min_value=0, max_value=20, value=12)
+        raw_inputs['SystolicBP'] = st.number_input('Systolic Blood Pressure', min_value=80, max_value=200, value=120)
+        raw_inputs['DiastolicBP'] = st.number_input('Diastolic Blood Pressure', min_value=50, max_value=120, value=80)
+        raw_inputs['CholesterolHDL'] = st.number_input('HDL Cholesterol', min_value=20.0, max_value=100.0, value=50.0)
+        raw_inputs['CholesterolLDL'] = st.number_input('LDL Cholesterol', min_value=50.0, max_value=200.0, value=100.0)
+        raw_inputs['CholesterolTotal'] = st.number_input('Total Cholesterol', min_value=100.0, max_value=300.0, value=200.0)
+        raw_inputs['CholesterolTriglycerides'] = st.number_input('Triglycerides', min_value=50.0, max_value=500.0, value=150.0)
+        
+        # Binary/categorical inputs
+        raw_inputs['Gender'] = st.selectbox('Gender', ['Male', 'Female'])
+        raw_inputs['Hypertension'] = st.selectbox('Hypertension', ['No', 'Yes'])
+        raw_inputs['Diabetes'] = st.selectbox('Diabetes', ['No', 'Yes'])
+        raw_inputs['CardiovascularDisease'] = st.selectbox('Cardiovascular Disease', ['No', 'Yes'])
+        raw_inputs['FamilyHistoryAlzheimers'] = st.selectbox('Family History of Alzheimer\'s', ['No', 'Yes'])
+        raw_inputs['HeadInjury'] = st.selectbox('History of Head Injury', ['No', 'Yes'])
+        
+        # Additional binary inputs
+        binary_options = ['No', 'Yes']
+        raw_inputs['Smoking'] = st.selectbox('Smoking', binary_options)
+        raw_inputs['AlcoholConsumption'] = st.selectbox('Alcohol Consumption', binary_options)
+        raw_inputs['PhysicalActivity'] = st.selectbox('Physical Activity', binary_options)
+        raw_inputs['Depression'] = st.selectbox('Depression', binary_options)
+        raw_inputs['Forgetfulness'] = st.selectbox('Forgetfulness', binary_options)
+        raw_inputs['Confusion'] = st.selectbox('Confusion', binary_options)
+        raw_inputs['Disorientation'] = st.selectbox('Disorientation', binary_options)
+        raw_inputs['PersonalityChanges'] = st.selectbox('Personality Changes', binary_options)
+        raw_inputs['BehavioralProblems'] = st.selectbox('Behavioral Problems', binary_options)
+        raw_inputs['DifficultyCompletingTasks'] = st.selectbox('Difficulty Completing Tasks', binary_options)
+        raw_inputs['MemoryComplaints'] = st.selectbox('Memory Complaints', binary_options)
+        
+        # Additional inputs with different scales
+        raw_inputs['SleepQuality'] = st.slider('Sleep Quality', 0, 10, 5)
+        raw_inputs['DietQuality'] = st.slider('Diet Quality', 0, 10, 5)
+        raw_inputs['FunctionalAssessment'] = st.slider('Functional Assessment', 0, 10, 5)
+        raw_inputs['ADL'] = st.slider('Activities of Daily Living', 0, 10, 5)
+        
+        
 # TAB 2: ALZHEIMER FORM #
 def alzheimers_prediction_app():
     pred = None
     alzheimer_inputs_df = None
-    raw_inputs = {}  # Ensure raw_inputs is always a dictionary
+
     st.title("🧠 Alzheimer's Predictor")
     st.warning("Complete all fields for accurate assessment")
     # Get nutritional score #
@@ -1463,34 +1472,64 @@ def alzheimers_prediction_app():
                     "CustomStressScore": st.session_state.stress_score
                 }
                 # Convert raw inputs into proper DataFrame for prediction
-                alzheimer_inputs_df = prepare_alzheimers_input_numeric(alzheimer_inputs_df)
-                if st.session_state.alz_model is None:
+                # 1️⃣ Prepare inputs
+                alzheimer_inputs_df = prepare_alzheimers_input_numeric(raw_inputs)
+
+                if alzheimer_inputs_df is None or alzheimer_inputs_df.empty:
+                    st.error("Input preparation failed: no valid features for prediction.")
+                    st.stop()
+
+# 2️⃣ Ensure model exists
+                if "alz_model" not in st.session_state or st.session_state.alz_model is None:
                     st.error("Alzheimer's model not loaded. Please initialize the model first.")
                     st.stop()
 
+# 3️⃣ Make prediction
                 pred = st.session_state.alz_model.predict(alzheimer_inputs_df)[0]
 
-                # The build_full_input function now returns the prediction and the dataframe
-                # We can use the prediction directly.
-                pred = int(pred)
-
+# 4️⃣ Display results
                 if pred == 1:
                     st.error("⚠️ HIGH ALZHEIMER RISK DETECTED")
                     st.markdown("""## 🚨 Immediate Action Recommended:
-        - **Consult a healthcare provider immediately**
-        - Begin cognitive training exercises
-        - Review family medical history
-        - 🧩 Do mental exercises (e.g., puzzles, memory games)
-        - 🏃 Stay physically active (exercise increases brain health)
-        - 🧘 Reduce stress — practice mindfulness or prayer
-        - 👥 Stay socially engaged — talk to friends, join a group
-        - 🥦 Eat brain-healthy foods (nuts, omega-3s, leafy greens)
-        - 🌿 **Use cinnamon regularly** – may protect memory and reduce inflammation
-        - 🚭 Avoid smoking and limit alcohol
-        - 💤 Prioritize sleep and manage depression
-        """)
+- **Consult a healthcare provider immediately**
+- Begin cognitive training exercises
+- Review family medical history
+- 🧩 Do mental exercises (e.g., puzzles, memory games)
+- 🏃 Stay physically active (exercise increases brain health)
+- 🧘 Reduce stress — practice mindfulness or prayer
+- 👥 Stay socially engaged — talk to friends, join a group
+- 🥦 Eat brain-healthy foods (nuts, omega-3s, leafy greens)
+- 🌿 **Use cinnamon regularly** – may protect memory and reduce inflammation
+- 🚭 Avoid smoking and limit alcohol
+- 💤 Prioritize sleep and manage depression
+""")
                 else:
                     st.success("✅ LOW ALZHEIMER'S RISK DETECTED")
+
+# 5️⃣ Expandable lifestyle suggestions
+                with st.expander("🛠️ Lifestyle Suggestions for Alzheimer's Prevention"):
+                    st.markdown("""
+### 🍽️ Dietary Recommendations:
+- Increase omega-3 fatty acids (fish, flax seeds)
+- Consume antioxidant-rich foods (berries, dark chocolate)
+- Eat leafy green vegetables daily
+- Reduce processed sugars and refined carbs
+
+### 🏃 Physical Activity:
+- Aerobic exercise 3–5 times/week
+- Strength training 2–3 times/week
+- Balance and coordination exercises
+
+### 😌 Mental Wellness:
+- Practice meditation or mindfulness
+- Maintain social connections
+- Learn new skills or languages
+
+### 🩺 Medical Follow-up:
+- Annual cognitive screening after age 60
+- Manage vascular risk factors (blood pressure, cholesterol)
+- Medication review with doctor
+""")
 
                 # Get user location
                 city, region, country = get_user_location()
@@ -1554,10 +1593,10 @@ def alzheimers_prediction_app():
                     return
             
         # Make prediction using your model
-                if 'alzheimer_model' in st.session_state:
+                if 'alz_model' in st.session_state:
             # Get prediction from model
-                    prediction_result = st.session_state.alzheimer_model.predict(alzheimer_inputs_df)
-            
+                    prediction_result = st.session_state.alz_model.predict(alzheimer_inputs_df)
+
             # Check if we got a valid prediction
                 if prediction_result is not None and len(prediction_result) > 0:
                     pred = prediction_result[0]
@@ -1574,9 +1613,10 @@ def alzheimers_prediction_app():
                     # Save to database
                     response = supabase.table("alzheimer_predictions").insert(db_payload).execute()
                     if response.data:
-                        st.success("Alzheimer's prediction saved to database!")
-                    else:
+                        st.success("Alzheimer's prediction saved successfully!")
+                    elif response.error:
                         st.error(f"Failed to save Alzheimer's prediction: {response.error}")
+                
                 else:
                     st.error("Prediction returned no result.")
                     return
@@ -1601,92 +1641,65 @@ def alzheimers_prediction_app():
                 # Display additional information or recommendations
         except (ValueError, TypeError):
             st.error(f"Invalid prediction value: {pred}")
-    else:
-        st.error("Prediction was not completed successfully. Please check the inputs and try again.")
 
-        # ===========================
-        # 🛠️ Cognitive Health Advice
-        # ===========================
-        with st.expander("🛠️ Cognitive Health Suggestions"):
-            st.markdown("""
-### 🍽️ Dietary Recommendations:
-- Increase omega-3 fatty acids (fish, flax seeds)
-- Consume antioxidant-rich foods (berries, dark chocolate)
-- Eat leafy green vegetables daily
-- Reduce processed sugars and refined carbs
 
-### 🏃 Physical Activity:
-- Aerobic exercise 3–5 times/week
-- Strength training 2–3 times/week
-- Balance and coordination exercises
+    st.subheader("🧩 Memory Recall Game")
 
-### 😌 Mental Wellness:
-- Practice meditation or mindfulness
-- Maintain social connections
-- Learn new skills or languages
-
-### 🩺 Medical Follow-up:
-- Annual cognitive screening after age 60
-- Manage vascular risk factors (blood pressure, cholesterol)
-- Medication review with doctor
-""")
-
-# ============================#
-# TAB 2: MEMORY RECALL GAME#
-# ============================#
-    st.subheader("🎮 Memory Recall Game")
-
-# Initialize memory game state if not already in session_state
+    # --- Initialize memory game state ---
     if "memory_game" not in st.session_state or st.session_state.memory_game is None:
         st.session_state.memory_game = {
-    "state": "start",
-    "words": [],
-    "start_time": None,
-    "level": 1,
-    "score_history": []  # <-- Initialize score history
-}
-
-    WORD_POOL = [
-    "apple", "table", "river", "mountain", "sun", "flower",
-    "clock", "phone", "book", "star", "moon", "chair",
-    "pencil", "car", "glass", "tree", "music", "house",
-    "cloud", "lamp", "keyboard", "shoe", "bottle", "ring"
-]
+            "state": "start",
+            "words": [],
+            "start_time": None,
+            "level": 1,
+            "score_history": []
+        }
 
     game = st.session_state.memory_game
+    WORD_POOL = [
+        "apple", "table", "river", "mountain", "sun", "flower",
+        "clock", "phone", "book", "star", "moon", "chair",
+        "pencil", "car", "glass", "tree", "music", "house",
+        "cloud", "lamp", "keyboard", "shoe", "bottle", "ring"
+    ]
 
+    # --- Start screen ---
     if game["state"] == "start":
         st.markdown(f"**Level {game['level']}** - You will see {4 + game['level']} words.")
-    if st.button("Start Memory Exercise"):
-        num_words = 4 + game["level"]
-        words = random.sample(WORD_POOL, num_words)
-        game["words"] = words
-        game["start_time"] = time.time()
-        game["state"] = "showing"
-        st.experimental_rerun()  # <-- updated rerun method
+        if st.button("Start Memory Exercise"):
+            num_words = 4 + game["level"]
+            words = random.sample(WORD_POOL, num_words)
+            game["words"] = words
+            game["start_time"] = time.time()
+            game["state"] = "showing"
+            st.rerun()
 
+    # --- Showing words ---
     elif game["state"] == "showing":
         st.write("Memorize these words (5 seconds):")
         st.info(", ".join(game["words"]))
-
         if time.time() - game["start_time"] > 5:
             game["state"] = "recalling"
-            st.experimental_rerun()
+            st.rerun()
 
+    # --- Recalling words ---
     elif game["state"] == "recalling":
         with st.form("recall_form"):
             recalled_input = st.text_input("Type the words you remember, separated by commas:")
-        submit = st.form_submit_button("Submit Recall")
+            submit = st.form_submit_button("Submit Recall")
+
+        recalled = []  # Ensure variable exists
+        correct_count = 0
 
         if submit:
             recalled = [w.strip().lower() for w in recalled_input.split(",") if w.strip()]
             correct_words = set(w.lower() for w in game["words"])
             recalled_set = set(recalled)
-
             correct_count = len(correct_words & recalled_set)
 
             st.success(f"You recalled {correct_count} out of {len(game['words'])} correctly.")
 
+            # Level progression
             if correct_count >= len(game['words']) - 1:
                 st.balloons()
                 st.info("🎉 Great job! You advance to the next level.")
@@ -1694,6 +1707,7 @@ def alzheimers_prediction_app():
             else:
                 st.warning("You'll stay on the same level to improve.")
 
+            # Save score in history
             game["score_history"].append({
                 "level": game["level"],
                 "correct": correct_count,
@@ -1702,16 +1716,22 @@ def alzheimers_prediction_app():
                 "recalled": recalled
             })
 
+            # Reset game state
             game["state"] = "start"
             game["words"] = []
             game["start_time"] = None
-            st.experimental_rerun()
+            st.rerun()
 
-# Display score history if available
+    # --- Display score history ---
     if game["score_history"]:
         with st.expander("📊 Score History"):
             for i, score in enumerate(reversed(game["score_history"])):
-                st.write(f"**Round {len(game['score_history']) - i}**: "f"Level {score['level']} - {score['correct']}/{score['total']} correct")
+                st.write(
+                    f"**Round {len(game['score_history']) - i}**: "
+                    f"Level {score['level']} - {score['correct']}/{score['total']} correct"
+                )
+
+
     
 # --- Initialize session state ---
 if "user" not in st.session_state:
@@ -1740,7 +1760,4 @@ if st.session_state.user is None:
         nutrition_tracker_app()
     elif page == "About":
         about()
-
-
-
 
