@@ -56,18 +56,6 @@ hide_streamlit_default = """
 """
 st.markdown(hide_streamlit_default, unsafe_allow_html=True)
 
-# ✅ Add your custom sidebar logo and title
-with st.sidebar:
-    st.image("your_logo.png", use_container_width=True)  # Add your logo (replace with your file path or URL)
-    st.markdown("<h2 style='text-align: center;'>🧠 African NeuroHealth</h2>", unsafe_allow_html=True)
-    st.write("---")  # Divider
-
-    # Example of keeping your navigation/variables visible
-    page = st.radio("📌 Navigate", ["Home", "Prediction", "Insights", "About"])
-    age = st.slider("Age", 20, 100, 65)
-    gender = st.selectbox("Gender", ["Male", "Female"])
-
-
 
 # --- Get User Location ---
 def get_user_location():
@@ -1776,6 +1764,7 @@ if st.session_state.user is None:
         nutrition_tracker_app()
     elif page == "About":
         about()
+
 
 
 
