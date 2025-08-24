@@ -1748,14 +1748,18 @@ if "stress_score" not in st.session_state:
     st.session_state.stress_score = 0
 if "location_str" not in st.session_state:
     st.session_state.location_str = {}
+
+# --- Show message if no user is logged in ---
 if st.session_state.user is None:
     st.write("No user is logged in.")
 
-# --- NAVIGATION AFTER LOGIN ---
+# --- NAVIGATION (always available if logged in) ---
+else:
     page = st.sidebar.radio(
         "Choose a feature:",
-        ["About", "Stroke Prediction", "Alzheimer's Prediction"]
+        ["About", "Stroke Prediction", "Alzheimer's Prediction", "Nutrition Tracker"]
     )
+
     if page == "Stroke Prediction":
         stroke_prediction_app()
     elif page == "Alzheimer's Prediction":
@@ -1764,6 +1768,8 @@ if st.session_state.user is None:
         nutrition_tracker_app()
     elif page == "About":
         about()
+
+
 
 
 
