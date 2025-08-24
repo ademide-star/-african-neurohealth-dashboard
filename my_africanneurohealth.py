@@ -1,5 +1,4 @@
 import streamlit as st
-import streamlit as st
 
 # Must be the very first Streamlit command
 st.set_page_config(
@@ -46,15 +45,7 @@ supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 logging.basicConfig(level=logging.DEBUG)
 
 
-# Hide Streamlit style elements (footer, menu)
-hide_streamlit_style = """
-    <style>
-    #MainMenu {visibility: hidden;}  /* Hide hamburger menu */
-    footer {visibility: hidden;}    /* Hide Streamlit footer */
-    header {visibility: hidden;}    /* Hide Streamlit header */
-    </style>
-"""
-st.markdown(hide_streamlit_style, unsafe_allow_html=True)
+
 
 # --- Get User Location ---
 def get_user_location():
@@ -1763,6 +1754,7 @@ if st.session_state.user is None:
         nutrition_tracker_app()
     elif page == "About":
         about()
+
 
 
 
