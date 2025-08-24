@@ -142,7 +142,7 @@ def register():
                     st.error("Registration failed.")
             except Exception as e:
                 st.error(f"Registration error: {e}")
-                st.error(f"Registration error: {e}")
+
 
 def custom_stress_score(prefix="", use_container=False):
     """Calculate stress score with option to avoid nested expanders"""
@@ -1760,4 +1760,5 @@ if st.session_state.user is None:
         nutrition_tracker_app()
     elif page == "About":
         about()
+
 
