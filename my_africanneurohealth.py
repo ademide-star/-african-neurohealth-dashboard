@@ -45,31 +45,27 @@ supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 logging.basicConfig(level=logging.DEBUG)
 
 # Hide all Streamlit style elements (menu, footer, header, status bar, toolbar, blank space)
-hide_streamlit_style = """
+# Hide Streamlit default elements
+hide_streamlit_default = """
     <style>
-    /* Hide Streamlit default header, and footer*
-    footer {visibility: hidden;}
-    header {visibility: hidden;}
-
-    /* Hide top toolbar (run, stop, settings) */
-    .stAppToolbar {display: none;}
-
-    /* Hide blank space at the top */
-    .block-container {
-        padding-top: 1rem;  /* adjust as needed */
-    }
-
-    /* Hide sidebar completely (optional) */
-    section[data-testid="stSidebar"] {display: none;}
-
-    /* Ensure expander stays visible */
-    .stExpander {
-        visibility: visible !important;
-        display: block !important;
-    }
+    #MainMenu {visibility: hidden;}   /* Hide Streamlit menu */
+    footer {visibility: hidden;}      /* Hide Streamlit footer */
+    header {visibility: hidden;}      /* Hide Streamlit header */
+    .stAppToolbar {visibility: hidden;} /* Hide Streamlit toolbar (GitHub/Settings/About) */
     </style>
 """
-st.markdown(hide_streamlit_style, unsafe_allow_html=True)
+st.markdown(hide_streamlit_default, unsafe_allow_html=True)
+
+# ✅ Add your custom sidebar logo and title
+with st.sidebar:
+    st.image("your_logo.png", use_container_width=True)  # Add your logo (replace with your file path or URL)
+    st.markdown("<h2 style='text-align: center;'>🧠 African NeuroHealth</h2>", unsafe_allow_html=True)
+    st.write("---")  # Divider
+
+    # Example of keeping your navigation/variables visible
+    page = st.radio("📌 Navigate", ["Home", "Prediction", "Insights", "About"])
+    age = st.slider("Age", 20, 100, 65)
+    gender = st.selectbox("Gender", ["Male", "Female"])
 
 
 
@@ -1780,6 +1776,7 @@ if st.session_state.user is None:
         nutrition_tracker_app()
     elif page == "About":
         about()
+
 
 
 
