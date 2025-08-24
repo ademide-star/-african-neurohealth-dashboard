@@ -1317,7 +1317,7 @@ def alzheimers_prediction_app():
     
     user_id = st.session_state.user['id'] if st.session_state.user else "anonymous"
     with st.form("alz_form"):
-         age = st.number_input("Age", 0, 100, 65, key='alz_age')
+        age = st.number_input("Age", 0, 100, 65, key='alz_age')
         gender = 1 if st.selectbox("Gender", ["Male", "Female"], key='alz_gender') == "Male" else 0
         education_years = st.selectbox("Education Level (Years)", list(range(0, 21)), 12, key='alz_eduyears')
         bmi = st.number_input("BMI", 10.0, 50.0, 25.0, key='alz_bmi')
@@ -1772,6 +1772,7 @@ else:
         nutrition_tracker_app()
     elif page == "About":
         about()
+
 
 
 
