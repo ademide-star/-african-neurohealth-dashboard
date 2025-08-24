@@ -1317,21 +1317,21 @@ def alzheimers_prediction_app():
     
     user_id = st.session_state.user['id'] if st.session_state.user else "anonymous"
     with st.form("alz_form"):
-        age = st.number_input("Age", 0, 100, 65, key='alz_age')
+         age = st.number_input("Age", 0, 100, 65, key='alz_age')
         gender = 1 if st.selectbox("Gender", ["Male", "Female"], key='alz_gender') == "Male" else 0
-        education_years = st.slider("Education Level (Years)", 0, 20, 12, key='alz_eduyears')
+        education_years = st.selectbox("Education Level (Years)", list(range(0, 21)), 12, key='alz_eduyears')
         bmi = st.number_input("BMI", 10.0, 50.0, 25.0, key='alz_bmi')
-        is_smoker = st.selectbox("Smoking", [0, 1], key='alz_smoking')
-        alcohol_consumption = st.slider("Alcohol Consumption (0 = None, 5 = High)", 0, 5, 2, key='alz_alcohol')
-        physical_activity = st.slider("Physical Activity (hrs/week)", 0, 20, 3, key='alz_activity')
+        is_smoker = st.selectbox("Smoking", [0, 1], format_func=lambda x: ["Yes", "No"][x], key='alz_smoking')
+        alcohol_consumption = st.selectbox("Alcohol Consumption (0 = None, 5 = High)", list(range(0, 6)), 2, key='alz_alcohol')
+        physical_activity = st.selectbox("Physical Activity (hrs/week)", list(range(0, 21)), 3, key='alz_activity')
         diet_quality = nutritional_score
-        sleep_quality = st.slider("Sleep Quality (1-5)", 1, 5, 3, key='alz_sleep')
-        family_history_alz = st.selectbox("Family History of Alzheimer's", [0, 1], key='alz_family')
-        cardiovascular_disease = st.selectbox("Cardiovascular Disease", [0, 1], key='alz_cardio')
+        sleep_quality = st.selectbox("Sleep Quality (1-5)", list(range(1, 6)), 3, key='alz_sleep')
+        family_history_alz = st.selectbox("Family History of Alzheimer's", [0, 1], format_func=lambda x: ["Yes", "No"][x], key='alz_family')
+        cardiovascular_disease = st.selectbox("Cardiovascular Disease", [0, 1], format_func=lambda x: ["Yes", "No"][x], key='alz_cardio')
 
-        diabetes = st.selectbox("Diabetes", [0, 1], key='alz_diabetes')
-        depression = st.selectbox("Depression", [0, 1], key='alz_depression')
-        hypertension = st.selectbox("Hypertension", [0, 1], key='alz_hypertension')
+        diabetes = st.selectbox("Diabetes", [0, 1], format_func=lambda x: ["Yes", "No"][x], key='alz_diabetes')
+        depression = st.selectbox("Depression", [0, 1], format_func=lambda x: ["Yes", "No"][x], key='alz_depression')
+        hypertension = st.selectbox("Hypertension", [0, 1], format_func=lambda x: ["Yes", "No"][x], key='alz_hypertension')
         systolic_bp = st.number_input("Systolic BP", 80, 220, 120, key='alz_systolic')
         diastolic_bp = st.number_input("Diastolic BP", 50, 150, 80, key='alz_diastolic')
         cholesterol_total = st.number_input("Total Cholesterol", 100, 400, 200, key='alz_chol_total')
@@ -1343,6 +1343,10 @@ def alzheimers_prediction_app():
         adl = st.slider("ADL Score (Activities of Daily Living)", 0, 6, 6, key='alz_adl')
 
 # Add MMSE input
+        st.subheader("Mini-Mental State Examination (MMSE).")
+        st.markdown("""
+It is a 30-point questionnaire widely used to assess a person’s cognitive function and detect possible impairment.
+    """)
         mmse = st.slider("MMSE Score (0-30)", 0, 30, 24, key='alz_mmse')
 
 # Add Pollution inputs
@@ -1768,6 +1772,7 @@ else:
         nutrition_tracker_app()
     elif page == "About":
         about()
+
 
 
 
