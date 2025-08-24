@@ -44,6 +44,33 @@ SUPABASE_KEY = st.secrets["SUPABASE_KEY"]
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 logging.basicConfig(level=logging.DEBUG)
 
+# Hide all Streamlit style elements (menu, footer, header, status bar, toolbar, blank space)
+hide_streamlit_style = """
+    <style>
+    /* Hide Streamlit default header, footer, and menu */
+    #MainMenu {visibility: hidden;}
+    footer {visibility: hidden;}
+    header {visibility: hidden;}
+
+    /* Hide top toolbar (run, stop, settings) */
+    .stAppToolbar {display: none;}
+
+    /* Hide blank space at the top */
+    .block-container {
+        padding-top: 1rem;  /* adjust as needed */
+    }
+
+    /* Hide sidebar completely (optional) */
+    section[data-testid="stSidebar"] {display: none;}
+
+    /* Ensure expander stays visible */
+    .stExpander {
+        visibility: visible !important;
+        display: block !important;
+    }
+    </style>
+"""
+st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
 
 
@@ -1754,6 +1781,7 @@ if st.session_state.user is None:
         nutrition_tracker_app()
     elif page == "About":
         about()
+
 
 
 
