@@ -80,10 +80,11 @@ logging.basicConfig(level=logging.DEBUG)
 # Hide Streamlit default elements
 hide_streamlit_default = """
     <style>
-    #MainMenu {visibility: hidden;}   /* Hide Streamlit menu */
-    footer {visibility: hidden;}      /* Hide Streamlit footer */
-    header {visibility: hidden;}      /* Hide Streamlit header */
-    .stAppToolbar {visibility: hidden;} /* Hide Streamlit toolbar (GitHub/Settings/About) */
+    #MainMenu {visibility: hidden;}        /* Hide Streamlit menu */
+    footer {visibility: hidden;}           /* Hide footer */
+    .stAppToolbar {visibility: hidden;}    /* Hide GitHub/Settings/About */
+    /* DO NOT HIDE <header>, only shrink it */
+    header {height: 0px !important;}
     </style>
 """
 st.markdown(hide_streamlit_default, unsafe_allow_html=True)
@@ -1804,6 +1805,7 @@ else:
         nutrition_tracker_app()
     elif page == "About":
         about()
+
 
 
 
