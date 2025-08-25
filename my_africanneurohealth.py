@@ -87,17 +87,7 @@ SUPABASE_KEY = st.secrets["SUPABASE_KEY"]
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 logging.basicConfig(level=logging.DEBUG)
 
-# Hide all Streamlit style elements (menu, footer, header, status bar, toolbar, blank space)
-# Hide Streamlit default elements
-hide_streamlit_default = """
-    <style>
-    footer {visibility: hidden;}           /* Hide footer */
-    .stAppToolbar {visibility: hidden;}    /* Hide GitHub/Settings/About */
-    /* DO NOT HIDE <header>, only shrink it */
-    header {height: 0px !important;}
-    </style>
-"""
-st.markdown(hide_streamlit_default, unsafe_allow_html=True)
+
 
 
 # --- Get User Location ---
@@ -1815,6 +1805,7 @@ else:
         nutrition_tracker_app()
     elif page == "About":
         about()
+
 
 
 
