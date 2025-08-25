@@ -1,11 +1,43 @@
 import streamlit as st
 
 # Must be the very first Streamlit command
+import streamlit as st
+
+# --- PAGE CONFIG (safe for mobile + desktop) ---
 st.set_page_config(
     page_title="AFRICAN NEUROHEALTH",
     page_icon="📊",
-    layout="centered",
-    initial_sidebar_state="expanded",
+    layout="centered",   # ✅ works on both desktop & mobile
+    initial_sidebar_state="expanded"
+)
+
+# --- CUSTOM RESPONSIVE STYLING ---
+st.markdown(
+    """
+    <style>
+    /* Desktop: mimic wide layout */
+    @media (min-width: 900px) {
+        .block-container {
+            max-width: 95% !important;
+            padding-left: 2rem !important;
+            padding-right: 2rem !important;
+        }
+    }
+
+    /* Mobile: make sure expanders are fully visible */
+    @media (max-width: 899px) {
+        .block-container {
+            max-width: 100% !important;
+            padding-left: 0.5rem !important;
+            padding-right: 0.5rem !important;
+        }
+        .streamlit-expanderHeader {
+            font-size: 1.1rem !important;  /* Bigger expander text on mobile */
+        }
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
 )
 
 
@@ -1772,6 +1804,7 @@ else:
         nutrition_tracker_app()
     elif page == "About":
         about()
+
 
 
 
