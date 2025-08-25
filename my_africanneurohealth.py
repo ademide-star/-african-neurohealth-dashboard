@@ -4,7 +4,7 @@ import streamlit as st
 st.set_page_config(
     page_title="AFRICAN NEUROHEALTH",
     page_icon="📊",
-    layout="wide",
+    layout="centered",
     initial_sidebar_state="expanded",
 )
 
@@ -1772,6 +1772,7 @@ else:
         nutrition_tracker_app()
     elif page == "About":
         about()
+
 
 
 
