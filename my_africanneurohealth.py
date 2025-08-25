@@ -39,6 +39,18 @@ st.markdown(
     """,
     unsafe_allow_html=True
 )
+permanent_sidebar = """
+    <style>
+    section[data-testid="stSidebar"] {
+        min-width: 250px !important;  /* force width */
+        max-width: 250px !important;
+    }
+    button[kind="header"] {
+        display: none !important;  /* hide expander toggle */
+    }
+    </style>
+"""
+st.markdown(permanent_sidebar, unsafe_allow_html=True)
 
 
 import pandas as pd
@@ -1804,6 +1816,7 @@ else:
         nutrition_tracker_app()
     elif page == "About":
         about()
+
 
 
 
