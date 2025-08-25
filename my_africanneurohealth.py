@@ -8,7 +8,6 @@ st.set_page_config(
     page_title="AFRICAN NEUROHEALTH",
     page_icon="📊",
     layout="centered",   # ✅ works on both desktop & mobile
-    initial_sidebar_state="expanded"
 )
 
 # --- CUSTOM RESPONSIVE STYLING ---
@@ -1816,6 +1815,7 @@ else:
         nutrition_tracker_app()
     elif page == "About":
         about()
+
 
 
 
