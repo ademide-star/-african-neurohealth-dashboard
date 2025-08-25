@@ -80,7 +80,6 @@ logging.basicConfig(level=logging.DEBUG)
 # Hide Streamlit default elements
 hide_streamlit_default = """
     <style>
-    #MainMenu {visibility: hidden;}        /* Hide Streamlit menu */
     footer {visibility: hidden;}           /* Hide footer */
     .stAppToolbar {visibility: hidden;}    /* Hide GitHub/Settings/About */
     /* DO NOT HIDE <header>, only shrink it */
@@ -1805,6 +1804,7 @@ else:
         nutrition_tracker_app()
     elif page == "About":
         about()
+
 
 
 
