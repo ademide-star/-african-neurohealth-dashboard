@@ -293,8 +293,6 @@ def load_models():
         alz_model = joblib.load(ALZ_MODEL_PATH)
         stroke_model = joblib.load(STROKE_MODEL_PATH)
         preprocessor = joblib.load(ALZ_PREPROCESSOR_PATH)
-        
-        st.success("Models loaded successfully!")
         return alz_model, stroke_model, preprocessor
         
     except Exception as e:
@@ -1805,6 +1803,7 @@ else:
         nutrition_tracker_app()
     elif page == "About":
         about()
+
 
 
 
