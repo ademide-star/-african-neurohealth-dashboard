@@ -86,6 +86,33 @@ SUPABASE_URL = st.secrets["SUPABASE_URL"]
 SUPABASE_KEY = st.secrets["SUPABASE_KEY"]
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 logging.basicConfig(level=logging.DEBUG)
+# Put this inside your Streamlit app where you want the barcode/QR to appear
+import streamlit as st
+import qrcode
+from io import BytesIO
+from PIL import Image
+
+def generate_qr_image(url: str, box_size=10, border=4) -> Image.Image:
+    qr = qrcode.QRCode(box_size=box_size, border=border, error_correction=qrcode.constants.ERROR_CORRECT_M)
+    qr.add_data(url)
+    qr.make(fit=True)
+    img = qr.make_image(fill_color="black", back_color="white").convert("RGB")
+    return img
+
+# replace this with your deployed app URL
+app_url = st.text_input("App URL to embed in QR", value="https://ademideola.streamlit.app/
+")
+
+if app_url:
+    qr_img = generate_qr_image(app_url)
+
+    st.image(qr_img, caption="Scan to open the app", use_column_width=False)
+
+    # Prepare bytes for download
+    buf = BytesIO()
+    qr_img.save(buf, format="PNG")
+    buf.seek(0)
+    st.download_button("Download QR (PNG)", data=buf, file_name="african_neurohealth_qr.png", mime="image/png")
 
 
 
@@ -1803,6 +1830,7 @@ else:
         nutrition_tracker_app()
     elif page == "About":
         about()
+
 
 
 
