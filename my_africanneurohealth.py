@@ -460,16 +460,6 @@ It blends conventional biomedical metrics with locally relevant stressors, lifes
     """)
 
 
-# --- Show login/register if no user ---
-if st.session_state.user is None:
-    st.sidebar.header("🔐 User Authentication")
-    auth_option = st.sidebar.radio("Select option:", ["Login", "Register"], key="auth_option")
-    if auth_option == "Login":
-        login()
-    else:
-        register()
-
-
     
 # -------------------
 # Initialize session state
@@ -1990,7 +1980,14 @@ elif page == "Memory Recall Game":
     else:
         st.warning("⚠️ Please log in to access Memory Recall Game.")
 
-    
+if st.session_state.user is None:
+    st.sidebar.header("🔐 User Authentication")
+    auth_option = st.sidebar.radio("Select option:", ["Login", "Register"], key="auth_option")
+    if auth_option == "Login":
+        login()
+    else:
+        register()
+   
 
 
 
