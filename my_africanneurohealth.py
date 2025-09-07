@@ -429,8 +429,11 @@ def predict_stroke(raw: dict) -> int:
 
 st.success("✅ Welcome Take a Moment to Know About The African Neurohealth Dashboard")
 
-if "user" not in st.session_state:
-    st.session_state.user = None
+if "user" in st.session_state and st.session_state.user:
+    logged_in = True
+else:
+    logged_in = False
+
 # ----------------------------
 # ABOUT FUNCTION
 # ----------------------------
@@ -457,17 +460,15 @@ It blends conventional biomedical metrics with locally relevant stressors, lifes
     """)
 
 
-# --- App Feature Functions ---
-
-# --- Main App Flow ---
+# --- Show login/register if no user ---
 if st.session_state.user is None:
-    with st.sidebar:
-        st.header("🔐 User Authentication")
-        auth_option = st.radio("Select option:", ["Login", "Register"], key="auth_option")
-        if auth_option == "Login":
-            login()
-        else:
-            register()
+    st.sidebar.header("🔐 User Authentication")
+    auth_option = st.sidebar.radio("Select option:", ["Login", "Register"], key="auth_option")
+    if auth_option == "Login":
+        login()
+    else:
+        register()
+
 
     
 # -------------------
@@ -976,13 +977,49 @@ def safe_float(val, default=None):
     except (ValueError, TypeError):
         return default
 
-
-# --- Streamlit app ---
-# --- Stroke Predictor ---
+def parameter_select(label, min_val, max_val, step=1, key=None):
+    """
+    Creates a selectbox input for a parameter.
+    
+    Args:
+        label (str): The label to display.
+        min_val (int): Minimum value.
+        max_val (int): Maximum value.
+        step (int): Step size.
+        key (str): Optional key for Streamlit session state.
+    
+    Returns:
+        int: Selected value as integer.
+    """
+    options = list(range(min_val, max_val + 1, step))
+    return st.selectbox(label, options, key=key)
 
 # =======================
 # TAB 1: STROKE PREDICTION
 # =======================
+# ---------- REQUIRED INPUT HELPERS ----------
+def required_text_input(label, key):
+    value = st.text_input(label, key=key)
+    return value if value.strip() else None
+
+def required_number_input(label, key, min_value=None, max_value=None):
+    value = st.text_input(label, key=key)
+    if value.strip().replace(".", "", 1).isdigit():
+        num = float(value)
+        if min_value is not None and num < min_value: 
+            return None
+        if max_value is not None and num > max_value: 
+            return None
+        return num
+    return None
+
+def required_selectbox(label, options, key):
+    value = st.selectbox(label, ["-- Select --"] + options, key=key)
+    return None if value == "-- Select --" else value
+
+def required_slider(label, min_value, max_value, default, key):
+    return st.slider(label, min_value, max_value, default, key=key)
+
 def stroke_prediction_app():
     st.title("🫀 Stroke Risk Predictor")
     st.warning("Complete all fields for accurate assessment")
@@ -990,43 +1027,117 @@ def stroke_prediction_app():
     nutritional_score = compute_nutritional_score()
     st.info(f"🍎 Nutritional Health Score: **{nutritional_score}/5**")
     with st.form("stroke_form"):
-            age = st.slider("Age", 18, 100, 45)
-            gender = st.selectbox("Gender", ["Male", "Female"])
-            heart_disease = st.selectbox("Heart Disease",[0, 1], format_func=lambda x: ["Yes", "No"][x])
-            hypertension = st.selectbox("Hypertension", [0, 1], format_func=lambda x: ["Yes", "No"][x])
-            systolic_bp = st.number_input("Systolic BP", 80, 220, 120, key='stroke_systolic')
-            diastolic_bp = st.number_input("Diastolic BP", 50, 150, 80, key='stroke_diastolic')
-            bmi = st.number_input("BMI", min_value=10.0, max_value=60.0, value=25.0)
-            marital_status = st.selectbox("Marital Status", ["Single", "Married", "Divorced", "Widowed"])
-            work_type = st.selectbox("Work Type", ["Private", "Self-employed", "Govt job", "Children", "Never worked"])
-            residence_type = st.selectbox("Residence Type", ["Urban", "Rural"])
-            avg_glucose_level = st.number_input("Average Glucose Level", 50.0, 300.0, 100.0, format="%.2f") # Ensure float
-            smoking_status = st.selectbox("Smoking Status", ["formerly smoked", "never smoked", "smokes"])
+    # ✅ Selectbox with placeholder
+        age = st.selectbox("Age", ["Select"] + [i for i in range(18, 221)])
+        gender = st.selectbox("Gender", ["Select Gender", "Male", "Female"])
+        blood_group = st.selectbox("Blood Group", ["Select Blood Group", "A", "B", "B+", "AB", "O+", "O-"])
+        genotype = st.selectbox("Genotype", ["Select Genotype", "AA", "AS", "SS", "AC", "SC"])
+        heart_disease = st.selectbox("Heart Disease", ["Select", "Yes", "No"])
+        hypertension = st.selectbox("Hypertension", ["Select", "Yes", "No"])
+        systolic_bp = st.number_input("Systolic BP", min_value=80, max_value=220, value=None)
+        diastolic_bp = st.number_input("Diastolic BP", min_value=50, max_value=150, value=None)
        
-        
-        
-            stress_level = st.selectbox("Stress Level", [0, 1, 2, 3], format_func=lambda x: ["None", "Low", "Moderate", "High"][x])
-            ptsd = st.selectbox("PTSD", [0, 1], format_func=lambda x: ["Yes", "No"][x])
-            depression_level = st.selectbox("Depression Level", [0, 1, 2], format_func=lambda x: ["Mild", "Moderate", "Severe"][x])
-            diabetes_type = st.selectbox("Diabetes Type", [0, 1, 2, 3], format_func=lambda x: ["None", "Type 1", "Type 2", "Gestational"][x])
-            chronic_pain = st.selectbox("Chronic Pain", ["None", "Rheumatism", "Osteoarthritis", "Others"])
-            sleep_hours = st.slider("Sleep Hours", 3.0, 10.0, 7.0)
-            hypertension_treatment = st.selectbox("Hypertension Treatment", ["None", "Herbal", "Drugs"])
-            salt_intake = st.selectbox("Salt Intake", ["None", "Little", "Moderate", "High"])
-            noise_sources = st.selectbox("Noise Sources", ["Mosque", "Church", "Market", "Block-Industry", "Grinding-Machine", "Welder", "Club-House",    
-                                                           "Generator", "None"])
-            pollution_level_air = st.selectbox("Air Pollution Level", ["None", "Low", "Moderate", "High"])
-            pollution_level_water = st.selectbox("Water Pollution Level", ["None", "Low", "Moderate", "High"])
-            pollution_level_environmental = st.selectbox("Environmental Pollution Level", ["None", "Low", "Moderate", "High"])
-            CustomStressScore = st.number_input("Custom Stress Score", min_value=0, max_value=100, value=5)
-        
-            st.subheader("🧠 Additional Stress Assessment")
-            _, _, stress_score = custom_stress_score(use_container=True)
-            st.session_state.stress_score = stress_score
 
+        st.subheader("📏 BMI Assessment (Body Mass Index)")
+        st.caption("BMI is calculated as weight (kg) ÷ height (m)². It estimates body fat and overall health risk.")
+
+# Weight input
+        weight = st.number_input(
+        "Enter your weight (kg)", 
+        min_value=20.0, 
+        max_value=200.0, 
+        value=20.0,
+        step=0.1,
+        key='weight'
+)
+        st.caption("⚠️ Weight must be in kilograms for accurate BMI calculation (e.g., 70 kg).")
+
+# Height input
+        height = st.number_input(
+        "Enter your height (m)", 
+        min_value=1.0, 
+        max_value=2.5, 
+        value=1.00,
+        step=0.01,
+        key='height'
+)
+        st.caption("⚠️ Height must be in meters for accurate BMI calculation (e.g., 1.75 m).")
+
+# Calculate BMI and display immediately
+        if weight > 0 and height > 0:
+            bmi = round(weight / (height ** 2), 2)
+            st.success(f"Calculated BMI: **{bmi}**")
+        else:
+            bmi = None
+        # Determine BMI category
+        if bmi < 18.5:
+            risk = "Underweight"
+            color = "warning"
+        elif 18.5 <= bmi < 24.9:
+            risk = "Normal weight"
+            color = "success"
+        elif 25 <= bmi < 29.9:
+            risk = "Overweight"
+            color = "warning"
+        else:
+            risk = "Obese"
+            color = "error"
+    
+        st.markdown(f"**BMI Category:** <span style='color:{color}'>{risk}</span>", unsafe_allow_html=True)
+        # Collecting additional user information
+        marital_status = st.selectbox("Marital Status", ["Select", "Single", "Married", "Divorced", "Widowed"])
+        work_type = st.selectbox("Work Type", ["Select", "Private", "Self-employed", "Govt job", "Children", "Never worked"])
+        residence_type = st.selectbox("Residence Type", ["Select", "Urban", "Rural"])
+        avg_glucose_level = st.number_input("Average Glucose Level", min_value=50.0, max_value=300.0, value=None, format="%.2f")
+        smoking_status = st.selectbox("Smoking Status", ["Select", "formerly smoked", "never smoked", "smokes"])
+
+        stress_level = st.selectbox("Stress Level", ["Select", "None", "Low", "Moderate", "High"])
+        ptsd = st.selectbox("PTSD", ["Select", "Yes", "No"])
+        depression_level = st.selectbox("Depression Level", ["Select", "None", "Mild", "Moderate", "Severe"])
+        diabetes_type = st.selectbox("Diabetes Type", ["Select", "None", "Type 1", "Type 2", "Gestational"])
+        chronic_pain = st.selectbox("Chronic Pain", ["Select", "None", "Rheumatism", "Osteoarthritis", "Others"])
+
+        sleep_hours = st.slider("Sleep Hours", 3.0, 10.0, value=None)
+        hypertension_treatment = st.selectbox("Hypertension Treatment", ["Select", "None", "Herbal", "Drugs"])
+        salt_intake = st.selectbox("Salt Intake", ["Select", "None", "Little", "Moderate", "High"])
+        noise_sources = st.selectbox("Noise Sources", ["Select", "None", "Mosque", "Church", "Market", "Block-Industry",
+                                                  "Grinding-Machine", "Welder", "Club-House", "Generator"])
+
+        pollution_level_air = st.selectbox("Air Pollution Level", ["Select", "None", "Low", "Moderate", "High"])
+        pollution_level_water = st.selectbox("Water Pollution Level", ["Select", "None", "Low", "Moderate", "High"])
+        pollution_level_environmental = st.selectbox("Environmental Pollution Level", ["Select", "None", "Low", "Moderate", "High"])
+        CustomStressScore = st.number_input("Custom Stress Score", min_value=0, max_value=10, value=None)
+        
+        st.subheader("🧠 Additional Stress Assessment")
+        _, _, stress_score = custom_stress_score(use_container=True)
+        st.session_state.stress_score = stress_score
+
+        submit_stroke_inputs = st.form_submit_button("Predict Stroke Risk")
+        def all_fields():
+                age, gender, heart_disease, hypertension, systolic_bp, diastolic_bp, bmi,
+                marital_status, work_type, residence_type, avg_glucose_level, smoking_status,
+                stress_level, ptsd, depression_level, diabetes_type, chronic_pain,
+                sleep_hours, hypertension_treatment, salt_intake, noise_sources,
+                pollution_level_air, pollution_level_water, pollution_level_environmental,
+                CustomStressScore, stress_score, height, weight,
+                blood_group, genotype
+        all_fields = [age, gender, heart_disease, hypertension, systolic_bp, diastolic_bp, bmi,
+                      marital_status, work_type, residence_type, avg_glucose_level, smoking_status,
+                      stress_level, ptsd, depression_level, diabetes_type, chronic_pain,
+                      sleep_hours, hypertension_treatment, salt_intake, noise_sources,
+                      pollution_level_air, pollution_level_water, pollution_level_environmental,
+                      CustomStressScore, stress_score, height, weight, blood_group, genotype
+        ]
+        if all(v is not None for v in all_fields):
             submit_stroke_inputs = st.form_submit_button("Predict Stroke Risk")
-
-  
+        else:
+        # Fake disabled button when not all fields filled
+            st.markdown(
+            "<button disabled style='background-color:grey; color:white; padding:0.5em 1em; border-radius:8px; border:none;'>Predict Stroke Risk</button>",
+            unsafe_allow_html=True
+        )
+        submit_stroke_inputs = False
+        st.warning("Complete all fields for accurate assessment")
     if submit_stroke_inputs:
         try:
         # 1️⃣ Collect raw inputs safely
@@ -1048,9 +1159,16 @@ def stroke_prediction_app():
             'salt_intake': safe_int(salt_intake),
             'noise_sources': safe_int(noise_sources),
             'stress_level': safe_int(stress_level),
+            'height': safe_float(height),
+            'weight': safe_float(weight),
+            'pollution_level_air': safe_int(pollution_level_air),
+            'pollution_level_water': safe_int(pollution_level_water),
+            'pollution_level_environmental': safe_int(pollution_level_environmental),
             'chronic_pain': safe_int(chronic_pain),
             'hypertension_treatment': safe_int(hypertension_treatment),
             'diabetes_type': safe_int(diabetes_type),
+            'blood_group': blood_group,
+            'genotype': genotype,
             'hypertension': 1 if hypertension else 0,
             'heart_disease': 1 if heart_disease else 0,
             'CustomStressScore': safe_float(CustomStressScore),
@@ -1092,6 +1210,8 @@ def stroke_prediction_app():
             "sleep_hours": sleep_hours,
             "hypertension_treatment": hypertension_treatment,
             "salt_intake": salt_intake,
+            "blood_group": blood_group,
+            "genotype": genotype,
             "noise_sources": noise_sources,
             "pollution_level_air": pollution_level_air,
             "pollution_level_water": pollution_level_water,
@@ -1162,9 +1282,9 @@ def stroke_prediction_app():
             "user_id","gender","ethnicity","country","prediction_result","age","BMI","avg_glucose_level","SystolicBP",
             "DiastolicBP","sleep_hours","salt_intake","stress_level","custom_stress_score",
             "depression_level","ptsd","chronic_pain","diabetes_type","hypertension",
-            "hypertension_treatment","heart_disease","smoking_status","work_type",
+            "hypertension_treatment","heart_disease","smoking_status","work_type","height","weight",
             "residence_type","noise_sources","pollution_level_air","pollution_level_water",
-            "pollution_level_environmental","marital_status"
+            "pollution_level_environmental","marital_status","blood_group","genotype","location_str","raw_inputs"
         ]
 
             db_payload = {"user_id": st.session_state.user['id'] if st.session_state.get('user') else "anonymous",
@@ -1229,7 +1349,7 @@ def prepare_alzheimers_input_numeric(raw_inputs):
         'CholesterolHDL', 'BehavioralProblems', 'DiastolicBP', 'CardiovascularDisease', 
         'BMI', 'Depression', 'DietQuality', 'SystolicBP', 'Diabetes', 'CholesterolTotal', 
         'MMSE', 'MemoryComplaints', 'Age', 'CholesterolTriglycerides', 'SleepQuality', 
-        'HeadInjury', 'CholesterolLDL', 'DifficultyCompletingTasks'
+        'HeadInjury', 'CholesterolLDL', 'DifficultyCompletingTasks', 'Height', 'Weight', 'Genotype', 'BloodGroup'
     ]
     
     # Create a dictionary with default values for all expected columns
@@ -1243,7 +1363,7 @@ def prepare_alzheimers_input_numeric(raw_inputs):
         'SystolicBP': 0, 'Diabetes': 0, 'CholesterolTotal': 0.0, 'MMSE': 0, 
         'MemoryComplaints': 0, 'Age': 0, 'CholesterolTriglycerides': 0.0, 
         'SleepQuality': 0, 'HeadInjury': 0, 'CholesterolLDL': 0.0, 
-        'DifficultyCompletingTasks': 0
+        'DifficultyCompletingTasks': 0, 'Height': 0, 'Weight': 0, 'Genotype': 0, 'BloodGroup': 0
     }
     
     # Initialize the full input with default values
@@ -1324,7 +1444,11 @@ def raw_inputs_collection():
         raw_inputs['BehavioralProblems'] = st.selectbox('Behavioral Problems', binary_options)
         raw_inputs['DifficultyCompletingTasks'] = st.selectbox('Difficulty Completing Tasks', binary_options)
         raw_inputs['MemoryComplaints'] = st.selectbox('Memory Complaints', binary_options)
-        
+        # Height and Weight for BMI calculation
+        raw_inputs['Height'] = st.number_input('Height (m)', min_value=0.0, max_value=3.0, value=1.75)
+        raw_inputs['Weight'] = st.number_input('Weight (kg)', min_value=0, max_value=300, value=70)
+        raw_inputs['Genotype'] = st.selectbox('Genotype', ['AA', 'AS', 'SS', 'AC', 'SC'])
+        raw_inputs['BloodGroup'] = st.selectbox('Blood Group', ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'])
         # Additional inputs with different scales
         raw_inputs['SleepQuality'] = st.slider('Sleep Quality', 0, 10, 5)
         raw_inputs['DietQuality'] = st.slider('Diet Quality', 0, 10, 5)
@@ -1332,136 +1456,188 @@ def raw_inputs_collection():
         raw_inputs['ADL'] = st.slider('Activities of Daily Living', 0, 10, 5)
         
         
-# TAB 2: ALZHEIMER FORM #
+import streamlit as st
+
+def select_input(label, options, key=None):
+    """Universal select input with a 'Select...' placeholder."""
+    return st.selectbox(label, ["Select..."] + options, index=0, key=key)
+
 def alzheimers_prediction_app():
     pred = None
     alzheimer_inputs_df = None
 
     st.title("🧠 Alzheimer's Predictor")
     st.warning("Complete all fields for accurate assessment")
-    # Get nutritional score #
+
+    # Nutritional score (computed separately)
     nutritional_score = compute_nutritional_score()
     st.info(f"🍎 Nutritional Health Score: **{nutritional_score}/5**")
-    
-    user_id = st.session_state.user['id'] if st.session_state.user else "anonymous"
+
     with st.form("alz_form"):
-        age = st.number_input("Age", 0, 100, 65, key='alz_age')
-        gender = 1 if st.selectbox("Gender", ["Male", "Female"], key='alz_gender') == "Male" else 0
-        education_years = st.selectbox("Education Level (Years)", list(range(0, 21)), 12, key='alz_eduyears')
-        bmi = st.number_input("BMI", 10.0, 50.0, 25.0, key='alz_bmi')
-        is_smoker = st.selectbox("Smoking", [0, 1], format_func=lambda x: ["Yes", "No"][x], key='alz_smoking')
-        alcohol_consumption = st.selectbox("Alcohol Consumption (0 = None, 5 = High)", list(range(0, 6)), 2, key='alz_alcohol')
-        physical_activity = st.selectbox("Physical Activity (hrs/week)", list(range(0, 21)), 3, key='alz_activity')
-        diet_quality = nutritional_score
-        sleep_quality = st.selectbox("Sleep Quality (1-5)", list(range(1, 6)), 3, key='alz_sleep')
-        family_history_alz = st.selectbox("Family History of Alzheimer's", [0, 1], format_func=lambda x: ["Yes", "No"][x], key='alz_family')
-        cardiovascular_disease = st.selectbox("Cardiovascular Disease", [0, 1], format_func=lambda x: ["Yes", "No"][x], key='alz_cardio')
+        age = st.number_input("Age", min_value=0, max_value=100, value=None, key='alz_age', placeholder="Enter Age")
+        gender = select_input("Gender", ["Male", "Female"], key='alz_gender')
+        blood_group = select_input("Blood Group", ["A", "B", "AB", "O"], key='alz_bloodgroup')
+        genotype = select_input("Genotype", ["AA", "AS", "SS", "AC", "SC"], key='alz_genotype')
 
-        diabetes = st.selectbox("Diabetes", [0, 1], format_func=lambda x: ["Yes", "No"][x], key='alz_diabetes')
-        depression = st.selectbox("Depression", [0, 1], format_func=lambda x: ["Yes", "No"][x], key='alz_depression')
-        hypertension = st.selectbox("Hypertension", [0, 1], format_func=lambda x: ["Yes", "No"][x], key='alz_hypertension')
-        systolic_bp = st.number_input("Systolic BP", 80, 220, 120, key='alz_systolic')
-        diastolic_bp = st.number_input("Diastolic BP", 50, 150, 80, key='alz_diastolic')
-        cholesterol_total = st.number_input("Total Cholesterol", 100, 400, 200, key='alz_chol_total')
-        cholesterol_ldl = st.number_input("LDL", 50, 300, 130, key='alz_ldl')
-        cholesterol_hdl = st.number_input("HDL", 20, 100, 50, key='alz_hdl')
-        cholesterol_triglycerides = st.number_input("Triglycerides", 50, 500, 150, key='alz_trig')
-        functional_assessment = st.slider("Functional Assessment (0-5)", 0, 5, 0, key='alz_func')
-        behavioral_problems = st.selectbox("Behavioral Problems", [0, 1], key='alz_behavior')
-        adl = st.slider("ADL Score (Activities of Daily Living)", 0, 6, 6, key='alz_adl')
+        education_years = select_input("Education Level (Years)", [str(i) for i in range(0, 21)], key='alz_eduyears')
+        # ........................BMI input with Weight and Height....................
+        st.subheader("📏 BMI Assessment (Body Mass Index)")
+        st.caption("BMI is calculated as weight (kg) ÷ height (m)². It estimates body fat and overall health risk.")
+        # Weight input
+        weight = st.number_input("Enter your weight (kg)", key='alz_weight', min_value=20, max_value=200)
 
-# Add MMSE input
-        st.subheader("Mini-Mental State Examination (MMSE).")
-        st.markdown("""
-It is a 30-point questionnaire widely used to assess a person’s cognitive function and detect possible impairment.
-    """)
-        mmse = st.slider("MMSE Score (0-30)", 0, 30, 24, key='alz_mmse')
+        # Height input
+        height = st.number_input("Enter your height (m)", key='alz_height', min_value=1.0, max_value=2.5)
 
-# Add Pollution inputs
-        pollution_score = st.slider("Pollution Score (0-100)", 0, 100, 50, key='alz_pollution_score')
-        pollution_choice = st.selectbox("Pollution Category", ["Low", "Moderate", "High"], key='alz_pollution_cat')
-        pollution_map = {"Low": [1, 0, 0], "Moderate": [0, 1, 0], "High": [0, 0, 1]}
-        pollution_moderate, pollution_high, pollution_low = pollution_map[pollution_choice]
-
-# ============================ #
-# Cognitive Assessment
-# ============================ #
-        option_map = {"Yes": 1, "No": 0, "Sometimes": 0.5}
-        confusion = option_map[st.selectbox("Confusion", ["Yes", "No", "Sometimes"], key='alz_confusion')]
-        disorientation = option_map[st.selectbox("Disorientation", ["Yes", "No", "Sometimes"], key='alz_disorien')]
-        personality_changes = option_map[st.selectbox("Personality Changes", ["Yes", "No", "Sometimes"], key='alz_personality')]
-        difficulty_tasks = option_map[st.selectbox("Difficulty Completing Tasks", ["Yes", "No", "Sometimes"], key='alz_tasks')]
-        forgetfulness = option_map[st.selectbox("Forgetfulness", ["Yes", "No", "Sometimes"], key='alz_forget')]
-        memory_complaints = option_map[st.selectbox("Memory Complaints", ["Yes", "No", "Sometimes"], key='alz_memory')]
-
-# Head injury
-        head_map = {"None": 0, "Accident": 1, "Violence": 2}
-        head_injury = head_map[st.selectbox("Head Injury", ["None", "Accident", "Violence"], key='alz_head')]
-        
+# Calculate BMI if both values are provided
+        bmi = None
+        if weight is not None and height is not None:
+            try:
+                bmi = round(weight / (height ** 2), 2)
+                st.info(f"Calculated BMI: **{bmi}**")
+            except ZeroDivisionError:
+                st.error("Height cannot be zero.")
+        # Determine BMI category
+        if bmi < 18.5:
+            risk = "Underweight"
+            color = "warning"
+        elif 18.5 <= bmi < 24.9:
+            risk = "Normal weight"
+            color = "success"
+        elif 25 <= bmi < 29.9:
+            risk = "Overweight"
+            color = "warning"
+        else:
+            risk = "Obese"
+            color = "error"
     
-        # ===== CULTURALLY ADAPTED MMSE ASSESSMENT ===== #
+        st.markdown(f"**BMI Category:** <span style='color:{color}'>{risk}</span>", unsafe_allow_html=True)
+        is_smoker = select_input("Smoking", ["Yes", "No"], key='alz_smoking')
+        alcohol_consumption = select_input("Alcohol Consumption (0=None, 5=High)", [str(i) for i in range(0, 6)], key='alz_alcohol')
+        physical_activity = select_input("Physical Activity (hrs/week)", [str(i) for i in range(0, 21)], key='alz_activity')
+        sleep_quality = select_input("Sleep Quality (1-5)", [str(i) for i in range(1, 6)], key='alz_sleep')
+        family_history_alz = select_input("Family History of Alzheimer's", ["Yes", "No"], key='alz_family')
+        cardiovascular_disease = select_input("Cardiovascular Disease", ["Yes", "No"], key='alz_cardio')
+        diabetes = select_input("Diabetes", ["Yes", "No"], key='alz_diabetes')
+        depression = select_input("Depression", ["Yes", "No"], key='alz_depression')
+        hypertension = select_input("Hypertension", ["Yes", "No"], key='alz_hypertension')
+
+        systolic_bp = st.number_input("Systolic BP", min_value=80, max_value=220, value=None, key='alz_systolic', placeholder="Enter systolic")
+        diastolic_bp = st.number_input("Diastolic BP", min_value=50, max_value=150, value=None, key='alz_diastolic', placeholder="Enter diastolic")
+
+        cholesterol_total = st.number_input("Total Cholesterol", min_value=100, max_value=400, value=None, key='alz_chol_total', placeholder="Enter total cholesterol")
+        cholesterol_ldl = st.number_input("LDL", min_value=50, max_value=300, value=None, key='alz_ldl', placeholder="Enter LDL")
+        cholesterol_hdl = st.number_input("HDL", min_value=20, max_value=100, value=None, key='alz_hdl', placeholder="Enter HDL")
+        cholesterol_triglycerides = st.number_input("Triglycerides", min_value=50, max_value=500, value=None, key='alz_trig', placeholder="Enter triglycerides")
+
+        functional_assessment = st.slider("Functional Assessment (0-5)", 0, 5, 0, key='alz_func')
+        behavioral_problems = select_input("Behavioral Problems", ["Yes", "No"], key='alz_behavior')
+        adl = st.slider("ADL Score (Activities of Daily Living)", 0, 6, 0, key='alz_adl')
+
+       # MMSE (direct)
+        st.subheader("🧠 Mini-Mental State Examination (MMSE)")
+        st.caption(
+    "The MMSE is a 30-point questionnaire used to assess cognitive function, evaluating "
+    "orientation, attention, memory, language, and visual-spatial skills. Higher scores indicate better cognitive performance."
+)
+
+# Optional: culturally adapted version note
+        st.caption(
+    "📝 Culturally Adapted MMSE: Some questions have been modified to reflect daily life and cultural context, "
+    "providing a more accurate assessment for African populations."
+)
+
+        mmse = st.slider("MMSE Score (0-30)", 0, 30, 0, key='alz_mmse')
+
+
+# ===== CULTURALLY ADAPTED MMSE ASSESSMENT ===== #
         st.subheader("MMSE Assessment (Adapted for African Context)")
         mmse_option = st.radio("Do you know your MMSE score?", ["Estimate using cultural questions"], key='alz_mmse_radio')
 
+
         st.info("Answer these culturally relevant questions to estimate your MMSE score:")
-        
+
+
         col1, col2 = st.columns(2)
-        
+
+
         with col1:
-            q1 = st.selectbox("Do you forget names of relatives/village members?", 
-                         ["Never", "Sometimes", "Often"], key='q1')
-            q2 = st.selectbox("Do you misplace important items (farming tools, keys)?", 
-                         ["Never", "Sometimes", "Often"], key='q2')
-            q3 = st.selectbox("Can you recall traditional recipes or remedies?", 
-                         ["Always", "Sometimes", "Rarely"], key='q3')
-            
+            q1 = select_input("Do you forget names of relatives/village members?", ["Never", "Sometimes", "Often"], key='q1')
+            q2 = select_input("Do you misplace important items (farming tools, keys)?", ["Never", "Sometimes", "Often"], key='q2')
+            q3 = select_input("Can you recall traditional recipes or remedies?", ["Always", "Sometimes", "Rarely"], key='q3')
+
+
         with col2:
-            q4 = st.selectbox("Do you recognize people from your community?", 
-                         ["Always", "Sometimes", "Rarely"], key='q4')
-            q5 = st.selectbox("Can you navigate familiar paths/markets?", 
-                         ["Always", "Sometimes", "Rarely"], key='q5')
-            q6 = st.selectbox("Do you remember important cultural events/dates?", 
-                         ["Always", "Sometimes", "Rarely"], key='q6')
-        
-        # Calculate estimated MMSE with cultural weighting#
+            q4 = select_input("Do you recognize people from your community?", ["Always", "Sometimes", "Rarely"], key='q4')
+            q5 = select_input("Can you navigate familiar paths/markets?", ["Always", "Sometimes", "Rarely"], key='q5')
+            q6 = select_input("Do you remember important cultural events/dates?", ["Always", "Sometimes", "Rarely"], key='q6')
+
+
+# Calculate estimated MMSE with cultural weighting#
         response_scores = {
-            "Never": 2, "Sometimes": 1, "Often": 0,"Always": 2, "Rarely": 0
-        }
-        
+            "Never": 2, "Sometimes": 1, "Often": 0, "Always": 2, "Rarely": 0
+            }
+
+
         weights = {
-            "q1": 2.0,   # Names of relatives
-            "q2": 1.5,   # Important items
-            "q3": 1.0,   # Traditional knowledge
-            "q4": 1.7,   # Community recognition
-            "q5": 2.0,   # Navigation
-            "q6": 1.3    # Cultural events
-        }
-        
-        mmse_score = 20 + ( 
-            response_scores[q1] * weights["q1"] +
-            response_scores[q2] * weights["q2"] +
-            response_scores[q3] * weights["q3"] +
-            response_scores[q4] * weights["q4"] +
-            response_scores[q5] * weights["q5"] +
-            response_scores[q6] * weights["q6"]
-        )
-        # ================================#
+            "q1": 2.0, # Names of relatives
+            "q2": 1.5, # Important items
+            "q3": 1.0, # Traditional knowledge
+            "q4": 1.7, # Community recognition
+            "q5": 2.0, # Navigation
+            "q6": 1.3  # Cultural events
+}
 
-        if age > 70:
-            mmse_score *= 0.95
-        elif age > 60:
-            mmse_score *= 0.97
 
-        mmse = max(0, min(30, round(mmse_score)))
-        st.info(f"Estimated MMSE Score: **{mmse}/30**")
+# Only compute estimated MMSE if all cultural questions are answered (not "Select...")
+        if all(q not in (None, "Select...") for q in [q1, q2, q3, q4, q5, q6]):
+            mmse_score = 20 + (
+                response_scores[q1] * weights["q1"] +
+                response_scores[q2] * weights["q2"] +
+                response_scores[q3] * weights["q3"] +
+                response_scores[q4] * weights["q4"] +
+                response_scores[q5] * weights["q5"] +
+                response_scores[q6] * weights["q6"]
+            )
+        # Pollution inputs
+        pollution_score = st.slider("Pollution Score (0-100)", 0, 100, 0, key='alz_pollution_score')
+        pollution_choice = select_input("Pollution Category", ["Low", "Moderate", "High"], key='alz_pollution_cat')
 
-        st.caption("*Note: This assessment emphasizes culturally significant cognitive functions.*")
+        # Cognitive assessment
+        option_map = {"Yes": 1, "No": 0, "Sometimes": 0.5}
+        confusion = option_map.get(select_input("Confusion", ["Yes", "No", "Sometimes"], key='alz_confusion'), None)
+        disorientation = option_map.get(select_input("Disorientation", ["Yes", "No", "Sometimes"], key='alz_disorien'), None)
+        personality_changes = option_map.get(select_input("Personality Changes", ["Yes", "No", "Sometimes"], key='alz_personality'), None)
+        difficulty_tasks = option_map.get(select_input("Difficulty Completing Tasks", ["Yes", "No", "Sometimes"], key='alz_tasks'), None)
+        forgetfulness = option_map.get(select_input("Forgetfulness", ["Yes", "No", "Sometimes"], key='alz_forget'), None)
+        memory_complaints = option_map.get(select_input("Memory Complaints", ["Yes", "No", "Sometimes"], key='alz_memory'), None)
 
-        stress_score = st.slider("Stress Level", 0, 10, 5)
-        st.session_state.stress_score = stress_score
+        # Head injury
+        head_map = {"None": 0, "Accident": 1, "Violence": 2}
+        head_choice = select_input("Head Injury", ["None", "Accident", "Violence"], key='alz_head')
+        head_injury = head_map.get(head_choice, None)
+
+        # Stress
+        stress_score = st.slider("Stress Level", 0, 10, 0, key='alz_stress')
 
         submit_alz = st.form_submit_button("🔍 Predict Alzheimer Risk")
-    
+
+    # Validation step
+    required_fields = [age, gender, education_years, bmi, is_smoker, alcohol_consumption, physical_activity,
+                       sleep_quality, family_history_alz, cardiovascular_disease, diabetes, depression, hypertension,
+                       systolic_bp, diastolic_bp, cholesterol_total, cholesterol_ldl, cholesterol_hdl,
+                       cholesterol_triglycerides, behavioral_problems, head_choice, pollution_choice,
+                       blood_group, genotype, height, weight]
+
+    if submit_alz:
+        if any(x in (None, "Select...") for x in required_fields):
+            st.error("⚠️ Please complete all fields before prediction.")
+            st.stop()
+
+        # 🔹 From here, continue your raw_inputs dict and prediction logic as in your original code 🔹
+        st.success("All inputs validated! Now run prediction pipeline...")
+
+        
     if submit_alz:
             try:
                 # Prepare data for prediction
@@ -1487,6 +1663,10 @@ It is a 30-point questionnaire widely used to assess a person’s cognitive func
                     "CholesterolHDL": cholesterol_hdl,
                     "CholesterolTriglycerides": cholesterol_triglycerides,
                     "MMSE": mmse,
+                    "Height": height,
+                    "Weight": weight,
+                    "Genotype": genotype,
+                    "BloodGroup": blood_group,
                     "FunctionalAssessment": functional_assessment,
                     "BehavioralProblems": behavioral_problems,
                     "ADL": adl,
@@ -1604,6 +1784,10 @@ It is a 30-point questionnaire widely used to assess a person’s cognitive func
                     "forgetfulness": forgetfulness,
                     "memory_complaints": memory_complaints,
                     "head_injury": head_injury,
+                    "height": height,
+                    "weight": weight,
+                    "blood_group": blood_group,
+                    "genotype": genotype,
                     "pollution_score": pollution_score,
                     "pollution_category_Low": pollution_low,
                     "pollution_category_Moderate": pollution_moderate,
@@ -1679,6 +1863,7 @@ It is a 30-point questionnaire widely used to assess a person’s cognitive func
             st.error(f"Invalid prediction value: {pred}")
 
 
+def memory_recall_game():
     st.subheader("🧩 Memory Recall Game")
 
     # --- Initialize memory game state ---
@@ -1767,8 +1952,6 @@ It is a 30-point questionnaire widely used to assess a person’s cognitive func
                     f"Level {score['level']} - {score['correct']}/{score['total']} correct"
                 )
 
-
-    
 # --- Initialize session state ---
 if "user" not in st.session_state:
     st.session_state.user = None
@@ -1781,25 +1964,33 @@ if "stress_score" not in st.session_state:
 if "location_str" not in st.session_state:
     st.session_state.location_str = {}
 
-# --- Show message if no user is logged in ---
-if st.session_state.user is None:
-    st.write("No user is logged in.")
+# --- Sidebar navigation ---
+st.sidebar.title("Navigation")
+page = st.sidebar.radio(
+    "Choose a feature:",
+    ["About", "Stroke Prediction", "Alzheimer's Prediction", "Memory Recall Game"]
+)
 
-# --- NAVIGATION (always available if logged in) ---
-else:
-    page = st.sidebar.radio(
-        "Choose a feature:",
-        ["About", "Stroke Prediction", "Alzheimer's Prediction", "Nutrition Tracker"]
-    )
-
-    if page == "Stroke Prediction":
+# --- Display pages ---
+if page == "About":
+    about()  # Always visible, even if no user is logged in
+elif page == "Stroke Prediction":
+    if st.session_state.user is not None:
         stroke_prediction_app()
-    elif page == "Alzheimer's Prediction":
+    else:
+        st.warning("⚠️ Please log in to access Stroke Prediction.")
+elif page == "Alzheimer's Prediction":
+    if st.session_state.user is not None:
         alzheimers_prediction_app()
-    elif page == "Nutrition Tracker":
-        nutrition_tracker_app()
-    elif page == "About":
-        about()
+    else:
+        st.warning("⚠️ Please log in to access Alzheimer's Prediction.")
+elif page == "Memory Recall Game":
+    if st.session_state.user is not None:
+        memory_recall_game()
+    else:
+        st.warning("⚠️ Please log in to access Memory Recall Game.")
+
+    
 
 
 
