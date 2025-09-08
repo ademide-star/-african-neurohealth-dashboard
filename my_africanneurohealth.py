@@ -813,10 +813,10 @@ def map_noise_source(val):
 
 def prepare_stroke_input_numeric(raw_input):
     numeric_features = ['age', 'avg_glucose_level', 'bmi', 'stress_level',
-                        'ptsd', 'depression_level', 'diabetes_type', 'sleep_hours']
-    
+                        'ptsd', 'depression_level', 'diabetes_type', 'sleep_hours', 'height', 'weight']
+
     categorical_features = ['gender', 'ever_married', 'work_type', 'Residence_type',
-                            'smoking_status', 'chronic_pain_None', 'chronic_pain_Osteoarthritis',
+                            'smoking_status', 'chronic_pain_None', 'blood_group', 'genotype', 'chronic_pain_Osteoarthritis',
                             'chronic_pain_Others']
     
     boolean_features = ['chronic_pain_Rheumatism', 'salt_intake_High', 'salt_intake_Little',
@@ -870,7 +870,7 @@ def build_full_input(raw):
     # Direct numeric and categorical
     direct_cols = ['age', 'avg_glucose_level', 'bmi', 'stress_level', 'ptsd', 'depression_level',
                    'diabetes_type', 'sleep_hours', 'gender', 'ever_married', 'work_type',
-                   'Residence_type', 'smoking_status', 'ethnicity', 'Country', 'Province_Option']
+                   'residence_type', 'smoking_status', 'ethnicity', 'Country', 'Province_Option']
     for col in direct_cols:
         full_input[col] = raw.get(col, 0 if col in ['age','avg_glucose_level','bmi','stress_level',
                                                     'ptsd','depression_level','diabetes_type','sleep_hours','systolic_bp', 'diastolic_bp'] else 'None')
@@ -899,7 +899,7 @@ def build_full_input(raw):
        # Convert categorical columns to string
     numeric_cols = [
         'age', 'avg_glucose_level', 'bmi', 'stress_level',
-        'ptsd', 'depression_level', 'sleep_hours', 'systolic_bp', 'diastolic_bp'
+        'ptsd', 'depression_level', 'sleep_hours', 'systolic_bp', 'diastolic_bp', 'height', 'weight'
     ]
     for col in numeric_cols:
         try:
@@ -914,7 +914,7 @@ def build_full_input(raw):
 
     # ---- Categorical values (raw for OneHotEncoder) ----
     categorical_cols = [
-        "marital_status", "work_type", "Residence_type", "smoking_status",
+        "marital_status", "work_type", "Residence_type", "smoking_status",'blood_group', 'genotype'
         "salt_intake", "nutritional_lifestyle", "ethnicity", "Country", "Province_Option"
     ]
     for col in categorical_cols:
@@ -1020,7 +1020,7 @@ def stroke_prediction_app():
     # ✅ Selectbox with placeholder
         age = st.selectbox("Age", ["Select"] + [i for i in range(18, 221)])
         gender = st.selectbox("Gender", ["Select Gender", "Male", "Female"])
-        blood_group = st.selectbox("Blood Group", ["Select Blood Group", "A", "B", "B+", "AB", "O+", "O-"])
+        blood_group = st.selectbox("Blood Group", ["Select Blood Group", "A+","A-", "B+", "B-", "AB+", "AB-", "O+", "O-"])
         genotype = st.selectbox("Genotype", ["Select Genotype", "AA", "AS", "SS", "AC", "SC"])
         heart_disease = st.selectbox("Heart Disease", ["Select", "Yes", "No"])
         hypertension = st.selectbox("Hypertension", ["Select", "Yes", "No"])
@@ -1466,7 +1466,7 @@ def alzheimers_prediction_app():
     with st.form("alz_form"):
         age = st.number_input("Age", min_value=0, max_value=100, value=None, key='alz_age', placeholder="Enter Age")
         gender = select_input("Gender", ["Male", "Female"], key='alz_gender')
-        blood_group = select_input("Blood Group", ["A", "B", "AB", "O"], key='alz_bloodgroup')
+        blood_group = select_input("Blood Group", ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"], key='alz_bloodgroup')
         genotype = select_input("Genotype", ["AA", "AS", "SS", "AC", "SC"], key='alz_genotype')
 
         education_years = select_input("Education Level (Years)", [str(i) for i in range(0, 21)], key='alz_eduyears')
