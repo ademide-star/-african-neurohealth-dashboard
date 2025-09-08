@@ -1502,7 +1502,7 @@ def alzheimers_prediction_app():
             color = "error"
     
         st.markdown(f"**BMI Category:** <span style='color:{color}'>{risk}</span>", unsafe_allow_html=True)
-        is_smoker = select_input("Smoking", ["Yes", "No"], key='alz_smoking')
+        is_smoker = select_input("Smoking Status", ["Select", "formerly smoked", "never smoked", "smokes"], key='alz_smoking')
         alcohol_consumption = select_input("Alcohol Consumption (0=None, 5=High)", [str(i) for i in range(0, 6)], key='alz_alcohol')
         physical_activity = select_input("Physical Activity (hrs/week)", [str(i) for i in range(0, 21)], key='alz_activity')
         sleep_quality = select_input("Sleep Quality (1-5)", [str(i) for i in range(1, 6)], key='alz_sleep')
@@ -1988,6 +1988,7 @@ if st.session_state.user is None:
     else:
         register()
    
+
 
 
 
