@@ -115,6 +115,8 @@ def login():
                 st.error("Invalid login credentials")
         except Exception as e:
             st.error(f"Login error: {e}")
+
+
 # ----------------------------
 # Handle OAuth callback
 # ----------------------------
@@ -162,6 +164,37 @@ def register():
                     st.error("Registration failed.")
             except Exception as e:
                 st.error(f"Registration error: {e}")
+# SESSION MANAGEMENT
+# ----------------------------
+if "user" not in st.session_state:
+    st.session_state.user = {"id": None, "email": None}
+if "access_token" not in st.session_state:
+    st.session_state.access_token = None
+if "refresh_token" not in st.session_state:
+    st.session_state.refresh_token = None
+
+# ----------------------------
+# RESTORE SESSION IF TOKENS EXIST
+# ----------------------------
+if st.session_state.access_token and st.session_state.refresh_token:
+    try:
+        supabase.auth.set_session({
+            "access_token": st.session_state.access_token,
+            "refresh_token": st.session_state.refresh_token,
+        })
+        user = supabase.auth.get_user()
+        if user.user:
+            st.session_state.user = {"id": user.user.id, "email": user.user.email}
+    except Exception:
+        st.session_state.user = {"id": None, "email": None}
+        st.session_state.access_token = None
+        st.session_state.refresh_token = None
+st.success("✅ Welcome Take a Moment to Know About The African Neurohealth Dashboard")
+
+if "user" in st.session_state and st.session_state.user:
+    logged_in = True
+else:
+    logged_in = False
 
 st.markdown("### User Access")
 if st.session_state.user.get("id"):
@@ -1984,6 +2017,7 @@ if st.session_state.user is None:
     else:
         register()
    
+
 
 
 
