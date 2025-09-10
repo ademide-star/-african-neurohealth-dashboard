@@ -189,6 +189,7 @@ if st.session_state.access_token and st.session_state.refresh_token:
         st.session_state.user = {"id": None, "email": None}
         st.session_state.access_token = None
         st.session_state.refresh_token = None
+        
 st.success("✅ Welcome Take a Moment to Know About The African Neurohealth Dashboard")
 
 if "user" in st.session_state and st.session_state.user:
@@ -455,13 +456,6 @@ def predict_stroke(raw: dict) -> int:
 
     return int(pred)
 
-
-st.success("✅ Welcome Take a Moment to Know About The African Neurohealth Dashboard")
-
-if "user" in st.session_state and st.session_state.user:
-    logged_in = True
-else:
-    logged_in = False
 
 # ----------------------------
 # ABOUT FUNCTION
@@ -2017,6 +2011,7 @@ if st.session_state.user is None:
     else:
         register()
    
+
 
 
 
