@@ -115,20 +115,6 @@ def login():
                 st.error("Invalid login credentials")
         except Exception as e:
             st.error(f"Login error: {e}")
-
-    st.markdown("---")
-    st.subheader("Or Sign in with Google")
-
-    if st.button("Login with Google", key="google_btn"):
-        redirect_url = "https://ademideola.streamlit.app"
-        res = supabase.auth.sign_in_with_oauth(
-            {
-                "provider": "google",
-                "options": {"redirect_to": redirect_url}
-            }
-        )
-        st.markdown(f'<meta http-equiv="refresh" content="0; url={res.url}">', unsafe_allow_html=True)
-
 # ----------------------------
 # Handle OAuth callback
 # ----------------------------
@@ -177,7 +163,17 @@ def register():
             except Exception as e:
                 st.error(f"Registration error: {e}")
 
-
+st.markdown("### User Access")
+if st.session_state.user.get("id"):
+    st.write(f"✅ Logged in as: **{st.session_state.user['email']}**")
+    if st.button("Logout"):
+        logout()
+else:
+    tab1, tab2 = st.tabs(["🔑 Login", "🆕 Register"])
+    with tab1:
+        login()
+    with tab2:
+        register()
 def custom_stress_score(prefix="", use_container=False):
     """Calculate stress score with option to avoid nested expanders"""
     title = f"🧮 {prefix} Stress Estimator Based on Cultural & Contextual Stress Factors" 
@@ -1988,6 +1984,7 @@ if st.session_state.user is None:
     else:
         register()
    
+
 
 
 
