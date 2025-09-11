@@ -1723,7 +1723,7 @@ def alzheimers_prediction_app():
 st.markdown("""
 ### 🚨 Immediate Action Recommended:
 - **Consult a healthcare provider immediately**
-- Eat brain-healthy foods (nuts, omega 3s, leafy greens)
+- Eat brain-healthy foods (nuts, omega three, leafy greens)
 - Begin cognitive training exercises
 - Review family medical history
 - Do mental exercises (e.g., puzzles, memory games)
@@ -1732,7 +1732,7 @@ st.markdown("""
 - Stay socially engaged: talk to friends, join a group
 - **Use cinnamon regularly** may protect memory and reduce inflammation
 - Avoid smoking and limit alcohol
-- Prioritize sleep and manage depression
+- Prioritize sleep and manage depression 
 """)
                 else:
                     st.success("✅ LOW ALZHEIMER'S RISK DETECTED")
@@ -2013,6 +2013,7 @@ if st.session_state.user is None:
     else:
         register()
    
+
 
 
 
