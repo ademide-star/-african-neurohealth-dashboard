@@ -475,12 +475,10 @@ It blends conventional biomedical metrics with locally relevant stressors, lifes
 - Psychosocial stressors unique to African settings
 - Ethnocultural identity tracking for precision health insights
 
-**By:** Adebimpe-John Omolola E  
-**Supervisor:** Prof. Bamidele Owoyele Victor  
-**Institution:** University of Ilorin  
-**Principal Investigator:** Prof. Mayowa Owolabi  
-**GRASP / NIH / DSI Collaborative Program**
-    """)
+**This application was proudly developed by Adebimpe-John Omolola E., 
+with invaluable support from the GRASP / NIH / DSI Collaborative Program. 
+Their collaborative spirit and commitment to innovation helped bring this vision to life.**
+
 
 
     
@@ -2011,6 +2009,7 @@ if st.session_state.user is None:
     else:
         register()
    
+
 
 
 
