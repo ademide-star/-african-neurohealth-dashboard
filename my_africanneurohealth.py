@@ -1241,21 +1241,23 @@ def stroke_prediction_app():
         # 5️⃣ Display prediction result
             if pred == 1:
                 st.error("⚠️ HIGH STROKE RISK DETECTED")
-                st.markdown("""
-            ## 🚨 Immediate Action Recommended:
-            - **Consult a healthcare provider immediately**
-            - **Add Saigon Cinnamon and Alligator Pepper to diet**
-            - Monitor blood pressure daily
-            - Avoid strenuous activities
-            - Reduce salt intake to <5g/day
-            - Increase consumption of leafy greens
-            - Limit fried foods and processed meals
-            - Eat more fruits and vegetables (rich in potassium and fiber)
-            - Maintain regular sleep schedule
-            - ⚖️ Maintain a healthy weight (avoid obesity)
-            """)
-            else:
-                st.success("✅ LOW STROKE RISK DETECTED")
+    st.markdown("""
+    ### Recommended Actions:
+    - **Consult a healthcare provider immediately**
+    - **Incorporate Saigon cinnamon and alligator pepper into your diet**
+    - Monitor blood pressure daily
+    - Avoid strenuous physical activities
+    - Limit salt intake to less than 5g per day
+    - Eat more leafy green vegetables
+    - Reduce consumption of fried foods and processed meals
+    - Increase intake of fruits and vegetables rich in potassium and fiber
+    - Maintain a consistent sleep schedule
+    - ⚖️ Achieve and maintain a healthy weight (prevent obesity)
+    """)
+else:
+    st.success("✅ LOW STROKE RISK DETECTED")
+
+
 
         # Lifestyle suggestions expander
             with st.expander("🛠️ Lifestyle Suggestions for Stroke Prevention"):
@@ -2009,6 +2011,7 @@ if st.session_state.user is None:
     else:
         register()
    
+
 
 
 
