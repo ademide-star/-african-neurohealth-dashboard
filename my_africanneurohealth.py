@@ -1761,7 +1761,6 @@ st.markdown("""
 - Manage vascular risk factors (blood pressure, cholesterol)
 - Medication review with doctor
 """)
-
                 # Get user location
                 city, region, country = get_user_location()
                 location_str = f"{city}, {region}, {country}"
@@ -2012,50 +2011,3 @@ if st.session_state.user is None:
         login()
     else:
         register()
-   
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
