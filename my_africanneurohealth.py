@@ -1247,7 +1247,7 @@ def stroke_prediction_app():
     - **Add Saigon Cinnamon and Alligator Pepper to diet**
     - Monitor blood pressure daily
     - Avoid strenuous activities
-    - Reduce salt intake to <5g/day
+    - Reduce salt intake
     - Increase consumption of leafy greens
     - Limit fried foods and processed meals
     - Eat more fruits and vegetables (rich in potassium and fiber)
@@ -1264,7 +1264,7 @@ else:
             with st.expander("🛠️ Lifestyle Suggestions for Stroke Prevention"):
                 st.markdown("""
             ### 🍽️ Dietary Recommendations:
-            - Reduce salt intake to <5g/day
+            - Reduce salt intake
             - Increase consumption of leafy greens
             - Limit fried foods and processed meals
             - Eat more fruits and vegetables (rich in potassium and fiber)
@@ -2012,6 +2012,7 @@ if st.session_state.user is None:
     else:
         register()
    
+
 
 
 
