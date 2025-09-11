@@ -1728,7 +1728,7 @@ def alzheimers_prediction_app():
 - Stay physically active (exercise increases brain health)
 - Reduce stress practice mindfulness or prayer
 - Stay socially engaged talk to friends, join a group
-- Eat brain-healthy foods (nuts, omega-3s, leafy greens)
+- Eat brain-healthy foods (nuts, omega 3s, leafy greens)
 - **Use cinnamon regularly** may protect memory and reduce inflammation
 - Avoid smoking and limit alcohol
 - Prioritize sleep and manage depression
@@ -1740,7 +1740,7 @@ def alzheimers_prediction_app():
                 with st.expander("🛠️ Lifestyle Suggestions for Alzheimer's Prevention"):
                     st.markdown("""
 ### 🍽️ Dietary Recommendations:
-- Increase omega-3 fatty acids (fish, flax seeds)
+- Increase omega 3 fatty acids (fish, flax seeds)
 - Consume antioxidant-rich foods (berries, dark chocolate)
 - Eat leafy green vegetables daily
 - Reduce processed sugars and refined carbs
@@ -2012,6 +2012,7 @@ if st.session_state.user is None:
     else:
         register()
    
+
 
 
 
