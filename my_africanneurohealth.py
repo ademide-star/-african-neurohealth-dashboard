@@ -1237,9 +1237,9 @@ def stroke_prediction_app():
             location_str = f"{city}, {region}, {province_map}, {country}, Africa"
 
         # 5️⃣ Display prediction result
-           if pred == 1:
-    st.error("⚠️ HIGH STROKE RISK DETECTED")
-    st.markdown("""
+            if pred == 1:
+                st.error("⚠️ HIGH STROKE RISK DETECTED")
+                st.markdown("""
     ## 🚨 Immediate Action Recommended:
     - **Consult a healthcare provider immediately**
     - **Add Saigon Cinnamon and Alligator Pepper to diet**
@@ -1251,12 +1251,9 @@ def stroke_prediction_app():
     - Eat more fruits and vegetables (rich in potassium and fiber)
     - Maintain regular sleep schedule
     - Maintain a healthy weight (avoid obesity)
-    """)
-else:
-    st.success("✅ LOW STROKE RISK DETECTED")
-
-
-
+                """)
+            else:
+                st.success("✅ LOW STROKE RISK DETECTED")
 
         # Lifestyle suggestions expander
             with st.expander("🛠️ Lifestyle Suggestions for Stroke Prevention"):
@@ -2009,6 +2006,7 @@ if st.session_state.user is None:
         login()
     else:
         register()
+
 
 
 
