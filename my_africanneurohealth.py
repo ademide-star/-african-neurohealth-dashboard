@@ -1727,9 +1727,9 @@ def alzheimers_prediction_app():
 - Do mental exercises (e.g., puzzles, memory games)
 - Stay physically active (exercise increases brain health)
 - Reduce stress practice mindfulness or prayer
-- Stay socially engaged — talk to friends, join a group
+- Stay socially engaged talk to friends, join a group
 - Eat brain-healthy foods (nuts, omega-3s, leafy greens)
-- **Use cinnamon regularly** – may protect memory and reduce inflammation
+- **Use cinnamon regularly** may protect memory and reduce inflammation
 - Avoid smoking and limit alcohol
 - Prioritize sleep and manage depression
 """)
@@ -2012,6 +2012,7 @@ if st.session_state.user is None:
     else:
         register()
    
+
 
 
 
