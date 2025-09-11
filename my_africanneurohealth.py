@@ -110,7 +110,7 @@ def login():
             response = supabase.auth.sign_in_with_password({"email": email, "password": password})
             if response.user:
                 st.session_state.user = {"id": response.user.id, "email": response.user.email}
-                st.success(f"Logged in as {st.session_state.user['email']}")
+                st.success(f"✅ Logged in as {st.session_state.user['email']}")
             else:
                 st.error("Invalid login credentials")
         except Exception as e:
@@ -118,30 +118,17 @@ def login():
 
 
 # ----------------------------
-# Handle OAuth callback
-# ----------------------------
-query_params = st.query_params
-if "access_token" in query_params:
-    try:
-        user_session = supabase.auth.get_user()
-        if user_session.user:
-            st.session_state.user = {"id": user_session.user.id, "email": user_session.user.email}
-            st.success(f"Welcome, {st.session_state.user['email']}!")
-    except Exception as e:
-        st.error(f"OAuth login error: {e}")
-
-# ----------------------------
 # LOGOUT FUNCTION
 # ----------------------------
 def logout():
     try:
         supabase.auth.sign_out()
-        # Always reset to dict, never None
         st.session_state.user = {"id": None, "email": None}
         st.success("Logged out successfully.")
-        st.experimental_rerun()
+        st.rerun()  # ✅ modern replacement
     except Exception as e:
         st.error(f"Logout error: {e}")
+
 
 # ----------------------------
 # REGISTER FUNCTION
@@ -159,7 +146,7 @@ def register():
             try:
                 response = supabase.auth.sign_up({"email": email, "password": password})
                 if response.user:
-                    st.success("Registration successful! Please check your email to confirm your account.")
+                    st.success("✅ Registration successful! Please check your email to confirm your account.")
                 else:
                     st.error("Registration failed.")
             except Exception as e:
@@ -197,17 +184,6 @@ if "user" in st.session_state and st.session_state.user:
 else:
     logged_in = False
 
-st.markdown("### User Access")
-if st.session_state.user.get("id"):
-    st.write(f"✅ Logged in as: **{st.session_state.user['email']}**")
-    if st.button("Logout"):
-        logout()
-else:
-    tab1, tab2 = st.tabs(["🔑 Login", "🆕 Register"])
-    with tab1:
-        login()
-    with tab2:
-        register()
 def custom_stress_score(prefix="", use_container=False):
     """Calculate stress score with option to avoid nested expanders"""
     title = f"🧮 {prefix} Stress Estimator Based on Cultural & Contextual Stress Factors" 
@@ -1973,39 +1949,58 @@ if "stress_score" not in st.session_state:
 if "location_str" not in st.session_state:
     st.session_state.location_str = {}
 
-# --- Sidebar navigation ---
 st.sidebar.title("Navigation")
-page = st.sidebar.radio(
-    "Choose a feature:",
-    ["About", "Stroke Prediction", "Alzheimer's Prediction", "Memory Recall Game"]
-)
+st.success("✅ Welcome to the African Neurohealth Dashboard")
 
-# --- Display pages ---
-if page == "About":
-    about()  # Always visible, even if no user is logged in
-elif page == "Stroke Prediction":
-    if st.session_state.user is not None:
-        stroke_prediction_app()
-    else:
-        st.warning("⚠️ Please log in to access Stroke Prediction.")
-elif page == "Alzheimer's Prediction":
-    if st.session_state.user is not None:
-        alzheimers_prediction_app()
-    else:
-        st.warning("⚠️ Please log in to access Alzheimer's Prediction.")
-elif page == "Memory Recall Game":
-    if st.session_state.user is not None:
-        memory_recall_game()
-    else:
-        st.warning("⚠️ Please log in to access Memory Recall Game.")
+# ----------------------------
+# Helper: Check if user is logged in
+# ----------------------------
+def is_logged_in():
+    return st.session_state.user.get("id") is not None
 
-if st.session_state.user is None:
+# ----------------------------
+# Sidebar: Authentication or Page Navigation
+# ----------------------------
+if not is_logged_in():
     st.sidebar.header("🔐 User Authentication")
     auth_option = st.sidebar.radio("Select option:", ["Login", "Register"], key="auth_option")
     if auth_option == "Login":
         login()
     else:
         register()
+    page_options = ["About"]  # Non-logged-in users only see About
+else:
+    page_options = ["About", "Stroke Prediction", "Alzheimer's Prediction", "Memory Recall Game"]
+    st.sidebar.markdown(f"Logged in as: **{st.session_state.user['email']}**")
+    if st.sidebar.button("Logout"):
+        logout()
+        st.experimental_rerun()
+
+# ----------------------------
+# Sidebar: Page Selection
+# ----------------------------
+page = st.sidebar.selectbox("Go to", page_options)
+
+# ----------------------------
+# Display Pages
+# ----------------------------
+if page == "About":
+    about()  # Always visible
+elif page == "Stroke Prediction":
+    if is_logged_in():
+        stroke_prediction_app()
+    else:
+        st.warning("⚠️ Please log in to access Stroke Prediction.")
+elif page == "Alzheimer's Prediction":
+    if is_logged_in():
+        alzheimers_prediction_app()
+    else:
+        st.warning("⚠️ Please log in to access Alzheimer's Prediction.")
+elif page == "Memory Recall Game":
+    if is_logged_in():
+        memory_recall_game()
+    else:
+        st.warning("⚠️ Please log in to access Memory Recall Game.")
 
 
 
