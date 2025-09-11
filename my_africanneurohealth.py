@@ -478,10 +478,8 @@ It blends conventional biomedical metrics with locally relevant stressors, lifes
 **This application was proudly developed by Adebimpe-John Omolola E., 
 with invaluable support from the GRASP / NIH / DSI Collaborative Program. 
 Their collaborative spirit and commitment to innovation helped bring this vision to life.**
+    """)
 
-
-
-    
 # -------------------
 # Initialize session state
 # -------------------
@@ -2011,5 +2009,6 @@ if st.session_state.user is None:
         login()
     else:
         register()
+
 
 
