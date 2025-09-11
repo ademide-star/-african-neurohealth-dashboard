@@ -177,7 +177,6 @@ if st.session_state.access_token and st.session_state.refresh_token:
         st.session_state.access_token = None
         st.session_state.refresh_token = None
         
-st.success("✅ Welcome Take a Moment to Know About The African Neurohealth Dashboard")
 
 if "user" in st.session_state and st.session_state.user:
     logged_in = True
@@ -1950,7 +1949,7 @@ if "location_str" not in st.session_state:
     st.session_state.location_str = {}
 
 st.sidebar.title("Navigation")
-st.success("✅ Welcome to the African Neurohealth Dashboard")
+st.success("✅ Welcome Take a Moment to Know About The African Neurohealth Dashboard")
 
 # ----------------------------
 # Helper: Check if user is logged in
@@ -2001,6 +2000,7 @@ elif page == "Memory Recall Game":
         memory_recall_game()
     else:
         st.warning("⚠️ Please log in to access Memory Recall Game.")
+
 
 
 
