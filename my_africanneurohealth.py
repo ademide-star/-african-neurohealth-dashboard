@@ -1724,14 +1724,14 @@ def alzheimers_prediction_app():
 - **Consult a healthcare provider immediately**
 - Begin cognitive training exercises
 - Review family medical history
-- 🧩 Do mental exercises (e.g., puzzles, memory games)
-- 🏃 Stay physically active (exercise increases brain health)
-- 🧘 Reduce stress — practice mindfulness or prayer
-- 👥 Stay socially engaged — talk to friends, join a group
-- 🥦 Eat brain-healthy foods (nuts, omega-3s, leafy greens)
-- 🌿 **Use cinnamon regularly** – may protect memory and reduce inflammation
-- 🚭 Avoid smoking and limit alcohol
-- 💤 Prioritize sleep and manage depression
+- Do mental exercises (e.g., puzzles, memory games)
+- Stay physically active (exercise increases brain health)
+- Reduce stress — practice mindfulness or prayer
+- Stay socially engaged — talk to friends, join a group
+- Eat brain-healthy foods (nuts, omega-3s, leafy greens)
+- **Use cinnamon regularly** – may protect memory and reduce inflammation
+- Avoid smoking and limit alcohol
+- Prioritize sleep and manage depression
 """)
                 else:
                     st.success("✅ LOW ALZHEIMER'S RISK DETECTED")
@@ -2012,6 +2012,7 @@ if st.session_state.user is None:
     else:
         register()
    
+
 
 
 
