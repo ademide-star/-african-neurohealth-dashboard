@@ -1746,8 +1746,8 @@ def alzheimers_prediction_app():
 - Reduce processed sugars and refined carbs
 
 ### 🏃 Physical Activity:
-- Aerobic exercise 3–5 times/week
-- Strength training 2–3 times/week
+- Aerobic exercise 3-5 times/week
+- Strength training 2-3 times/week
 - Balance and coordination exercises
 
 ### 😌 Mental Wellness:
@@ -2012,6 +2012,7 @@ if st.session_state.user is None:
     else:
         register()
    
+
 
 
 
