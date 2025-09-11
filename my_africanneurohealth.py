@@ -1252,7 +1252,7 @@ def stroke_prediction_app():
     - Reduce consumption of fried foods and processed meals
     - Increase intake of fruits and vegetables rich in potassium and fiber
     - Maintain a consistent sleep schedule
-    - ⚖️ Achieve and maintain a healthy weight (prevent obesity)
+    - Achieve and maintain a healthy weight (prevent obesity)
     """)
 else:
     st.success("✅ LOW STROKE RISK DETECTED")
@@ -2011,6 +2011,7 @@ if st.session_state.user is None:
     else:
         register()
    
+
 
 
 
