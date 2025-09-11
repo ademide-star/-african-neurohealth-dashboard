@@ -1719,8 +1719,8 @@ def alzheimers_prediction_app():
 
 # 4️⃣ Display results
                 if pred == 1:
-  st.error("⚠️ HIGH ALZHEIMER RISK DETECTED")
-st.markdown("""
+                    st.error("⚠️ HIGH ALZHEIMER RISK DETECTED")
+                    st.markdown("""
 ### 🚨 Immediate Action Recommended:
 - **Consult a healthcare provider immediately**
 - Eat brain-healthy foods (nuts, omega three, leafy greens)
@@ -1733,7 +1733,7 @@ st.markdown("""
 - **Use cinnamon regularly** may protect memory and reduce inflammation
 - Avoid smoking and limit alcohol
 - Prioritize sleep and manage depression 
-""")
+                    """)
                 else:
                     st.success("✅ LOW ALZHEIMER'S RISK DETECTED")
 
@@ -2011,4 +2011,5 @@ if st.session_state.user is None:
         login()
     else:
         register()
+
 
