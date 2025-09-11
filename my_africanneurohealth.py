@@ -1720,7 +1720,8 @@ def alzheimers_prediction_app():
 # 4️⃣ Display results
                 if pred == 1:
                     st.error("⚠️ HIGH ALZHEIMER RISK DETECTED")
-                    st.markdown("""## 🚨 Immediate Action Recommended:
+                    st.markdown("""
+### 🚨 Immediate Action Recommended:
 - **Consult a healthcare provider immediately**
 - Begin cognitive training exercises
 - Review family medical history
@@ -2012,6 +2013,7 @@ if st.session_state.user is None:
     else:
         register()
    
+
 
 
 
