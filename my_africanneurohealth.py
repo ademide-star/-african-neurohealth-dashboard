@@ -1280,7 +1280,7 @@ else:
             - BP check every 2 weeks
             - Annual glucose screening
             - Medication adherence if prescribed
-            - Prioritize 7–8 hours of sleep per night  
+            - Prioritize 7-8 hours of sleep per night  
             - **Take cinnamon (e.g., Saigon cinnamon) regularly**  
             - *Reduces blood sugar, inflammation, and oxidative stress*  
             - *Supports brain and heart health naturally*  
@@ -2012,6 +2012,7 @@ if st.session_state.user is None:
     else:
         register()
    
+
 
 
 
