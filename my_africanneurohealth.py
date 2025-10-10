@@ -270,10 +270,10 @@ def smart_load_model(path):
 current_dir = Path(__file__).resolve().parent
 
 # Define model paths using relative paths
-ALZ_MODEL_PATH = current_dir / "alzheimers_pipeline.joblib"
-STROKE_MODEL_PATH = current_dir / "stroke_pipeline.joblib"
-ALZ_PREPROCESSOR_PATH = current_dir / "alzheimers_preprocessor.joblib"
-
+ALZ_MODEL_PATH = current_dir / "alz_model_v17.joblib"
+STROKE_MODEL_PATH = current_dir / "stroke_model_v17.joblib"
+ALZ_PREPROCESSOR_PATH = current_dir / "alz_preprocessor_v17.joblib"
+STROKE_PREPROCESSOR_PATH = current_dir / "stroke_preprocessor_v17.joblib"
 # Function to load models with error handling
 @st.cache_resource
 def load_models():
@@ -290,11 +290,15 @@ def load_models():
         if not ALZ_PREPROCESSOR_PATH.exists():
             st.error(f"Preprocessor file not found at {ALZ_PREPROCESSOR_PATH}")
             return None, None, None
-            
+        
+        if not STROKE_PREPROCESSOR_PATH.exists():
+            st.error(f"Preprocessor file not found at {STROKE_PREPROCESSOR_PATH}")
+            return None, None, None
         # Load the models
         alz_model = joblib.load(ALZ_MODEL_PATH)
         stroke_model = joblib.load(STROKE_MODEL_PATH)
         preprocessor = joblib.load(ALZ_PREPROCESSOR_PATH)
+        preprocessor = joblib.load(STROKE_PREPROCESSOR_PATH)
         return alz_model, stroke_model, preprocessor
         
     except Exception as e:
@@ -2000,6 +2004,7 @@ elif page == "Memory Recall Game":
         memory_recall_game()
     else:
         st.warning("⚠️ Please log in to access Memory Recall Game.")
+
 
 
 
