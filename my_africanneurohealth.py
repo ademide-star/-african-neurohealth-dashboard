@@ -87,6 +87,247 @@ SUPABASE_KEY = st.secrets["SUPABASE_KEY"]
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 logging.basicConfig(level=logging.DEBUG)
 
+# --- Translation Dictionary ---
+TRANSLATIONS = {
+    "en": {
+        # Authentication
+        "login": "Login",
+        "register": "Register",
+        "email": "Email",
+        "password": "Password",
+        "new_email": "New Email",
+        "new_password": "New Password",
+        "confirm_password": "Confirm Password",
+        "logged_in_as": "Logged in as",
+        "invalid_credentials": "Invalid login credentials",
+        "registration_success": "Registration successful! Please check your email to confirm your account.",
+        "logout_success": "Logged out successfully.",
+        "logout_error": "Logout error",
+        "passwords_not_match": "Passwords do not match",
+        "login_with_email": "Login with Email & Password",
+        
+        # Navigation
+        "navigation": "Navigation",
+        "go_to": "Go to",
+        "about": "About",
+        "stroke_prediction": "Stroke Prediction",
+        "alzheimers_prediction": "Alzheimer's Prediction",
+        "memory_recall_game": "Memory Recall Game",
+        "nutrition_tracker": "Nutrition Tracker",
+        
+        # Common UI
+        "select_language": "Select Language",
+        "complete_all_fields": "Complete all fields for accurate assessment",
+        "submit": "Submit",
+        "save": "Save",
+        "predict": "Predict",
+        "high_risk": "HIGH RISK DETECTED",
+        "low_risk": "LOW RISK DETECTED",
+        "welcome": "Welcome to African NeuroHealth Dashboard",
+        
+        # Form Fields
+        "age": "Age",
+        "gender": "Gender",
+        "male": "Male",
+        "female": "Female",
+        "weight": "Weight",
+        "height": "Height",
+        "blood_group": "Blood Group",
+        "genotype": "Genotype",
+        "select": "Select",
+        "select_gender": "Select Gender",
+        "select_blood_group": "Select Blood Group",
+        "select_genotype": "Select Genotype",
+        
+        # Stroke Specific
+        "predict_stroke_risk": "Predict Stroke Risk",
+        "stroke_risk_predictor": "Stroke Risk Predictor",
+        "heart_disease": "Heart Disease",
+        "hypertension": "Hypertension",
+        "systolic_bp": "Systolic BP",
+        "diastolic_bp": "Diastolic BP",
+        "marital_status": "Marital Status",
+        "work_type": "Work Type",
+        "residence_type": "Residence Type",
+        "avg_glucose_level": "Average Glucose Level",
+        "smoking_status": "Smoking Status",
+        "stress_level": "Stress Level",
+        "ptsd": "PTSD",
+        "depression_level": "Depression Level",
+        "diabetes_type": "Diabetes Type",
+        "chronic_pain": "Chronic Pain",
+        "sleep_hours": "Sleep Hours",
+        "hypertension_treatment": "Hypertension Treatment",
+        "salt_intake": "Salt Intake",
+        "noise_sources": "Noise Sources",
+        "air_pollution": "Air Pollution Level",
+        "water_pollution": "Water Pollution Level",
+        "environmental_pollution": "Environmental Pollution Level",
+        "custom_stress_score": "Custom Stress Score",
+        
+        # Alzheimer's Specific
+        "alzheimers_predictor": "Alzheimer's Predictor",
+        "predict_alzheimers_risk": "Predict Alzheimer Risk",
+        "education_level": "Education Level",
+        "physical_activity": "Physical Activity",
+        "alcohol_consumption": "Alcohol Consumption",
+        "sleep_quality": "Sleep Quality",
+        "family_history": "Family History of Alzheimer's",
+        "cardiovascular_disease": "Cardiovascular Disease",
+        "depression": "Depression",
+        "cholesterol_total": "Total Cholesterol",
+        "cholesterol_ldl": "LDL",
+        "cholesterol_hdl": "HDL",
+        "triglycerides": "Triglycerides",
+        "functional_assessment": "Functional Assessment",
+        "behavioral_problems": "Behavioral Problems",
+        "adl": "ADL Score",
+        "confusion": "Confusion",
+        "disorientation": "Disorientation",
+        "personality_changes": "Personality Changes",
+        "difficulty_tasks": "Difficulty Completing Tasks",
+        "forgetfulness": "Forgetfulness",
+        "memory_complaints": "Memory Complaints",
+        "head_injury": "Head Injury",
+        
+        # Memory Game
+        "memory_recall_game": "Memory Recall Game",
+        "start_memory_exercise": "Start Memory Exercise",
+        "level": "Level",
+        "you_will_see_words": "You will see",
+        "words": "words",
+        "memorize_words": "Memorize these words (5 seconds):",
+        "type_words_remembered": "Type the words you remember, separated by commas:",
+        "submit_recall": "Submit Recall",
+        
+        # Nutrition Tracker
+        "nutrition_tracker": "Nutrition Tracker",
+        "fruit_intake": "Fruit Intake (servings per day)",
+        "vegetable_intake": "Vegetable Intake (servings per day)",
+        "water_intake": "Water Intake (liters per day)",
+        "supplements_used": "Supplements Used",
+        "natural_herbs": "Natural Herbs Taken",
+        "select_lifestyles": "Select Nutritional Lifestyles",
+        "track_consumption": "Track Consumption",
+        "frequency": "Frequency",
+        "servings": "Servings",
+        "save_nutrition_data": "Save Nutritional Data",
+        "nutritional_health_score": "Nutritional Health Score",
+        
+        # Location
+        "location_info": "Location Information",
+        "select_country": "Select Country",
+        "select_province": "Select Province",
+        "select_region": "Select Region",
+        "select_ethnicity": "Select Ethnicity",
+        
+        # About Page
+        "about_this_app": "About This App",
+        "african_neurohealth": "African NeuroHealth Dashboard",
+        "about_description": """This platform is a culturally attuned, context-aware diagnostic tool tailored for assessing neuro-health risks in African populations. 
+It blends conventional biomedical metrics with locally relevant stressors, lifestyle habits, and cultural practices to offer a truly holistic health assessment experience.
+
+**Key Features:**
+- Environmental exposures (e.g., noise, air pollution)
+- Dietary patterns (including traditional nutrition)
+- Sleep quality and hydration
+- Use of herbal or traditional remedies
+- Psychosocial stressors unique to African settings
+- Ethnocultural identity tracking for precision health insights
+
+**This application was proudly developed by Adebimpe-John Omolola E., 
+with invaluable support from the GRASP / NIH / DSI Collaborative Program. 
+Their collaborative spirit and commitment to innovation helped bring this vision to life.**""",
+        
+        # Stress Assessment
+        "stress_estimator": "Stress Estimator Based on Cultural & Contextual Stress Factors",
+        "financial_pressure": "Financial pressure/burden",
+        "family_issues": "Family/relationship issues",
+        "work_stress": "Work/employment stress",
+        "safety_concerns": "Community safety concerns",
+        "caregiver_burden": "Caregiver burden",
+        "migration_stress": "Migration/displacement stress",
+        "family_expectations": "Traditional family expectations",
+        "religious_conflicts": "Spiritual/religious conflicts",
+        "total_stress_score": "Total Stress Score",
+        "low_stress": "Low",
+        "moderate_stress": "Moderate",
+        "high_stress": "High",
+        "additional_stress_assessment": "Additional Stress Assessment",
+        
+        # BMI
+        "bmi_assessment": "BMI Assessment (Body Mass Index)",
+        "enter_weight": "Enter your weight (kg)",
+        "enter_height": "Enter your height (m)",
+        "calculated_bmi": "Calculated BMI",
+        "bmi_category": "BMI Category",
+        "underweight": "Underweight",
+        "normal_weight": "Normal weight",
+        "overweight": "Overweight",
+        "obese": "Obese",
+        
+        # Messages
+        "please_login": "Please log in to access this feature",
+        "logged_in_success": "✅ Logged in as",
+        "registration_failed": "Registration failed.",
+        "login_error": "Login error",
+        "registration_error": "Registration error",
+    },
+    "ar": {
+        "login": "تسجيل الدخول",
+        "register": "تسجيل",
+        "email": "البريد الإلكتروني",
+        "password": "كلمة المرور",
+        "new_email": "بريد إلكتروني جديد",
+        "new_password": "كلمة مرور جديدة",
+        "confirm_password": "تأكيد كلمة المرور",
+        "logged_in_as": "تم تسجيل الدخول باسم",
+        "invalid_credentials": "بيانات تسجيل دخول غير صالحة",
+        "registration_success": "تم التسجيل بنجاح! يرجى التحقق من بريدك الإلكتروني لتأكيد حسابك.",
+        "logout_success": "تم تسجيل الخروج بنجاح.",
+        "logout_error": "خطأ في تسجيل الخروج",
+        "passwords_not_match": "كلمات المرور غير متطابقة",
+        "login_with_email": "تسجيل الدخول بالبريد الإلكتروني وكلمة المرور",
+    },
+    "sw": {
+        "login": "Ingia",
+        "register": "Jisajili",
+        "email": "Barua Pepe",
+        "password": "Nenosiri",
+        "new_email": "Barua Pepe Mpya",
+        "new_password": "Nenosiri Jipya",
+        "confirm_password": "Thibitisha Nenosiri",
+        "logged_in_as": "Umeingia kama",
+        "invalid_credentials": "Maelezo ya kuingia sio sahihi",
+        "registration_success": "Usajili umefanikiwa! Tafadhali angalia barua pepe yako kuthibitisha akaunti yako.",
+        "logout_success": "Umetoka kwa mafanikio.",
+        "logout_error": "Hitilafu ya kutoka",
+        "passwords_not_match": "Nenosiri halifanani",
+        "login_with_email": "Ingia na Barua Pepe na Nenosiri",
+    },
+    "fr": {
+        "login": "Connexion",
+        "register": "S'inscrire",
+        "email": "E-mail",
+        "password": "Mot de passe",
+        "new_email": "Nouvel e-mail",
+        "new_password": "Nouveau mot de passe",
+        "confirm_password": "Confirmer le mot de passe",
+        "logged_in_as": "Connecté en tant que",
+        "invalid_credentials": "Identifiants de connexion invalides",
+        "registration_success": "Inscription réussie ! Veuillez vérifier votre e-mail pour confirmer votre compte.",
+        "logout_success": "Déconnexion réussie.",
+        "logout_error": "Erreur de déconnexion",
+        "passwords_not_match": "Les mots de passe ne correspondent pas",
+        "login_with_email": "Se connecter avec e-mail et mot de passe",
+    }
+}
+
+# Helper function to get translated text
+def t(key):
+    lang = st.session_state.get('current_lang', 'en')
+    return TRANSLATIONS[lang].get(key, key)  # Fallback to key if translation missing
+
 # --- Get User Location ---
 def get_user_location():
     try: 
@@ -101,20 +342,20 @@ def get_user_location():
 # LOGIN FUNCTION
 # ----------------------------
 def login():
-    st.subheader("Login with Email & Password")
-    email = st.text_input("Email", key="login_email")
-    password = st.text_input("Password", type="password", key="login_password")
+    st.subheader(t("login_with_email"))
+    email = st.text_input(t("email"), key="login_email")
+    password = st.text_input(t("password"), type="password", key="login_password")
 
-    if st.button("Login", key="login_btn"):
+    if st.button(t("login"), key="login_btn"):
         try:
             response = supabase.auth.sign_in_with_password({"email": email, "password": password})
             if response.user:
                 st.session_state.user = {"id": response.user.id, "email": response.user.email}
-                st.success(f"✅ Logged in as {st.session_state.user['email']}")
+                st.success(f"✅ {t('logged_in_as')} {st.session_state.user['email']}")
             else:
-                st.error("Invalid login credentials")
+                st.error(t("invalid_credentials"))
         except Exception as e:
-            st.error(f"Login error: {e}")
+            st.error(f"{t('login_error')}: {e}")
 
 
 # ----------------------------
@@ -124,33 +365,34 @@ def logout():
     try:
         supabase.auth.sign_out()
         st.session_state.user = {"id": None, "email": None}
-        st.success("Logged out successfully.")
+        st.success(t("logout_success"))
         st.rerun()  # ✅ modern replacement
     except Exception as e:
-        st.error(f"Logout error: {e}")
+        st.error(f"{t('logout_error')}: {e}")
 
 
 # ----------------------------
 # REGISTER FUNCTION
 # ----------------------------
 def register():
-    st.subheader("Register")
-    email = st.text_input("New Email", key="register_email")
-    password = st.text_input("New Password", type="password", key="register_password")
-    confirm_password = st.text_input("Confirm Password", type="password", key="register_confirm_password")
+    st.subheader(t("register"))
+    email = st.text_input(t("new_email"), key="register_email")
+    password = st.text_input(t("new_password"), type="password", key="register_password")
+    confirm_password = st.text_input(t("confirm_password"), type="password", key="register_confirm_password")
 
-    if st.button("Register", key="register_btn"):
+    if st.button(t("register"), key="register_btn"):
         if password != confirm_password:
-            st.error("Passwords do not match")
+            st.error(t("passwords_not_match"))
         else:
             try:
                 response = supabase.auth.sign_up({"email": email, "password": password})
                 if response.user:
-                    st.success("✅ Registration successful! Please check your email to confirm your account.")
+                    st.success(t("registration_success"))
                 else:
-                    st.error("Registration failed.")
+                    st.error(t("registration_failed"))
             except Exception as e:
-                st.error(f"Registration error: {e}")
+                st.error(f"{t('registration_error')}: {e}")
+
 # SESSION MANAGEMENT
 # ----------------------------
 if "user" not in st.session_state:
@@ -159,6 +401,8 @@ if "access_token" not in st.session_state:
     st.session_state.access_token = None
 if "refresh_token" not in st.session_state:
     st.session_state.refresh_token = None
+if "current_lang" not in st.session_state:
+    st.session_state.current_lang = "en"
 
 # ----------------------------
 # RESTORE SESSION IF TOKENS EXIST
@@ -185,7 +429,7 @@ else:
 
 def custom_stress_score(prefix="", use_container=False):
     """Calculate stress score with option to avoid nested expanders"""
-    title = f"🧮 {prefix} Stress Estimator Based on Cultural & Contextual Stress Factors" 
+    title = f"🧮 {prefix} {t('stress_estimator')}" 
     # Create either a container or expander based on context
     if use_container:
         container = st.container()
@@ -194,41 +438,41 @@ def custom_stress_score(prefix="", use_container=False):
         container = st.expander(title)
     
     with container:
-        q1 = st.slider("Financial pressure/burden", 0, 4, 2, 
+        q1 = st.slider(t("financial_pressure"), 0, 4, 2, 
                       help="Struggling with basic needs, debts, or unemployment")
-        q2 = st.slider("Family/relationship issues", 0, 4, 2,
+        q2 = st.slider(t("family_issues"), 0, 4, 2,
                       help="Marital conflicts, caring for extended family, generational conflicts")
-        q3 = st.slider("Work/employment stress", 0, 4, 2,
+        q3 = st.slider(t("work_stress"), 0, 4, 2,
                       help="Job insecurity, long commutes, workplace discrimination")
-        q4 = st.slider("Community safety concerns", 0, 4, 2,
+        q4 = st.slider(t("safety_concerns"), 0, 4, 2,
                       help="Crime, political instability, or ethnic tensions in your area")
-        q5 = st.slider("Caregiver burden", 0, 4, 2,
+        q5 = st.slider(t("caregiver_burden"), 0, 4, 2,
                       help="Caring for children/elderly with limited support")
-        q6 = st.slider("Migration/displacement stress", 0, 4, 2,
+        q6 = st.slider(t("migration_stress"), 0, 4, 2,
                       help="Relocation challenges, missing homeland, adapting to new culture")
-        q7 = st.slider("Traditional family expectations", 0, 4, 2,
+        q7 = st.slider(t("family_expectations"), 0, 4, 2,
                       help="Pressure to uphold cultural traditions, marriage expectations")
-        q8 = st.slider("Spiritual/religious conflicts", 0, 4, 2,
+        q8 = st.slider(t("religious_conflicts"), 0, 4, 2,
                       help="Tension between traditional beliefs and modern life")
         
         total_score = q1 + q2 + q3 + q4 + q5 + q6 + q7 + q8
         
         if total_score <= 12:
             level = 0
-            label = "Low"
+            label = t("low_stress")
             color = "green"
         elif total_score <= 20:
             level = 1
-            label = "Moderate"
+            label = t("moderate_stress")
             color = "orange"
         else:
             level = 2
-            label = "High"
+            label = t("high_stress")
             color = "red"
  
         st.markdown(f"""
         <div style='padding: 10px; border-radius: 5px; background-color: #f0f2f6; margin-top: 20px;'>
-            <h4>🧠 Total Stress Score: <span style='color:{color};'>{total_score}/32</span> → {label} Stress</h4>
+            <h4>🧠 {t('total_stress_score')}: <span style='color:{color};'>{total_score}/32</span> → {label} {t('stress_level')}</h4>
             <p><small>Higher scores indicate greater exposure to Africa-specific stressors</small></p>
         </div>
         """, unsafe_allow_html=True)
@@ -440,24 +684,9 @@ def predict_stroke(raw: dict) -> int:
 # ABOUT FUNCTION
 # ----------------------------
 def about():
-    st.header("ℹ️ About This App")
-    st.title("🧠 African NeuroHealth Dashboard")
-    st.markdown("""
-This platform is a culturally attuned, context-aware diagnostic tool tailored for assessing neuro-health risks in African populations. 
-It blends conventional biomedical metrics with locally relevant stressors, lifestyle habits, and cultural practices to offer a truly holistic health assessment experience.
-
-**Key Features:**
-- Environmental exposures (e.g., noise, air pollution)
-- Dietary patterns (including traditional nutrition)
-- Sleep quality and hydration
-- Use of herbal or traditional remedies
-- Psychosocial stressors unique to African settings
-- Ethnocultural identity tracking for precision health insights
-
-**This application was proudly developed by Adebimpe-John Omolola E., 
-with invaluable support from the GRASP / NIH / DSI Collaborative Program. 
-Their collaborative spirit and commitment to innovation helped bring this vision to life.**
-    """)
+    st.header(f"ℹ️ {t('about_this_app')}")
+    st.title(f"🧠 {t('african_neurohealth')}")
+    st.markdown(t("about_description"))
 
 # -------------------
 # Initialize session state
@@ -600,11 +829,11 @@ for r, ethnicities in region_with_ethnicity.items():
 
 # Streamlit UI
 with st.sidebar:
-    st.header("🌍 Location Information")
-    selected_country = st.selectbox("Select Country", list(countries_with_provinces.keys()))
-    selected_province = st.selectbox("Select Province", countries_with_provinces[selected_country])
-    selected_region = st.selectbox("🌍 Select Region", list(region_with_ethnicity.keys()))
-    selected_ethnicity = st.selectbox("Select Ethnicity", region_with_ethnicity[selected_region])
+    st.header(f"🌍 {t('location_info')}")
+    selected_country = st.selectbox(t("select_country"), list(countries_with_provinces.keys()))
+    selected_province = st.selectbox(t("select_province"), countries_with_provinces[selected_country])
+    selected_region = st.selectbox(f"🌍 {t('select_region')}", list(region_with_ethnicity.keys()))
+    selected_ethnicity = st.selectbox(t("select_ethnicity"), region_with_ethnicity[selected_region])
 # Convert selections to numerical codes
     encoded_country = country_map[selected_country]
     encoded_province = province_map[selected_province]
@@ -621,8 +850,8 @@ payload = {
 }
 
 def nutrition_tracker_app():
-    st.header("Nutrition Tracker")
-    st.title("🥗 Nutrition Tracker")
+    st.header(t("nutrition_tracker"))
+    st.title(f"🥗 {t('nutrition_tracker')}")
 # --- Nutritional Lifestyle Tracker ---
 def calculate_weekly_servings(freq, servings):
     if freq == "Daily":
@@ -655,27 +884,27 @@ def compute_nutritional_score():
     raw_score = 3 + (positive_score / 10) - (negative_score / 5)
     return max(1, min(5, round(raw_score)))
 
-st.sidebar.header("🍽️ Nutritional Lifestyle Tracker")
-st.sidebar.header("Additional Nutrition Details")
+st.sidebar.header(f"🍽️ {t('nutrition_tracker')}")
+st.sidebar.header(f"{t('additional_nutrition_details')}")
 
 fruit_intake = st.sidebar.number_input(
-    "Fruit Intake (servings per day)", min_value=0, max_value=20, value=2, key="fruit_intake"
+    t("fruit_intake"), min_value=0, max_value=20, value=2, key="fruit_intake"
 )
 
 vegetable_intake = st.sidebar.number_input(
-    "Vegetable Intake (servings per day)", min_value=0, max_value=20, value=3, key="vegetable_intake"
+    t("vegetable_intake"), min_value=0, max_value=20, value=3, key="vegetable_intake"
 )
 
 hydration_liters = st.sidebar.number_input(
-    "Water Intake (liters per day)", min_value=0.0, max_value=10.0, value=2.0, key="hydration_liters"
+    t("water_intake"), min_value=0.0, max_value=10.0, value=2.0, key="hydration_liters"
 )
 
 supplements_used = st.sidebar.text_input(
-    "Supplements Used (e.g., Vitamin D, Omega-3)", key="supplements_used"
+    t("supplements_used"), key="supplements_used"
 )
 
 natural_herbs = st.sidebar.text_input(
-    "Natural Herbs Taken (e.g., Ginger, Turmeric)", key="natural_herbs"
+    t("natural_herbs"), key="natural_herbs"
 )
 
 # Available options
@@ -687,7 +916,7 @@ all_options = [
 
 # Lifestyle selection
 selected_lifestyles = st.sidebar.multiselect(
-    "Select Nutritional Lifestyles",
+    t("select_lifestyles"),
     all_options,
     default=st.session_state.default_lifestyles,
     key="nutritional_lifestyle"
@@ -696,14 +925,14 @@ st.session_state.default_lifestyles = selected_lifestyles
 
 # Process each selected lifestyle
 if selected_lifestyles:
-    with st.sidebar.expander("Track Consumption", expanded=True):
+    with st.sidebar.expander(t("track_consumption"), expanded=True):
         for lifestyle in selected_lifestyles:
             st.subheader(lifestyle)
             col1, col2 = st.columns(2)
             
             with col1:
                 freq = st.selectbox(
-                    "Frequency",
+                    t("frequency"),
                     ["Daily", "Weekly", "Monthly"],
                     key=f"freq_{lifestyle}"
                 )
@@ -711,7 +940,7 @@ if selected_lifestyles:
             with col2:
                 freq_label = "day" if freq == "Daily" else "week" if freq == "Weekly" else "month"
                 servings = st.number_input(
-                    f"Servings per {freq_label}:",
+                    f"{t('servings')} per {freq_label}:",
                     min_value=1,
                     max_value=100,
                     value=1,
@@ -729,12 +958,12 @@ if selected_lifestyles:
 # Display score after processing inputs
 if st.session_state.nutritional_data:
     nutritional_score = compute_nutritional_score()
-    st.sidebar.info(f"🍎 Nutritional Health Score: **{nutritional_score}/5**")         
+    st.sidebar.info(f"🍎 {t('nutritional_health_score')}: **{nutritional_score}/5**")         
 
 # --- Save Functionality ---
-if st.sidebar.button("Save Nutritional Data"):
+if st.sidebar.button(t("save_nutrition_data")):
     if st.session_state.user is None:
-        st.sidebar.warning("Please log in to save nutritional data")
+        st.sidebar.warning(t("please_login"))
     elif not st.session_state.nutritional_data:
         st.sidebar.warning("No nutritional data to save")
     else:
@@ -1009,29 +1238,29 @@ def required_slider(label, min_value, max_value, default, key):
     return st.slider(label, min_value, max_value, default, key=key)
 
 def stroke_prediction_app():
-    st.title("🫀 Stroke Risk Predictor")
-    st.warning("Complete all fields for accurate assessment")
+    st.title(f"🫀 {t('stroke_risk_predictor')}")
+    st.warning(t("complete_all_fields"))
 # Get nutritional score
     nutritional_score = compute_nutritional_score()
-    st.info(f"🍎 Nutritional Health Score: **{nutritional_score}/5**")
+    st.info(f"🍎 {t('nutritional_health_score')}: **{nutritional_score}/5**")
     with st.form("stroke_form"):
     # ✅ Selectbox with placeholder
-        age = st.selectbox("Age", ["Select"] + [i for i in range(18, 221)])
-        gender = st.selectbox("Gender", ["Select Gender", "Male", "Female"])
-        blood_group = st.selectbox("Blood Group", ["Select Blood Group", "A+","A-", "B+", "B-", "AB+", "AB-", "O+", "O-"])
-        genotype = st.selectbox("Genotype", ["Select Genotype", "AA", "AS", "SS", "AC", "SC"])
-        heart_disease = st.selectbox("Heart Disease", ["Select", "Yes", "No"])
-        hypertension = st.selectbox("Hypertension", ["Select", "Yes", "No"])
-        systolic_bp = st.number_input("Systolic BP", min_value=80, max_value=220, value=None)
-        diastolic_bp = st.number_input("Diastolic BP", min_value=50, max_value=150, value=None)
+        age = st.selectbox(t("age"), [t("select")] + [i for i in range(18, 221)])
+        gender = st.selectbox(t("gender"), [t("select_gender"), t("male"), t("female")])
+        blood_group = st.selectbox(t("blood_group"), [t("select_blood_group"), "A+","A-", "B+", "B-", "AB+", "AB-", "O+", "O-"])
+        genotype = st.selectbox(t("genotype"), [t("select_genotype"), "AA", "AS", "SS", "AC", "SC"])
+        heart_disease = st.selectbox(t("heart_disease"), [t("select"), "Yes", "No"])
+        hypertension = st.selectbox(t("hypertension"), [t("select"), "Yes", "No"])
+        systolic_bp = st.number_input(t("systolic_bp"), min_value=80, max_value=220, value=None)
+        diastolic_bp = st.number_input(t("diastolic_bp"), min_value=50, max_value=150, value=None)
        
 
-        st.subheader("📏 BMI Assessment (Body Mass Index)")
+        st.subheader(f"📏 {t('bmi_assessment')}")
         st.caption("BMI is calculated as weight (kg) ÷ height (m)². It estimates body fat and overall health risk.")
 
 # Weight input
         weight = st.number_input(
-        "Enter your weight (kg)", 
+        t("enter_weight"), 
         min_value=20.0, 
         max_value=200.0, 
         value=20.0,
@@ -1042,7 +1271,7 @@ def stroke_prediction_app():
 
 # Height input
         height = st.number_input(
-        "Enter your height (m)", 
+        t("enter_height"), 
         min_value=1.0, 
         max_value=2.5, 
         value=1.00,
@@ -1054,53 +1283,53 @@ def stroke_prediction_app():
 # Calculate BMI and display immediately
         if weight > 0 and height > 0:
             bmi = round(weight / (height ** 2), 2)
-            st.success(f"Calculated BMI: **{bmi}**")
+            st.success(f"{t('calculated_bmi')}: **{bmi}**")
         else:
             bmi = None
         # Determine BMI category
         if bmi < 18.5:
-            risk = "Underweight"
+            risk = t("underweight")
             color = "warning"
         elif 18.5 <= bmi < 24.9:
-            risk = "Normal weight"
+            risk = t("normal_weight")
             color = "success"
         elif 25 <= bmi < 29.9:
-            risk = "Overweight"
+            risk = t("overweight")
             color = "warning"
         else:
-            risk = "Obese"
+            risk = t("obese")
             color = "error"
     
-        st.markdown(f"**BMI Category:** <span style='color:{color}'>{risk}</span>", unsafe_allow_html=True)
+        st.markdown(f"**{t('bmi_category')}:** <span style='color:{color}'>{risk}</span>", unsafe_allow_html=True)
         # Collecting additional user information
-        marital_status = st.selectbox("Marital Status", ["Select", "Single", "Married", "Divorced", "Widowed"])
-        work_type = st.selectbox("Work Type", ["Select", "Private", "Self-employed", "Govt job", "Children", "Never worked"])
-        residence_type = st.selectbox("Residence Type", ["Select", "Urban", "Rural"])
-        avg_glucose_level = st.number_input("Average Glucose Level", min_value=50.0, max_value=300.0, value=None, format="%.2f")
-        smoking_status = st.selectbox("Smoking Status", ["Select", "formerly smoked", "never smoked", "smokes"])
+        marital_status = st.selectbox(t("marital_status"), [t("select"), "Single", "Married", "Divorced", "Widowed"])
+        work_type = st.selectbox(t("work_type"), [t("select"), "Private", "Self-employed", "Govt job", "Children", "Never worked"])
+        residence_type = st.selectbox(t("residence_type"), [t("select"), "Urban", "Rural"])
+        avg_glucose_level = st.number_input(t("avg_glucose_level"), min_value=50.0, max_value=300.0, value=None, format="%.2f")
+        smoking_status = st.selectbox(t("smoking_status"), [t("select"), "formerly smoked", "never smoked", "smokes"])
 
-        stress_level = st.selectbox("Stress Level", ["Select", "None", "Low", "Moderate", "High"])
-        ptsd = st.selectbox("PTSD", ["Select", "Yes", "No"])
-        depression_level = st.selectbox("Depression Level", ["Select", "None", "Mild", "Moderate", "Severe"])
-        diabetes_type = st.selectbox("Diabetes Type", ["Select", "None", "Type 1", "Type 2", "Gestational"])
-        chronic_pain = st.selectbox("Chronic Pain", ["Select", "None", "Rheumatism", "Osteoarthritis", "Others"])
+        stress_level = st.selectbox(t("stress_level"), [t("select"), "None", "Low", "Moderate", "High"])
+        ptsd = st.selectbox(t("ptsd"), [t("select"), "Yes", "No"])
+        depression_level = st.selectbox(t("depression_level"), [t("select"), "None", "Mild", "Moderate", "Severe"])
+        diabetes_type = st.selectbox(t("diabetes_type"), [t("select"), "None", "Type 1", "Type 2", "Gestational"])
+        chronic_pain = st.selectbox(t("chronic_pain"), [t("select"), "None", "Rheumatism", "Osteoarthritis", "Others"])
 
-        sleep_hours = st.slider("Sleep Hours", 3.0, 10.0, value=None)
-        hypertension_treatment = st.selectbox("Hypertension Treatment", ["Select", "None", "Herbal", "Drugs"])
-        salt_intake = st.selectbox("Salt Intake", ["Select", "None", "Little", "Moderate", "High"])
-        noise_sources = st.selectbox("Noise Sources", ["Select", "None", "Mosque", "Church", "Market", "Block-Industry",
+        sleep_hours = st.slider(t("sleep_hours"), 3.0, 10.0, value=None)
+        hypertension_treatment = st.selectbox(t("hypertension_treatment"), [t("select"), "None", "Herbal", "Drugs"])
+        salt_intake = st.selectbox(t("salt_intake"), [t("select"), "None", "Little", "Moderate", "High"])
+        noise_sources = st.selectbox(t("noise_sources"), [t("select"), "None", "Mosque", "Church", "Market", "Block-Industry",
                                                   "Grinding-Machine", "Welder", "Club-House", "Generator"])
 
-        pollution_level_air = st.selectbox("Air Pollution Level", ["Select", "None", "Low", "Moderate", "High"])
-        pollution_level_water = st.selectbox("Water Pollution Level", ["Select", "None", "Low", "Moderate", "High"])
-        pollution_level_environmental = st.selectbox("Environmental Pollution Level", ["Select", "None", "Low", "Moderate", "High"])
-        CustomStressScore = st.number_input("Custom Stress Score", min_value=0, max_value=10, value=None)
+        pollution_level_air = st.selectbox(t("air_pollution"), [t("select"), "None", "Low", "Moderate", "High"])
+        pollution_level_water = st.selectbox(t("water_pollution"), [t("select"), "None", "Low", "Moderate", "High"])
+        pollution_level_environmental = st.selectbox(t("environmental_pollution"), [t("select"), "None", "Low", "Moderate", "High"])
+        CustomStressScore = st.number_input(t("custom_stress_score"), min_value=0, max_value=10, value=None)
         
-        st.subheader("🧠 Additional Stress Assessment")
+        st.subheader(f"🧠 {t('additional_stress_assessment')}")
         _, _, stress_score = custom_stress_score(use_container=True)
         st.session_state.stress_score = stress_score
 
-        submit_stroke_inputs = st.form_submit_button("Predict Stroke Risk")
+        submit_stroke_inputs = st.form_submit_button(t("predict_stroke_risk"))
         def all_fields():
                 age, gender, heart_disease, hypertension, systolic_bp, diastolic_bp, bmi,
                 marital_status, work_type, residence_type, avg_glucose_level, smoking_status,
@@ -1117,15 +1346,15 @@ def stroke_prediction_app():
                       CustomStressScore, stress_score, height, weight, blood_group, genotype
         ]
         if all(v is not None for v in all_fields):
-            submit_stroke_inputs = st.form_submit_button("Predict Stroke Risk")
+            submit_stroke_inputs = st.form_submit_button(t("predict_stroke_risk"))
         else:
         # Fake disabled button when not all fields filled
             st.markdown(
-            "<button disabled style='background-color:grey; color:white; padding:0.5em 1em; border-radius:8px; border:none;'>Predict Stroke Risk</button>",
+            f"<button disabled style='background-color:grey; color:white; padding:0.5em 1em; border-radius:8px; border:none;'>{t('predict_stroke_risk')}</button>",
             unsafe_allow_html=True
         )
         submit_stroke_inputs = False
-        st.warning("Complete all fields for accurate assessment")
+        st.warning(t("complete_all_fields"))
     if submit_stroke_inputs:
         try:
         # 1️⃣ Collect raw inputs safely
@@ -1400,127 +1629,127 @@ def raw_inputs_collection():
         # Collect all required inputs
         raw_inputs = {}
         # Numeric inputs
-        raw_inputs['Age'] = st.number_input('Age', min_value=0, max_value=120, value=50)
+        raw_inputs['Age'] = st.number_input(t('age'), min_value=0, max_value=120, value=50)
         raw_inputs['BMI'] = st.number_input('BMI', min_value=10.0, max_value=50.0, value=25.0)
         raw_inputs['MMSE'] = st.number_input('MMSE Score', min_value=0, max_value=30, value=25)
-        raw_inputs['EducationLevel'] = st.number_input('Education Level', min_value=0, max_value=20, value=12)
-        raw_inputs['SystolicBP'] = st.number_input('Systolic Blood Pressure', min_value=80, max_value=200, value=120)
-        raw_inputs['DiastolicBP'] = st.number_input('Diastolic Blood Pressure', min_value=50, max_value=120, value=80)
-        raw_inputs['CholesterolHDL'] = st.number_input('HDL Cholesterol', min_value=20.0, max_value=100.0, value=50.0)
-        raw_inputs['CholesterolLDL'] = st.number_input('LDL Cholesterol', min_value=50.0, max_value=200.0, value=100.0)
-        raw_inputs['CholesterolTotal'] = st.number_input('Total Cholesterol', min_value=100.0, max_value=300.0, value=200.0)
-        raw_inputs['CholesterolTriglycerides'] = st.number_input('Triglycerides', min_value=50.0, max_value=500.0, value=150.0)
+        raw_inputs['EducationLevel'] = st.number_input(t('education_level'), min_value=0, max_value=20, value=12)
+        raw_inputs['SystolicBP'] = st.number_input(t('systolic_bp'), min_value=80, max_value=200, value=120)
+        raw_inputs['DiastolicBP'] = st.number_input(t('diastolic_bp'), min_value=50, max_value=120, value=80)
+        raw_inputs['CholesterolHDL'] = st.number_input(t('cholesterol_hdl'), min_value=20.0, max_value=100.0, value=50.0)
+        raw_inputs['CholesterolLDL'] = st.number_input(t('cholesterol_ldl'), min_value=50.0, max_value=200.0, value=100.0)
+        raw_inputs['CholesterolTotal'] = st.number_input(t('cholesterol_total'), min_value=100.0, max_value=300.0, value=200.0)
+        raw_inputs['CholesterolTriglycerides'] = st.number_input(t('triglycerides'), min_value=50.0, max_value=500.0, value=150.0)
         
         # Binary/categorical inputs
-        raw_inputs['Gender'] = st.selectbox('Gender', ['Male', 'Female'])
-        raw_inputs['Hypertension'] = st.selectbox('Hypertension', ['No', 'Yes'])
-        raw_inputs['Diabetes'] = st.selectbox('Diabetes', ['No', 'Yes'])
-        raw_inputs['CardiovascularDisease'] = st.selectbox('Cardiovascular Disease', ['No', 'Yes'])
-        raw_inputs['FamilyHistoryAlzheimers'] = st.selectbox('Family History of Alzheimer\'s', ['No', 'Yes'])
-        raw_inputs['HeadInjury'] = st.selectbox('History of Head Injury', ['No', 'Yes'])
+        raw_inputs['Gender'] = st.selectbox(t('gender'), ['Male', 'Female'])
+        raw_inputs['Hypertension'] = st.selectbox(t('hypertension'), ['No', 'Yes'])
+        raw_inputs['Diabetes'] = st.selectbox(t('diabetes'), ['No', 'Yes'])
+        raw_inputs['CardiovascularDisease'] = st.selectbox(t('cardiovascular_disease'), ['No', 'Yes'])
+        raw_inputs['FamilyHistoryAlzheimers'] = st.selectbox(t('family_history'), ['No', 'Yes'])
+        raw_inputs['HeadInjury'] = st.selectbox(t('head_injury'), ['No', 'Yes'])
         
         # Additional binary inputs
         binary_options = ['No', 'Yes']
-        raw_inputs['Smoking'] = st.selectbox('Smoking', binary_options)
-        raw_inputs['AlcoholConsumption'] = st.selectbox('Alcohol Consumption', binary_options)
-        raw_inputs['PhysicalActivity'] = st.selectbox('Physical Activity', binary_options)
-        raw_inputs['Depression'] = st.selectbox('Depression', binary_options)
-        raw_inputs['Forgetfulness'] = st.selectbox('Forgetfulness', binary_options)
-        raw_inputs['Confusion'] = st.selectbox('Confusion', binary_options)
-        raw_inputs['Disorientation'] = st.selectbox('Disorientation', binary_options)
-        raw_inputs['PersonalityChanges'] = st.selectbox('Personality Changes', binary_options)
-        raw_inputs['BehavioralProblems'] = st.selectbox('Behavioral Problems', binary_options)
-        raw_inputs['DifficultyCompletingTasks'] = st.selectbox('Difficulty Completing Tasks', binary_options)
-        raw_inputs['MemoryComplaints'] = st.selectbox('Memory Complaints', binary_options)
+        raw_inputs['Smoking'] = st.selectbox(t('smoking_status'), binary_options)
+        raw_inputs['AlcoholConsumption'] = st.selectbox(t('alcohol_consumption'), binary_options)
+        raw_inputs['PhysicalActivity'] = st.selectbox(t('physical_activity'), binary_options)
+        raw_inputs['Depression'] = st.selectbox(t('depression'), binary_options)
+        raw_inputs['Forgetfulness'] = st.selectbox(t('forgetfulness'), binary_options)
+        raw_inputs['Confusion'] = st.selectbox(t('confusion'), binary_options)
+        raw_inputs['Disorientation'] = st.selectbox(t('disorientation'), binary_options)
+        raw_inputs['PersonalityChanges'] = st.selectbox(t('personality_changes'), binary_options)
+        raw_inputs['BehavioralProblems'] = st.selectbox(t('behavioral_problems'), binary_options)
+        raw_inputs['DifficultyCompletingTasks'] = st.selectbox(t('difficulty_tasks'), binary_options)
+        raw_inputs['MemoryComplaints'] = st.selectbox(t('memory_complaints'), binary_options)
         # Height and Weight for BMI calculation
-        raw_inputs['Height'] = st.number_input('Height (m)', min_value=0.0, max_value=3.0, value=1.75)
-        raw_inputs['Weight'] = st.number_input('Weight (kg)', min_value=0, max_value=300, value=70)
-        raw_inputs['Genotype'] = st.selectbox('Genotype', ['AA', 'AS', 'SS', 'AC', 'SC'])
-        raw_inputs['BloodGroup'] = st.selectbox('Blood Group', ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'])
+        raw_inputs['Height'] = st.number_input(t('height'), min_value=0.0, max_value=3.0, value=1.75)
+        raw_inputs['Weight'] = st.number_input(t('weight'), min_value=0, max_value=300, value=70)
+        raw_inputs['Genotype'] = st.selectbox(t('genotype'), ['AA', 'AS', 'SS', 'AC', 'SC'])
+        raw_inputs['BloodGroup'] = st.selectbox(t('blood_group'), ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'])
         # Additional inputs with different scales
-        raw_inputs['SleepQuality'] = st.slider('Sleep Quality', 0, 10, 5)
+        raw_inputs['SleepQuality'] = st.slider(t('sleep_quality'), 0, 10, 5)
         raw_inputs['DietQuality'] = st.slider('Diet Quality', 0, 10, 5)
-        raw_inputs['FunctionalAssessment'] = st.slider('Functional Assessment', 0, 10, 5)
-        raw_inputs['ADL'] = st.slider('Activities of Daily Living', 0, 10, 5)
+        raw_inputs['FunctionalAssessment'] = st.slider(t('functional_assessment'), 0, 10, 5)
+        raw_inputs['ADL'] = st.slider(t('adl'), 0, 10, 5)
         
         
 import streamlit as st
 
 def select_input(label, options, key=None):
     """Universal select input with a 'Select...' placeholder."""
-    return st.selectbox(label, ["Select..."] + options, index=0, key=key)
+    return st.selectbox(label, [t("select") + "..."] + options, index=0, key=key)
 
 def alzheimers_prediction_app():
     pred = None
     alzheimer_inputs_df = None
 
-    st.title("🧠 Alzheimer's Predictor")
-    st.warning("Complete all fields for accurate assessment")
+    st.title(f"🧠 {t('alzheimers_predictor')}")
+    st.warning(t("complete_all_fields"))
 
     # Nutritional score (computed separately)
     nutritional_score = compute_nutritional_score()
-    st.info(f"🍎 Nutritional Health Score: **{nutritional_score}/5**")
+    st.info(f"🍎 {t('nutritional_health_score')}: **{nutritional_score}/5**")
 
     with st.form("alz_form"):
-        age = st.number_input("Age", min_value=0, max_value=100, value=None, key='alz_age', placeholder="Enter Age")
-        gender = select_input("Gender", ["Male", "Female"], key='alz_gender')
-        blood_group = select_input("Blood Group", ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"], key='alz_bloodgroup')
-        genotype = select_input("Genotype", ["AA", "AS", "SS", "AC", "SC"], key='alz_genotype')
+        age = st.number_input(t("age"), min_value=0, max_value=100, value=None, key='alz_age', placeholder="Enter Age")
+        gender = select_input(t("gender"), ["Male", "Female"], key='alz_gender')
+        blood_group = select_input(t("blood_group"), ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"], key='alz_bloodgroup')
+        genotype = select_input(t("genotype"), ["AA", "AS", "SS", "AC", "SC"], key='alz_genotype')
 
-        education_years = select_input("Education Level (Years)", [str(i) for i in range(0, 21)], key='alz_eduyears')
+        education_years = select_input(t("education_level"), [str(i) for i in range(0, 21)], key='alz_eduyears')
         # ........................BMI input with Weight and Height....................
-        st.subheader("📏 BMI Assessment (Body Mass Index)")
+        st.subheader(f"📏 {t('bmi_assessment')}")
         st.caption("BMI is calculated as weight (kg) ÷ height (m)². It estimates body fat and overall health risk.")
         # Weight input
-        weight = st.number_input("Enter your weight (kg)", key='alz_weight', min_value=20, max_value=200)
+        weight = st.number_input(t("enter_weight"), key='alz_weight', min_value=20, max_value=200)
 
         # Height input
-        height = st.number_input("Enter your height (m)", key='alz_height', min_value=1.0, max_value=2.5)
+        height = st.number_input(t("enter_height"), key='alz_height', min_value=1.0, max_value=2.5)
 
 # Calculate BMI if both values are provided
         bmi = None
         if weight is not None and height is not None:
             try:
                 bmi = round(weight / (height ** 2), 2)
-                st.info(f"Calculated BMI: **{bmi}**")
+                st.info(f"{t('calculated_bmi')}: **{bmi}**")
             except ZeroDivisionError:
                 st.error("Height cannot be zero.")
         # Determine BMI category
         if bmi < 18.5:
-            risk = "Underweight"
+            risk = t("underweight")
             color = "warning"
         elif 18.5 <= bmi < 24.9:
-            risk = "Normal weight"
+            risk = t("normal_weight")
             color = "success"
         elif 25 <= bmi < 29.9:
-            risk = "Overweight"
+            risk = t("overweight")
             color = "warning"
         else:
-            risk = "Obese"
+            risk = t("obese")
             color = "error"
     
-        st.markdown(f"**BMI Category:** <span style='color:{color}'>{risk}</span>", unsafe_allow_html=True)
-        is_smoker = select_input("Smoking Status", ["Select", "formerly smoked", "never smoked", "smokes"], key='alz_smoking')
-        alcohol_consumption = select_input("Alcohol Consumption (0=None, 5=High)", [str(i) for i in range(0, 6)], key='alz_alcohol')
-        physical_activity = select_input("Physical Activity (hrs/week)", [str(i) for i in range(0, 21)], key='alz_activity')
-        sleep_quality = select_input("Sleep Quality (1-5)", [str(i) for i in range(1, 6)], key='alz_sleep')
-        family_history_alz = select_input("Family History of Alzheimer's", ["Yes", "No"], key='alz_family')
-        cardiovascular_disease = select_input("Cardiovascular Disease", ["Yes", "No"], key='alz_cardio')
-        diabetes = select_input("Diabetes", ["Yes", "No"], key='alz_diabetes')
-        depression = select_input("Depression", ["Yes", "No"], key='alz_depression')
-        hypertension = select_input("Hypertension", ["Yes", "No"], key='alz_hypertension')
+        st.markdown(f"**{t('bmi_category')}:** <span style='color:{color}'>{risk}</span>", unsafe_allow_html=True)
+        is_smoker = select_input(t("smoking_status"), ["Select", "formerly smoked", "never smoked", "smokes"], key='alz_smoking')
+        alcohol_consumption = select_input(t("alcohol_consumption"), [str(i) for i in range(0, 6)], key='alz_alcohol')
+        physical_activity = select_input(t("physical_activity"), [str(i) for i in range(0, 21)], key='alz_activity')
+        sleep_quality = select_input(t("sleep_quality"), [str(i) for i in range(1, 6)], key='alz_sleep')
+        family_history_alz = select_input(t("family_history"), ["Yes", "No"], key='alz_family')
+        cardiovascular_disease = select_input(t("cardiovascular_disease"), ["Yes", "No"], key='alz_cardio')
+        diabetes = select_input(t("diabetes"), ["Yes", "No"], key='alz_diabetes')
+        depression = select_input(t("depression"), ["Yes", "No"], key='alz_depression')
+        hypertension = select_input(t("hypertension"), ["Yes", "No"], key='alz_hypertension')
 
-        systolic_bp = st.number_input("Systolic BP", min_value=80, max_value=220, value=None, key='alz_systolic', placeholder="Enter systolic")
-        diastolic_bp = st.number_input("Diastolic BP", min_value=50, max_value=150, value=None, key='alz_diastolic', placeholder="Enter diastolic")
+        systolic_bp = st.number_input(t("systolic_bp"), min_value=80, max_value=220, value=None, key='alz_systolic', placeholder="Enter systolic")
+        diastolic_bp = st.number_input(t("diastolic_bp"), min_value=50, max_value=150, value=None, key='alz_diastolic', placeholder="Enter diastolic")
 
-        cholesterol_total = st.number_input("Total Cholesterol", min_value=100, max_value=400, value=None, key='alz_chol_total', placeholder="Enter total cholesterol")
-        cholesterol_ldl = st.number_input("LDL", min_value=50, max_value=300, value=None, key='alz_ldl', placeholder="Enter LDL")
-        cholesterol_hdl = st.number_input("HDL", min_value=20, max_value=100, value=None, key='alz_hdl', placeholder="Enter HDL")
-        cholesterol_triglycerides = st.number_input("Triglycerides", min_value=50, max_value=500, value=None, key='alz_trig', placeholder="Enter triglycerides")
+        cholesterol_total = st.number_input(t("cholesterol_total"), min_value=100, max_value=400, value=None, key='alz_chol_total', placeholder="Enter total cholesterol")
+        cholesterol_ldl = st.number_input(t("cholesterol_ldl"), min_value=50, max_value=300, value=None, key='alz_ldl', placeholder="Enter LDL")
+        cholesterol_hdl = st.number_input(t("cholesterol_hdl"), min_value=20, max_value=100, value=None, key='alz_hdl', placeholder="Enter HDL")
+        cholesterol_triglycerides = st.number_input(t("triglycerides"), min_value=50, max_value=500, value=None, key='alz_trig', placeholder="Enter triglycerides")
 
-        functional_assessment = st.slider("Functional Assessment (0-5)", 0, 5, 0, key='alz_func')
-        behavioral_problems = select_input("Behavioral Problems", ["Yes", "No"], key='alz_behavior')
-        adl = st.slider("ADL Score (Activities of Daily Living)", 0, 6, 0, key='alz_adl')
+        functional_assessment = st.slider(t("functional_assessment"), 0, 5, 0, key='alz_func')
+        behavioral_problems = select_input(t("behavioral_problems"), ["Yes", "No"], key='alz_behavior')
+        adl = st.slider(t("adl"), 0, 6, 0, key='alz_adl')
 
        # MMSE (direct)
         st.subheader("🧠 Mini-Mental State Examination (MMSE)")
@@ -1593,20 +1822,20 @@ def alzheimers_prediction_app():
 
         # Cognitive assessment
         option_map = {"Yes": 1, "No": 0, "Sometimes": 0.5}
-        confusion = option_map.get(select_input("Confusion", ["Yes", "No", "Sometimes"], key='alz_confusion'), None)
-        disorientation = option_map.get(select_input("Disorientation", ["Yes", "No", "Sometimes"], key='alz_disorien'), None)
-        personality_changes = option_map.get(select_input("Personality Changes", ["Yes", "No", "Sometimes"], key='alz_personality'), None)
-        difficulty_tasks = option_map.get(select_input("Difficulty Completing Tasks", ["Yes", "No", "Sometimes"], key='alz_tasks'), None)
-        forgetfulness = option_map.get(select_input("Forgetfulness", ["Yes", "No", "Sometimes"], key='alz_forget'), None)
-        memory_complaints = option_map.get(select_input("Memory Complaints", ["Yes", "No", "Sometimes"], key='alz_memory'), None)
+        confusion = option_map.get(select_input(t("confusion"), ["Yes", "No", "Sometimes"], key='alz_confusion'), None)
+        disorientation = option_map.get(select_input(t("disorientation"), ["Yes", "No", "Sometimes"], key='alz_disorien'), None)
+        personality_changes = option_map.get(select_input(t("personality_changes"), ["Yes", "No", "Sometimes"], key='alz_personality'), None)
+        difficulty_tasks = option_map.get(select_input(t("difficulty_tasks"), ["Yes", "No", "Sometimes"], key='alz_tasks'), None)
+        forgetfulness = option_map.get(select_input(t("forgetfulness"), ["Yes", "No", "Sometimes"], key='alz_forget'), None)
+        memory_complaints = option_map.get(select_input(t("memory_complaints"), ["Yes", "No", "Sometimes"], key='alz_memory'), None)
 
         # Head injury
         head_map = {"None": 0, "Accident": 1, "Violence": 2}
-        head_choice = select_input("Head Injury", ["None", "Accident", "Violence"], key='alz_head')
+        head_choice = select_input(t("head_injury"), ["None", "Accident", "Violence"], key='alz_head')
         head_injury = head_map.get(head_choice, None)
 
         # Stress
-        stress_score = st.slider("Stress Level", 0, 10, 0, key='alz_stress')
+        stress_score = st.slider(t("stress_level"), 0, 10, 0, key='alz_stress')
 
         submit_alz = st.form_submit_button("🔍 Predict Alzheimer Risk")
 
@@ -1852,7 +2081,7 @@ def alzheimers_prediction_app():
 
 
 def memory_recall_game():
-    st.subheader("🧩 Memory Recall Game")
+    st.subheader(f"🧩 {t('memory_recall_game')}")
 
     # --- Initialize memory game state ---
     if "memory_game" not in st.session_state or st.session_state.memory_game is None:
@@ -1874,8 +2103,8 @@ def memory_recall_game():
 
     # --- Start screen ---
     if game["state"] == "start":
-        st.markdown(f"**Level {game['level']}** - You will see {4 + game['level']} words.")
-        if st.button("Start Memory Exercise"):
+        st.markdown(f"**{t('level')} {game['level']}** - {t('you_will_see_words')} {4 + game['level']} {t('words')}.")
+        if st.button(t("start_memory_exercise")):
             num_words = 4 + game["level"]
             words = random.sample(WORD_POOL, num_words)
             game["words"] = words
@@ -1885,7 +2114,7 @@ def memory_recall_game():
 
     # --- Showing words ---
     elif game["state"] == "showing":
-        st.write("Memorize these words (5 seconds):")
+        st.write(t("memorize_words"))
         st.info(", ".join(game["words"]))
         if time.time() - game["start_time"] > 5:
             game["state"] = "recalling"
@@ -1894,8 +2123,8 @@ def memory_recall_game():
     # --- Recalling words ---
     elif game["state"] == "recalling":
         with st.form("recall_form"):
-            recalled_input = st.text_input("Type the words you remember, separated by commas:")
-            submit = st.form_submit_button("Submit Recall")
+            recalled_input = st.text_input(t("type_words_remembered"))
+            submit = st.form_submit_button(t("submit_recall"))
 
         recalled = []  # Ensure variable exists
         correct_count = 0
@@ -1952,61 +2181,76 @@ if "stress_score" not in st.session_state:
 if "location_str" not in st.session_state:
     st.session_state.location_str = {}
 
-st.sidebar.title("Navigation")
-st.success("✅ Welcome Take a Moment to Know About The African Neurohealth Dashboard")
+# --- Language Selection in Sidebar ---
+st.sidebar.markdown("---")
+st.sidebar.subheader("🌍 Language")
+
+# Language selection
+language_options = {
+    "English": "en",
+    "Arabic": "ar", 
+    "Swahili": "sw",
+    "French": "fr"
+}
+
+selected_language = st.sidebar.selectbox(
+    t("select_language"),
+    list(language_options.keys()),
+    key="language_selector"
+)
+
+# Update current language in session state
+st.session_state.current_lang = language_options[selected_language]
+
+st.sidebar.title(t("navigation"))
+st.success(f"✅ {t('welcome')}")
 
 # ----------------------------
 # Helper: Check if user is logged in
 # ----------------------------
 def is_logged_in():
-    return st.session_state.user.get("id") is not None
+    return st.session_state.user and st.session_state.user.get("id") is not None
 
 # ----------------------------
 # Sidebar: Authentication or Page Navigation
 # ----------------------------
 if not is_logged_in():
     st.sidebar.header("🔐 User Authentication")
-    auth_option = st.sidebar.radio("Select option:", ["Login", "Register"], key="auth_option")
-    if auth_option == "Login":
+    auth_option = st.sidebar.radio("Select option:", [t("login"), t("register")], key="auth_option")
+    if auth_option == t("login"):
         login()
     else:
         register()
-    page_options = ["About"]  # Non-logged-in users only see About
+    page_options = [t("about")]  # Non-logged-in users only see About
 else:
-    page_options = ["About", "Stroke Prediction", "Alzheimer's Prediction", "Memory Recall Game"]
-    st.sidebar.markdown(f"Logged in as: **{st.session_state.user['email']}**")
-    if st.sidebar.button("Logout"):
+    page_options = [t("about"), t("stroke_prediction"), t("alzheimers_prediction"), t("memory_recall_game")]
+    st.sidebar.markdown(f"{t('logged_in_as')}: **{st.session_state.user['email']}**")
+    if st.sidebar.button(t("logout")):
         logout()
         st.experimental_rerun()
 
 # ----------------------------
 # Sidebar: Page Selection
 # ----------------------------
-page = st.sidebar.selectbox("Go to", page_options)
+page = st.sidebar.selectbox(t("go_to"), page_options)
 
 # ----------------------------
 # Display Pages
 # ----------------------------
-if page == "About":
+if page == t("about"):
     about()  # Always visible
-elif page == "Stroke Prediction":
+elif page == t("stroke_prediction"):
     if is_logged_in():
         stroke_prediction_app()
     else:
-        st.warning("⚠️ Please log in to access Stroke Prediction.")
-elif page == "Alzheimer's Prediction":
+        st.warning(f"⚠️ {t('please_login')}")
+elif page == t("alzheimers_prediction"):
     if is_logged_in():
         alzheimers_prediction_app()
     else:
-        st.warning("⚠️ Please log in to access Alzheimer's Prediction.")
-elif page == "Memory Recall Game":
+        st.warning(f"⚠️ {t('please_login')}")
+elif page == t("memory_recall_game"):
     if is_logged_in():
         memory_recall_game()
     else:
-        st.warning("⚠️ Please log in to access Memory Recall Game.")
-
-
-
-
-
-
+        st.warning(f"⚠️ {t('please_login')}")
