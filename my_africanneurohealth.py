@@ -1,7 +1,6 @@
 
 # Must be the very first Streamlit command
 import streamlit as st
-from streamlit_lottie import st_lottie
 import requests
 
 # --- PAGE CONFIG (safe for mobile + desktop) ---
@@ -2019,6 +2018,7 @@ elif page == "Memory Recall Game":
 
 
    
+
 
 
 
