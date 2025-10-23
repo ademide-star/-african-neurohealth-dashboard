@@ -117,13 +117,6 @@ if "refresh_token" not in st.session_state:
     st.session_state.refresh_token = None
 
 
-def load_lottieurl(url: str):
-    r = requests.get(url)
-    if r.status_code != 200:
-        return None
-    return r.json()
-lottie_health = load_lottieurl("https://assets2.lottiefiles.com/packages/lf20_your_animation.json")
-st_lottie(lottie_health, height=200, key="health")
 
 # ----------------------------
 # LOGIN FUNCTION
@@ -2018,6 +2011,7 @@ elif page == "Memory Recall Game":
 
 
    
+
 
 
 
