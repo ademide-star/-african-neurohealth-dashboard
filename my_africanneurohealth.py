@@ -1,7 +1,8 @@
-import streamlit as st
 
 # Must be the very first Streamlit command
 import streamlit as st
+from streamlit_lottie import st_lottie
+import requests
 
 # --- PAGE CONFIG (safe for mobile + desktop) ---
 st.set_page_config(
@@ -51,7 +52,6 @@ permanent_sidebar = """
 """
 st.markdown(permanent_sidebar, unsafe_allow_html=True)
 
-
 import pandas as pd
 import numpy as np
 import joblib
@@ -77,6 +77,15 @@ from datetime import datetime
 import traceback
 from sklearn.pipeline import Pipeline
 from supabase import create_client, Client
+from translations import get_translation, set_language_selector
+import streamlit as st
+
+# Set up language
+selected_lang = set_language_selector()
+
+st.title(get_translation("African NeuroHealth Dashboard"))
+
+
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -97,60 +106,8 @@ def get_user_location():
         print(f"Error fetching location: {e}")
         return "Unknown", "Unknown", "Unknown"
 
-# ----------------------------
-# LOGIN FUNCTION
-# ----------------------------
-def login():
-    st.subheader("Login with Email & Password")
-    email = st.text_input("Email", key="login_email")
-    password = st.text_input("Password", type="password", key="login_password")
-
-    if st.button("Login", key="login_btn"):
-        try:
-            response = supabase.auth.sign_in_with_password({"email": email, "password": password})
-            if response.user:
-                st.session_state.user = {"id": response.user.id, "email": response.user.email}
-                st.success(f"✅ Logged in as {st.session_state.user['email']}")
-            else:
-                st.error("Invalid login credentials")
-        except Exception as e:
-            st.error(f"Login error: {e}")
-
 
 # ----------------------------
-# LOGOUT FUNCTION
-# ----------------------------
-def logout():
-    try:
-        supabase.auth.sign_out()
-        st.session_state.user = {"id": None, "email": None}
-        st.success("Logged out successfully.")
-        st.rerun()  # ✅ modern replacement
-    except Exception as e:
-        st.error(f"Logout error: {e}")
-
-
-# ----------------------------
-# REGISTER FUNCTION
-# ----------------------------
-def register():
-    st.subheader("Register")
-    email = st.text_input("New Email", key="register_email")
-    password = st.text_input("New Password", type="password", key="register_password")
-    confirm_password = st.text_input("Confirm Password", type="password", key="register_confirm_password")
-
-    if st.button("Register", key="register_btn"):
-        if password != confirm_password:
-            st.error("Passwords do not match")
-        else:
-            try:
-                response = supabase.auth.sign_up({"email": email, "password": password})
-                if response.user:
-                    st.success("✅ Registration successful! Please check your email to confirm your account.")
-                else:
-                    st.error("Registration failed.")
-            except Exception as e:
-                st.error(f"Registration error: {e}")
 # SESSION MANAGEMENT
 # ----------------------------
 if "user" not in st.session_state:
@@ -160,57 +117,136 @@ if "access_token" not in st.session_state:
 if "refresh_token" not in st.session_state:
     st.session_state.refresh_token = None
 
+
+def load_lottieurl(url: str):
+    r = requests.get(url)
+    if r.status_code != 200:
+        return None
+    return r.json()
+lottie_health = load_lottieurl("https://assets2.lottiefiles.com/packages/lf20_your_animation.json")
+st_lottie(lottie_health, height=200, key="health")
+
 # ----------------------------
-# RESTORE SESSION IF TOKENS EXIST
+# LOGIN FUNCTION
 # ----------------------------
-if st.session_state.access_token and st.session_state.refresh_token:
+def login():
+    st.subheader(get_translation("Login with Email & Password"))
+    email = st.text_input("Email", key="login_email")
+    password = st.text_input(get_translation("Password"), type="password", key="login_password")
+
+    if st.button("Login", key="login_btn"):
+        try:
+            response = supabase.auth.sign_in_with_password({"email": email, "password": password})
+            if response.user:
+                st.session_state.user = {"id": response.user.id, "email": response.user.email}
+                st.success(get_translation(f"✅ Logged in as {st.session_state.user['email']}"))
+            else:
+                st.error(get_translation("Invalid login credentials"))
+        except Exception as e:
+            st.error(get_translation(f"Login error: {e}"))
+
+
+
+# ----------------------------
+# LOGOUT FUNCTION
+# ----------------------------
+def logout():
     try:
-        supabase.auth.set_session({
-            "access_token": st.session_state.access_token,
-            "refresh_token": st.session_state.refresh_token,
-        })
-        user = supabase.auth.get_user()
-        if user.user:
-            st.session_state.user = {"id": user.user.id, "email": user.user.email}
-    except Exception:
+        supabase.auth.sign_out()
         st.session_state.user = {"id": None, "email": None}
-        st.session_state.access_token = None
-        st.session_state.refresh_token = None
-        
+        st.success(get_translation("Logged out successfully."))
+        st.rerun()  # ✅ modern replacement
+    except Exception as e:
+        st.error(get_translation(f"Logout error: {e}"))
 
-if "user" in st.session_state and st.session_state.user:
-    logged_in = True
-else:
-    logged_in = False
 
-def custom_stress_score(prefix="", use_container=False):
-    """Calculate stress score with option to avoid nested expanders"""
-    title = f"🧮 {prefix} Stress Estimator Based on Cultural & Contextual Stress Factors" 
-    # Create either a container or expander based on context
+
+# ----------------------------
+# REGISTER FUNCTION
+# ----------------------------
+def register():
+    st.subheader(get_translation("Register"))
+    email = st.text_input(get_translation("New Email", key="register_email"))
+    password = st.text_input(get_translation("New Password", type="password", key="register_password"))
+    confirm_password = st.text_input(get_translation("Confirm Password", type="password", key="register_confirm_password"))
+
+    if st.button("Register", key="register_btn"):
+        if password != confirm_password:
+            st.error(get_translation("Passwords do not match"))
+        else:
+            try:
+                response = supabase.auth.sign_up({"email": email, "password": password})
+                if response.user:
+                    st.success(get_translation("✅ Registration successful! Please check your email to confirm your account."))
+                else:
+                    st.error(get_translation("Registration failed."))
+            except Exception as e:
+                st.error(f"Registration error: {e}")
+
+
+
+# ABOUT FUNCTION
+# ----------------------------
+
+def about():
+    st.header(get_translation("ℹ️ About this Application"))
+    st.title(get_translation("🧠 African NeuroHealth Dashboard"))
+    st.markdown(get_translation("""
+This platform is a culturally attuned, context-aware diagnostic tool tailored for assessing neuro-health risks in African populations. 
+It blends conventional biomedical metrics with locally relevant stressors, lifestyle habits, and cultural practices to offer a truly holistic health assessment experience.
+
+**Key Features:**
+- Environmental exposures (e.g., noise, air pollution)
+- Dietary patterns (including traditional nutrition)
+- Sleep quality and hydration
+- Use of herbal or traditional remedies
+- Psychosocial stressors unique to African settings
+- Ethnocultural identity tracking for precision health insights
+**This application was proudly developed by Adebimpe-John Omolola E., with invaluable support from the GRASP / NIH / DSI Collaborative Program. 
+Their collaborative spirit and commitment to innovation helped bring this vision to life.**
+    """))
+
+
+def custom_stress_score(prefix: str = "", use_container: bool = False):
+    """
+    Display a stress score section in Streamlit with an option to avoid nested expanders.
+
+    Args:
+        prefix (str): Optional prefix for the title.
+        use_container (bool): If True, content will be rendered directly without an expander.
+
+    Returns:
+        streamlit.delta_generator.DeltaGenerator: The container (expander or main) to add content into.
+    """
+    # Construct title with translation
+    title = get_translation(f"🧮 {prefix} Stress Estimator Based on Cultural & Contextual Stress Factors")
+    
     if use_container:
+        # Directly return the main Streamlit container
         container = st.container()
-        container.header(title)
+        container.markdown(f"### {title}")
+        return container
     else:
-        container = st.expander(title)
+        container = st.expander(get_translation(title))
     
     with container:
-        q1 = st.slider("Financial pressure/burden", 0, 4, 2, 
-                      help="Struggling with basic needs, debts, or unemployment")
-        q2 = st.slider("Family/relationship issues", 0, 4, 2,
-                      help="Marital conflicts, caring for extended family, generational conflicts")
-        q3 = st.slider("Work/employment stress", 0, 4, 2,
-                      help="Job insecurity, long commutes, workplace discrimination")
-        q4 = st.slider("Community safety concerns", 0, 4, 2,
-                      help="Crime, political instability, or ethnic tensions in your area")
-        q5 = st.slider("Caregiver burden", 0, 4, 2,
-                      help="Caring for children/elderly with limited support")
-        q6 = st.slider("Migration/displacement stress", 0, 4, 2,
-                      help="Relocation challenges, missing homeland, adapting to new culture")
-        q7 = st.slider("Traditional family expectations", 0, 4, 2,
-                      help="Pressure to uphold cultural traditions, marriage expectations")
-        q8 = st.slider("Spiritual/religious conflicts", 0, 4, 2,
-                      help="Tension between traditional beliefs and modern life")
-        
+        q1 = st.slider(get_translation("Financial pressure/burden"), 0, 4, 2,
+                      help=get_translation("Struggling with basic needs, debts, or unemployment"))
+        q2 = st.slider(get_translation("Family/relationship issues"), 0, 4, 2,
+                      help=get_translation("Marital conflicts, caring for extended family, generational conflicts"))
+        q3 = st.slider(get_translation("Work/employment stress"), 0, 4, 2,
+                      help=get_translation("Job insecurity, long commutes, workplace discrimination"))
+        q4 = st.slider(get_translation("Community safety concerns"), 0, 4, 2,
+                      help=get_translation("Crime, political instability, or ethnic tensions in your area"))
+        q5 = st.slider(get_translation("Caregiver burden"), 0, 4, 2,
+                      help=get_translation("Caring for children/elderly with limited support"))
+        q6 = st.slider(get_translation("Migration/displacement stress"), 0, 4, 2,
+                      help=get_translation("Relocation challenges, missing homeland, adapting to new culture"))
+        q7 = st.slider(get_translation("Traditional family expectations"), 0, 4, 2,
+                      help=get_translation("Pressure to uphold cultural traditions, marriage expectations"))
+        q8 = st.slider(get_translation("Spiritual/religious conflicts"), 0, 4, 2,
+                      help=get_translation("Tension between traditional beliefs and modern life"))
+
         total_score = q1 + q2 + q3 + q4 + q5 + q6 + q7 + q8
         
         if total_score <= 12:
@@ -226,12 +262,12 @@ def custom_stress_score(prefix="", use_container=False):
             label = "High"
             color = "red"
  
-        st.markdown(f"""
+        st.markdown(get_translation(f"""
         <div style='padding: 10px; border-radius: 5px; background-color: #f0f2f6; margin-top: 20px;'>
             <h4>🧠 Total Stress Score: <span style='color:{color};'>{total_score}/32</span> → {label} Stress</h4>
             <p><small>Higher scores indicate greater exposure to Africa-specific stressors</small></p>
         </div>
-        """, unsafe_allow_html=True)
+        """, unsafe_allow_html=True))
         
         return level, label, total_score
 
@@ -270,10 +306,10 @@ def smart_load_model(path):
 current_dir = Path(__file__).resolve().parent
 
 # Define model paths using relative paths
-ALZ_MODEL_PATH = current_dir / "alz_model_v17.joblib"
-STROKE_MODEL_PATH = current_dir / "stroke_model_v17.joblib"
-ALZ_PREPROCESSOR_PATH = current_dir / "alz_preprocessor_v17.joblib"
-STROKE_PREPROCESSOR_PATH = current_dir / "stroke_preprocessor_v17.joblib"
+ALZ_MODEL_PATH = current_dir / "alzheimers_pipeline.joblib"
+STROKE_MODEL_PATH = current_dir / "stroke_pipeline.joblib"
+ALZ_PREPROCESSOR_PATH = current_dir / "alzheimers_preprocessor.joblib"
+
 # Function to load models with error handling
 @st.cache_resource
 def load_models():
@@ -290,15 +326,11 @@ def load_models():
         if not ALZ_PREPROCESSOR_PATH.exists():
             st.error(f"Preprocessor file not found at {ALZ_PREPROCESSOR_PATH}")
             return None, None, None
-        
-        if not STROKE_PREPROCESSOR_PATH.exists():
-            st.error(f"Preprocessor file not found at {STROKE_PREPROCESSOR_PATH}")
-            return None, None, None
+            
         # Load the models
         alz_model = joblib.load(ALZ_MODEL_PATH)
         stroke_model = joblib.load(STROKE_MODEL_PATH)
         preprocessor = joblib.load(ALZ_PREPROCESSOR_PATH)
-        preprocessor = joblib.load(STROKE_PREPROCESSOR_PATH)
         return alz_model, stroke_model, preprocessor
         
     except Exception as e:
@@ -436,29 +468,7 @@ def predict_stroke(raw: dict) -> int:
     return int(pred)
 
 
-# ----------------------------
-# ABOUT FUNCTION
-# ----------------------------
-def about():
-    st.header("ℹ️ About This App")
-    st.title("🧠 African NeuroHealth Dashboard")
-    st.markdown("""
-This platform is a culturally attuned, context-aware diagnostic tool tailored for assessing neuro-health risks in African populations. 
-It blends conventional biomedical metrics with locally relevant stressors, lifestyle habits, and cultural practices to offer a truly holistic health assessment experience.
-
-**Key Features:**
-- Environmental exposures (e.g., noise, air pollution)
-- Dietary patterns (including traditional nutrition)
-- Sleep quality and hydration
-- Use of herbal or traditional remedies
-- Psychosocial stressors unique to African settings
-- Ethnocultural identity tracking for precision health insights
-
-**This application was proudly developed by Adebimpe-John Omolola E., 
-with invaluable support from the GRASP / NIH / DSI Collaborative Program. 
-Their collaborative spirit and commitment to innovation helped bring this vision to life.**
-    """)
-
+    
 # -------------------
 # Initialize session state
 # -------------------
@@ -601,10 +611,10 @@ for r, ethnicities in region_with_ethnicity.items():
 # Streamlit UI
 with st.sidebar:
     st.header("🌍 Location Information")
-    selected_country = st.selectbox("Select Country", list(countries_with_provinces.keys()))
-    selected_province = st.selectbox("Select Province", countries_with_provinces[selected_country])
-    selected_region = st.selectbox("🌍 Select Region", list(region_with_ethnicity.keys()))
-    selected_ethnicity = st.selectbox("Select Ethnicity", region_with_ethnicity[selected_region])
+    selected_country = st.selectbox(get_translation("Select Country"), list(countries_with_provinces.keys()))
+    selected_province = st.selectbox(get_translation("Select Province"), countries_with_provinces[selected_country])
+    selected_region = st.selectbox(get_translation("🌍 Select Region"), list(region_with_ethnicity.keys()))
+    selected_ethnicity = st.selectbox(get_translation("Select Ethnicity"), region_with_ethnicity[selected_region])
 # Convert selections to numerical codes
     encoded_country = country_map[selected_country]
     encoded_province = province_map[selected_province]
@@ -621,8 +631,8 @@ payload = {
 }
 
 def nutrition_tracker_app():
-    st.header("Nutrition Tracker")
-    st.title("🥗 Nutrition Tracker")
+    st.header(get_translation("Nutrition Tracker"))
+    st.title(get_translation("🥗 Nutrition Tracker"))
 # --- Nutritional Lifestyle Tracker ---
 def calculate_weekly_servings(freq, servings):
     if freq == "Daily":
@@ -655,27 +665,27 @@ def compute_nutritional_score():
     raw_score = 3 + (positive_score / 10) - (negative_score / 5)
     return max(1, min(5, round(raw_score)))
 
-st.sidebar.header("🍽️ Nutritional Lifestyle Tracker")
-st.sidebar.header("Additional Nutrition Details")
+st.sidebar.header(get_translation("🍽️ Nutritional Lifestyle Tracker"))
+st.sidebar.header(get_translation("Additional Nutrition Details"))
 
 fruit_intake = st.sidebar.number_input(
-    "Fruit Intake (servings per day)", min_value=0, max_value=20, value=2, key="fruit_intake"
+    get_translation("Fruit Intake (servings per day)"), min_value=0, max_value=20, value=2, key="fruit_intake"
 )
 
 vegetable_intake = st.sidebar.number_input(
-    "Vegetable Intake (servings per day)", min_value=0, max_value=20, value=3, key="vegetable_intake"
+    get_translation("Vegetable Intake (servings per day)"), min_value=0, max_value=20, value=3, key="vegetable_intake"
 )
 
 hydration_liters = st.sidebar.number_input(
-    "Water Intake (liters per day)", min_value=0.0, max_value=10.0, value=2.0, key="hydration_liters"
+    get_translation("Water Intake (liters per day)"), min_value=0, max_value=10, value=2, key="hydration_liters"
 )
 
 supplements_used = st.sidebar.text_input(
-    "Supplements Used (e.g., Vitamin D, Omega-3)", key="supplements_used"
+    get_translation("Supplements Used (e.g., Vitamin D, Omega-3)"), key="supplements_used"
 )
 
 natural_herbs = st.sidebar.text_input(
-    "Natural Herbs Taken (e.g., Ginger, Turmeric)", key="natural_herbs"
+    get_translation("Natural Herbs Taken (e.g., Ginger, Turmeric)"), key="natural_herbs"
 )
 
 # Available options
@@ -687,7 +697,7 @@ all_options = [
 
 # Lifestyle selection
 selected_lifestyles = st.sidebar.multiselect(
-    "Select Nutritional Lifestyles",
+    get_translation("Select Nutritional Lifestyles"),
     all_options,
     default=st.session_state.default_lifestyles,
     key="nutritional_lifestyle"
@@ -696,7 +706,7 @@ st.session_state.default_lifestyles = selected_lifestyles
 
 # Process each selected lifestyle
 if selected_lifestyles:
-    with st.sidebar.expander("Track Consumption", expanded=True):
+    with st.sidebar.expander(get_translation("Track Consumption", expanded=True)):
         for lifestyle in selected_lifestyles:
             st.subheader(lifestyle)
             col1, col2 = st.columns(2)
@@ -729,14 +739,14 @@ if selected_lifestyles:
 # Display score after processing inputs
 if st.session_state.nutritional_data:
     nutritional_score = compute_nutritional_score()
-    st.sidebar.info(f"🍎 Nutritional Health Score: **{nutritional_score}/5**")         
+    st.sidebar.info(get_translation(f"🍎 Nutritional Health Score: **{nutritional_score}/5**"))
 
 # --- Save Functionality ---
-if st.sidebar.button("Save Nutritional Data"):
+if st.sidebar.button(get_translation("Save Nutritional Data")):
     if st.session_state.user is None:
-        st.sidebar.warning("Please log in to save nutritional data")
+        st.sidebar.warning(get_translation("Please log in to save nutritional data"))
     elif not st.session_state.nutritional_data:
-        st.sidebar.warning("No nutritional data to save")
+        st.sidebar.warning(get_translation("No nutritional data to save"))
     else:
         try:
             nutrition_data = {
@@ -1009,22 +1019,23 @@ def required_slider(label, min_value, max_value, default, key):
     return st.slider(label, min_value, max_value, default, key=key)
 
 def stroke_prediction_app():
-    st.title("🫀 Stroke Risk Predictor")
-    st.warning("Complete all fields for accurate assessment")
+    st.title(get_translation("🫀 Stroke Risk Predictor"))
+    st.warning(get_translation("Complete all fields for accurate assessment"))
 # Get nutritional score
     nutritional_score = compute_nutritional_score()
     st.info(f"🍎 Nutritional Health Score: **{nutritional_score}/5**")
     with st.form("stroke_form"):
     # ✅ Selectbox with placeholder
-        age = st.selectbox("Age", ["Select"] + [i for i in range(18, 221)])
-        gender = st.selectbox("Gender", ["Select Gender", "Male", "Female"])
-        blood_group = st.selectbox("Blood Group", ["Select Blood Group", "A+","A-", "B+", "B-", "AB+", "AB-", "O+", "O-"])
-        genotype = st.selectbox("Genotype", ["Select Genotype", "AA", "AS", "SS", "AC", "SC"])
-        heart_disease = st.selectbox("Heart Disease", ["Select", "Yes", "No"])
-        hypertension = st.selectbox("Hypertension", ["Select", "Yes", "No"])
-        systolic_bp = st.number_input("Systolic BP", min_value=80, max_value=220, value=None)
-        diastolic_bp = st.number_input("Diastolic BP", min_value=50, max_value=150, value=None)
-       
+        st.subheader(get_translation("🩺 Personal & Health Information"))
+        age = st.selectbox(get_translation("Age"), ["Select"] + [i for i in range(18, 121)])
+        gender = st.selectbox(get_translation("Gender"), ["Select Gender", "Male", "Female"])
+        blood_group = st.selectbox(get_translation("Blood Group"), ["Select Blood Group", "A+","A-", "B+", "B-", "AB+", "AB-", "O+", "O-"])
+        genotype = st.selectbox(get_translation("Genotype"), ["Select Genotype", "AA", "AS", "SS", "AC", "SC"])
+        heart_disease = st.selectbox(get_translation("Heart Disease"), ["Select", "Yes", "No"])
+        hypertension = st.selectbox(get_translation("Hypertension"), ["Select", "Yes", "No"])
+        systolic_bp = st.number_input(get_translation("Systolic BP"), min_value=80, max_value=220, value=None)
+        diastolic_bp = st.number_input(get_translation("Diastolic BP"), min_value=50, max_value=150, value=None)
+
 
         st.subheader("📏 BMI Assessment (Body Mass Index)")
         st.caption("BMI is calculated as weight (kg) ÷ height (m)². It estimates body fat and overall health risk.")
@@ -1038,18 +1049,17 @@ def stroke_prediction_app():
         step=0.1,
         key='weight'
 )
-        st.caption("⚠️ Weight must be in kilograms for accurate BMI calculation (e.g., 70 kg).")
+        st.caption(get_translation("⚠️ Weight must be in kilograms for accurate BMI calculation (e.g., 70 kg)."))
 
 # Height input
-        height = st.number_input(
-        "Enter your height (m)", 
+        height = st.number_input(get_translation("Enter your height (m)"),
         min_value=1.0, 
         max_value=2.5, 
         value=1.00,
         step=0.01,
         key='height'
 )
-        st.caption("⚠️ Height must be in meters for accurate BMI calculation (e.g., 1.75 m).")
+        st.caption(get_translation("⚠️ Height must be in meters for accurate BMI calculation (e.g., 1.75 m)."))
 
 # Calculate BMI and display immediately
         if weight > 0 and height > 0:
@@ -1071,36 +1081,36 @@ def stroke_prediction_app():
             risk = "Obese"
             color = "error"
     
-        st.markdown(f"**BMI Category:** <span style='color:{color}'>{risk}</span>", unsafe_allow_html=True)
+        st.markdown(get_translation(f"**BMI Category:** <span style='color:{color}'>{risk}</span>", unsafe_allow_html=True))
         # Collecting additional user information
-        marital_status = st.selectbox("Marital Status", ["Select", "Single", "Married", "Divorced", "Widowed"])
-        work_type = st.selectbox("Work Type", ["Select", "Private", "Self-employed", "Govt job", "Children", "Never worked"])
-        residence_type = st.selectbox("Residence Type", ["Select", "Urban", "Rural"])
-        avg_glucose_level = st.number_input("Average Glucose Level", min_value=50.0, max_value=300.0, value=None, format="%.2f")
-        smoking_status = st.selectbox("Smoking Status", ["Select", "formerly smoked", "never smoked", "smokes"])
+        marital_status = st.selectbox(get_translation("Marital Status", ["Select", "Single", "Married", "Divorced", "Widowed"]))
+        work_type = st.selectbox(get_translation("Work Type", ["Select", "Private", "Self-employed", "Govt job", "Children", "Never worked"]))
+        residence_type = st.selectbox(get_translation("Residence Type", ["Select", "Urban", "Rural"]))
+        avg_glucose_level = st.number_input(get_translation("Average Glucose Level"), min_value=50.0, max_value=300.0, value=None, format="%.2f")
+        smoking_status = st.selectbox(get_translation("Smoking Status", ["Select", "formerly smoked", "never smoked", "smokes"]))
 
-        stress_level = st.selectbox("Stress Level", ["Select", "None", "Low", "Moderate", "High"])
-        ptsd = st.selectbox("PTSD", ["Select", "Yes", "No"])
-        depression_level = st.selectbox("Depression Level", ["Select", "None", "Mild", "Moderate", "Severe"])
-        diabetes_type = st.selectbox("Diabetes Type", ["Select", "None", "Type 1", "Type 2", "Gestational"])
-        chronic_pain = st.selectbox("Chronic Pain", ["Select", "None", "Rheumatism", "Osteoarthritis", "Others"])
+        stress_level = st.selectbox(get_translation("Stress Level", ["Select", "None", "Low", "Moderate", "High"]))
+        ptsd = st.selectbox(get_translation("PTSD", ["Select", "Yes", "No"]))
+        depression_level = st.selectbox(get_translation("Depression Level", ["Select", "None", "Mild", "Moderate", "Severe"]))
+        diabetes_type = st.selectbox(get_translation("Diabetes Type", ["Select", "None", "Type 1", "Type 2", "Gestational"]))
+        chronic_pain = st.selectbox(get_translation("Chronic Pain", ["Select", "None", "Rheumatism", "Osteoarthritis", "Others"]))
 
-        sleep_hours = st.slider("Sleep Hours", 3.0, 10.0, value=None)
-        hypertension_treatment = st.selectbox("Hypertension Treatment", ["Select", "None", "Herbal", "Drugs"])
-        salt_intake = st.selectbox("Salt Intake", ["Select", "None", "Little", "Moderate", "High"])
-        noise_sources = st.selectbox("Noise Sources", ["Select", "None", "Mosque", "Church", "Market", "Block-Industry",
-                                                  "Grinding-Machine", "Welder", "Club-House", "Generator"])
+        sleep_hours = st.slider(get_translation("Sleep Hours"), 3.0, 10.0, value=None)
+        hypertension_treatment = st.selectbox(get_translation("Hypertension Treatment", ["Select", "None", "Herbal", "Drugs"]))
+        salt_intake = st.selectbox(get_translation("Salt Intake", ["Select", "None", "Little", "Moderate", "High"]))
+        noise_sources = st.selectbox(get_translation("Noise Sources", ["Select", "None", "Mosque", "Church", "Market", "Block-Industry",
+                                                  "Grinding-Machine", "Welder", "Club-House", "Generator"]))
 
         pollution_level_air = st.selectbox("Air Pollution Level", ["Select", "None", "Low", "Moderate", "High"])
-        pollution_level_water = st.selectbox("Water Pollution Level", ["Select", "None", "Low", "Moderate", "High"])
-        pollution_level_environmental = st.selectbox("Environmental Pollution Level", ["Select", "None", "Low", "Moderate", "High"])
-        CustomStressScore = st.number_input("Custom Stress Score", min_value=0, max_value=10, value=None)
-        
-        st.subheader("🧠 Additional Stress Assessment")
+        pollution_level_water = st.selectbox(get_translation("Water Pollution Level", ["Select", "None", "Low", "Moderate", "High"]))
+        pollution_level_environmental = st.selectbox(get_translation("Environmental Pollution Level", ["Select", "None", "Low", "Moderate", "High"]))
+        CustomStressScore = st.number_input(get_translation("Custom Stress Score"), min_value=0, max_value=10, value=None)
+
+        st.subheader(get_translation("🧠 Additional Stress Assessment"))
         _, _, stress_score = custom_stress_score(use_container=True)
         st.session_state.stress_score = stress_score
 
-        submit_stroke_inputs = st.form_submit_button("Predict Stroke Risk")
+        submit_stroke_inputs = st.form_submit_button(get_translation("Predict Stroke Risk"))
         def all_fields():
                 age, gender, heart_disease, hypertension, systolic_bp, diastolic_bp, bmi,
                 marital_status, work_type, residence_type, avg_glucose_level, smoking_status,
@@ -1219,18 +1229,18 @@ def stroke_prediction_app():
             if pred == 1:
                 st.error("⚠️ HIGH STROKE RISK DETECTED")
                 st.markdown("""
-    ## 🚨 Immediate Action Recommended:
-    - **Consult a healthcare provider immediately**
-    - **Add Saigon Cinnamon and Alligator Pepper to diet**
-    - Monitor blood pressure daily
-    - Avoid strenuous activities
-    - Reduce salt intake
-    - Increase consumption of leafy greens
-    - Limit fried foods and processed meals
-    - Eat more fruits and vegetables (rich in potassium and fiber)
-    - Maintain regular sleep schedule
-    - Maintain a healthy weight (avoid obesity)
-                """)
+            ## 🚨 Immediate Action Recommended:
+            - **Consult a healthcare provider immediately**
+            - **Add Saigon Cinnamon and Alligator Pepper to diet**
+            - Monitor blood pressure daily
+            - Avoid strenuous activities
+            - Reduce salt intake to <5g/day
+            - Increase consumption of leafy greens
+            - Limit fried foods and processed meals
+            - Eat more fruits and vegetables (rich in potassium and fiber)
+            - Maintain regular sleep schedule
+            - ⚖️ Maintain a healthy weight (avoid obesity)
+            """)
             else:
                 st.success("✅ LOW STROKE RISK DETECTED")
 
@@ -1238,7 +1248,7 @@ def stroke_prediction_app():
             with st.expander("🛠️ Lifestyle Suggestions for Stroke Prevention"):
                 st.markdown("""
             ### 🍽️ Dietary Recommendations:
-            - Reduce salt intake
+            - Reduce salt intake to <5g/day
             - Increase consumption of leafy greens
             - Limit fried foods and processed meals
             - Eat more fruits and vegetables (rich in potassium and fiber)
@@ -1254,12 +1264,12 @@ def stroke_prediction_app():
             - BP check every 2 weeks
             - Annual glucose screening
             - Medication adherence if prescribed
-            - Prioritize 7-8 hours of sleep per night  
-            - **Take cinnamon (e.g., Saigon cinnamon) regularly**  
-            - *Reduces blood sugar, inflammation, and oxidative stress*  
-            - *Supports brain and heart health naturally*  
-            - Stop smoking and reduce alcohol intake  
-            - Maintain a healthy weight (avoid obesity)
+            🧘 Prioritize 7–8 hours of sleep per night  
+            🌿 **Take cinnamon (e.g., Saigon cinnamon) regularly**  
+            🧪 *Reduces blood sugar, inflammation, and oxidative stress*  
+            🩺 *Supports brain and heart health naturally*  
+            🚭 Stop smoking and reduce alcohol intake  
+            ⚖️ Maintain a healthy weight (avoid obesity)
             """)
       
             pred = st.session_state.stroke_model.predict(stroke_inputs_df)[0]
@@ -1694,20 +1704,19 @@ def alzheimers_prediction_app():
 # 4️⃣ Display results
                 if pred == 1:
                     st.error("⚠️ HIGH ALZHEIMER RISK DETECTED")
-                    st.markdown("""
-### 🚨 Immediate Action Recommended:
+                    st.markdown("""## 🚨 Immediate Action Recommended:
 - **Consult a healthcare provider immediately**
-- Eat brain-healthy foods (nuts, omega three, leafy greens)
 - Begin cognitive training exercises
 - Review family medical history
-- Do mental exercises (e.g., puzzles, memory games)
-- Stay physically active (exercise increases brain health)
-- Reduce stress: practice mindfulness or prayer
-- Stay socially engaged: talk to friends, join a group
-- **Use cinnamon regularly** may protect memory and reduce inflammation
-- Avoid smoking and limit alcohol
-- Prioritize sleep and manage depression 
-                    """)
+- 🧩 Do mental exercises (e.g., puzzles, memory games)
+- 🏃 Stay physically active (exercise increases brain health)
+- 🧘 Reduce stress  practice mindfulness or prayer
+- 👥 Stay socially engaged talk to friends, join a group
+- 🥦 Eat brain-healthy foods (nuts, omega-3s, leafy greens)
+- 🌿 **Use cinnamon regularly**  may protect memory and reduce inflammation
+- 🚭 Avoid smoking and limit alcohol
+- 💤 Prioritize sleep and manage depression
+""")
                 else:
                     st.success("✅ LOW ALZHEIMER'S RISK DETECTED")
 
@@ -1715,14 +1724,14 @@ def alzheimers_prediction_app():
                 with st.expander("🛠️ Lifestyle Suggestions for Alzheimer's Prevention"):
                     st.markdown("""
 ### 🍽️ Dietary Recommendations:
-- Increase omega 3 fatty acids (fish, flax seeds)
+- Increase omega-3 fatty acids (fish, flax seeds)
 - Consume antioxidant-rich foods (berries, dark chocolate)
 - Eat leafy green vegetables daily
 - Reduce processed sugars and refined carbs
 
 ### 🏃 Physical Activity:
-- Aerobic exercise 3-5 times/week
-- Strength training 2-3 times/week
+- Aerobic exercise 3–5 times/week
+- Strength training 2–3 times/week
 - Balance and coordination exercises
 
 ### 😌 Mental Wellness:
@@ -1734,7 +1743,8 @@ def alzheimers_prediction_app():
 - Annual cognitive screening after age 60
 - Manage vascular risk factors (blood pressure, cholesterol)
 - Medication review with doctor
-                    """)
+""")
+
                 # Get user location
                 city, region, country = get_user_location()
                 location_str = f"{city}, {region}, {country}"
@@ -1953,7 +1963,7 @@ if "location_str" not in st.session_state:
     st.session_state.location_str = {}
 
 st.sidebar.title("Navigation")
-st.success("✅ Welcome Take a Moment to Know About The African Neurohealth Dashboard")
+st.success("✅ Welcome to the African Neurohealth Dashboard")
 
 # ----------------------------
 # Helper: Check if user is logged in
@@ -2004,6 +2014,27 @@ elif page == "Memory Recall Game":
         memory_recall_game()
     else:
         st.warning("⚠️ Please log in to access Memory Recall Game.")
+
+
+
+
+   
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
