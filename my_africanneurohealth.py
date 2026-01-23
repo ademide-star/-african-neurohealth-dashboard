@@ -2901,7 +2901,7 @@ def main():
         
         with col1:
             # Display image
-            image_path = r"C:\Users\sibs2\Downloads\Gemini_Generated_Image_rnqv02rnqv02rnqv.png"
+            image_path = "Gemini_Generated_Image_rnqv02rnqv02rnqv.png"
             try:
                 st.image(image_path, width=150)
             except:
@@ -2988,5 +2988,6 @@ with footer_col3:
 # ====== RUN APP ======
 if __name__ == "__main__":
     main()
+
 
 
