@@ -3,56 +3,109 @@ import streamlit as st
 import pandas as pd
 import requests
 
-# ====== CUSTOM CSS ======
-st.markdown("""
-<style>
-    .main-header {
-        font-size: 2.5rem;
-        color: #1E3A8A;
-        font-weight: 700;
-        margin-bottom: 1rem;
-    }
-    .sub-header {
-        font-size: 1.8rem;
-        color: #2D3748;
-        font-weight: 600;
-        margin-top: 1.5rem;
-        margin-bottom: 1rem;
-    }
-    .model-card {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        padding: 20px;
-        border-radius: 15px;
-        margin: 10px 0;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-        transition: transform 0.3s;
-    }
-    .model-card:hover {
-        transform: translateY(-5px);
-    }
-    .risk-high { background-color: #FEE2E2; color: #DC2626; padding: 10px; border-radius: 5px; }
-    .risk-medium { background-color: #FEF3C7; color: #D97706; padding: 10px; border-radius: 5px; }
-    .risk-low { background-color: #D1FAE5; color: #059669; padding: 10px; border-radius: 5px; }
-    .metric-card { background-color: #F8FAFC; padding: 15px; border-radius: 10px; border-left: 4px solid #3B82F6; }
-    .tab-button { 
-        background: #4F46E5; 
-        color: white; 
-        border: none; 
-        padding: 10px 20px; 
-        border-radius: 5px;
-        margin: 5px;
-        cursor: pointer;
-    }
-    .report-section {
-        border: 1px solid #E5E7EB;
-        border-radius: 10px;
-        padding: 20px;
-        margin: 10px 0;
-        background-color: white;
-    }
-</style>
-""", unsafe_allow_html=True)
+def render_dashboard():
+    """Main dashboard page"""
+    import base64
+    import streamlit as st
+    import time
+
+    # ====== HIDE STREAMLIT DEFAULT UI ======
+    st.markdown("""
+    <style>
+        #MainMenu {visibility: hidden;}
+        footer {visibility: hidden;}
+        header {visibility: hidden;}
+    </style>
+    """, unsafe_allow_html=True)
+
+    # ====== CUSTOM CSS ======
+    st.markdown("""
+    <style>
+        .metric-card {
+            background-color: #F8FAFC; 
+            padding: 15px; 
+            border-radius: 10px; 
+            border-left: 4px solid #3B82F6;
+            text-align: center;
+        }
+        .metric-label { font-weight: 600; font-size: 1rem; margin-bottom: 5px; }
+        .metric-value { font-size: 1.5rem; font-weight: bold; }
+        .metric-delta { font-size: 1rem; color: #16A34A; }
+    </style>
+    """, unsafe_allow_html=True)
+
+    # ====== Helper: Animated Metric ======
+    def animated_metric(label, target_value, delta, duration=0.5, steps=20):
+        placeholder = st.empty()
+        step_value = max(1, target_value // steps)
+        for i in range(steps + 1):
+            current = min(i * step_value, target_value)
+            placeholder.markdown(f"""
+            <div class="metric-card">
+                <div class="metric-label">{label}</div>
+                <div class="metric-value">{current:,}</div>
+                <div class="metric-delta">{delta}</div>
+            </div>
+            """, unsafe_allow_html=True)
+            time.sleep(duration / steps)
+
+    # ====== Helper: Delta ======
+    def compute_delta(current, previous):
+        diff = current - previous
+        sign = "+" if diff >= 0 else ""
+        return f"{sign}{diff}"
+
+    # ====== Dashboard Header with Logo ======
+    def get_base64_of_bin_file(bin_file):
+        with open(bin_file, 'rb') as f:
+            return base64.b64encode(f.read()).decode()
+
+    img_path = r"C:\Users\sibs2\Downloads\Gemini_Generated_Image_rnqv02rnqv02rnqv.png"
+    try:
+        img_base64 = get_base64_of_bin_file(img_path)
+        st.markdown(f"""
+        <div style="display:flex; align-items:center; gap:20px; margin-bottom:20px;">
+            <img src="data:image/png;base64,{img_base64}" style="height:100px; width:auto;">
+            <div>
+                <h2 style="margin:0;">African NeuroHealth AI</h2>
+                <p style="margin:0; font-size:1rem; color:#6B7280;">Stroke & Dementia Predictor</p>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+    except:
+        st.markdown("""
+        <div style="display:flex; align-items:center; gap:20px; margin-bottom:20px;">
+            <div>
+                <h2 style="margin:0;">African NeuroHealth AI</h2>
+                <p style="margin:0; font-size:1rem; color:#6B7280;">Stroke & Dementia Predictor</p>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    # ====== Fetch Stats ======
+    if "previous_stats" not in st.session_state:
+        st.session_state.previous_stats = {"stroke": 1247, "dementia": 892}
+
+    stats = {"stroke": 1247, "dementia": 892}  # Replace with model or DB
+
+    # ====== Render Metrics in a Row ======
+    col1, col2 = st.columns(2)
+    with col1:
+        animated_metric(
+            label="🧠 Stroke Predictions",
+            target_value=stats["stroke"],
+            delta=compute_delta(stats["stroke"], st.session_state.previous_stats["stroke"])
+        )
+    with col2:
+        animated_metric(
+            label="🧓 Dementia Predictions",
+            target_value=stats["dementia"],
+            delta=compute_delta(stats["dementia"], st.session_state.previous_stats["dementia"])
+        )
+
+    # Update session state
+    st.session_state.previous_stats = stats
+
 import numpy as np
 import joblib
 import plotly.graph_objects as go
@@ -3055,6 +3108,7 @@ with footer_col3:
 # ====== RUN APP ======
 if __name__ == "__main__":
     main()
+
 
 
 
