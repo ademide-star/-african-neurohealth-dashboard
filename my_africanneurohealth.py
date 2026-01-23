@@ -2789,9 +2789,14 @@ def render_sidebar():
         return base64.b64encode(data).decode()
 
     # 2. Get the base64 string (use 'r' before the path to avoid escape character errors)
-    img_path = r"C:\Users\sibs2\Downloads\Gemini_Generated_Image_rnqv02rnqv02rnqv.png"
+    # Just use the filename. Don't use the C:\ path or the URL.
+    img_path = "Gemini_Generated_Image_rnqv02rnqv02rnqv.png"
+
     try:
         img_base64 = get_base64_of_bin_file(img_path)
+    # ... rest of your code
+    except FileNotFoundError:
+        st.error("Logo file not found in the repository folder.")
         # 3. Use the base64 string in your HTML
         st.sidebar.markdown(f"""
         <div style="text-align: center;">
@@ -2984,3 +2989,4 @@ with footer_col3:
 # ====== RUN APP ======
 if __name__ == "__main__":
     main()
+
