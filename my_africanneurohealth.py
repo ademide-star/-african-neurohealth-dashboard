@@ -3,12 +3,6 @@ import streamlit as st
 import pandas as pd
 import requests
 
-# --- PAGE CONFIG (safe for mobile + desktop) ---
-st.set_page_config(
-    page_title="AFRICAN NEUROHEALTH - STROKE & DEMENTIA RISK PREDICTION",
-    page_icon="🧠",
-    layout="centered"   # ✅ works on both desktop & mobile
-)
 # ====== CUSTOM CSS ======
 st.markdown("""
 <style>
@@ -2271,7 +2265,40 @@ if "previous_stats" not in st.session_state:
 # ====== DASHBOARD ======
 def render_dashboard():
     """Main dashboard page"""
-    st.header(get_translation("🧠 African NeuroHealth AI Dashboard- Stroke and Dementia Predictor"))
+    import base64
+    import streamlit as st
+
+    # Helper function: convert image to base64
+    def get_base64_of_bin_file(bin_file):
+        with open(bin_file, 'rb') as f:
+            data = f.read()
+        return base64.b64encode(data).decode()
+
+    # Image path
+    img_path ="Gemini_Generated_Image_rnqv02rnqv02rnqv.png"
+
+    try:
+        img_base64 = get_base64_of_bin_file(img_path)
+        st.markdown(f"""
+        <div style="display: flex; align-items: center; gap: 20px;">
+            <img src="data:image/png;base64,{img_base64}" 
+                 style="height: 100px; width: auto;">
+            <div>
+                <h1 style="margin: 0;">African NeuroHealth AI Dashboard</h1>
+                <p style="color: #6B7280; font-size: 1rem; margin: 0;">Stroke & Dementia Predictor</p>
+            </div>
+        """, unsafe_allow_html=True)
+    except Exception as e:
+        # Fallback if image fails
+        st.markdown("""
+        <div style="display: flex; align-items: center; gap: 20px;">
+            <div>
+                <h1 style="margin: 0;">African NeuroHealth AI Dashboard</h1>
+                <p style="color: #6B7280; font-size: 1rem; margin: 0;">Stroke & Dementia Predictor</p>
+            </div>
+        """, unsafe_allow_html=True)
+
+    st.markdown("---")
     
     st.markdown(get_translation("""
     Welcome to the **African NeuroHealth AI Dashboard** - an integrated platform for predicting 
@@ -2943,12 +2970,12 @@ def main():
             # Display image
             image_path = "Gemini_Generated_Image_rnqv02rnqv02rnqv.png"
             try:
-                st.image(image_path, width=150)
+                st.image(image_path, width=125)
             except:
                 st.info("🧠")  # Fallback emoji if image not found
         
         with col2:
-            st.markdown(get_translation('<h1 class="main-header-center">Welcome to African NeuroHealth AI</h1>'), unsafe_allow_html=True)
+            st.markdown(get_translation('<h2 class="main-header-center">African NeuroHealth AI Dashboard</h2>'), unsafe_allow_html=True)
         
         st.markdown("---")
         
@@ -3028,6 +3055,7 @@ with footer_col3:
 # ====== RUN APP ======
 if __name__ == "__main__":
     main()
+
 
 
 
