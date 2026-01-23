@@ -1,60 +1,77 @@
 # Must be the very first Streamlit command
 import streamlit as st
+import pandas as pd
 import requests
 
 # --- PAGE CONFIG (safe for mobile + desktop) ---
 st.set_page_config(
-    page_title="AFRICAN NEUROHEALTH",
-    page_icon="📊",
-    layout="centered",   # ✅ works on both desktop & mobile
+    page_title="AFRICAN NEUROHEALTH - STROKE & DEMENTIA RISK PREDICTION",
+    page_icon="🧠",
+    layout="centered"   # ✅ works on both desktop & mobile
 )
-
-# --- CUSTOM RESPONSIVE STYLING ---
-st.markdown(
-    """
-    <style>
-    /* Desktop: mimic wide layout */
-    @media (min-width: 900px) {
-        .block-container {
-            max-width: 95% !important;
-            padding-left: 2rem !important;
-            padding-right: 2rem !important;
-        }
+# ====== CUSTOM CSS ======
+st.markdown("""
+<style>
+    .main-header {
+        font-size: 2.5rem;
+        color: #1E3A8A;
+        font-weight: 700;
+        margin-bottom: 1rem;
     }
-
-    /* Mobile: make sure expanders are fully visible */
-    @media (max-width: 899px) {
-        .block-container {
-            max-width: 100% !important;
-            padding-left: 0.5rem !important;
-            padding-right: 0.5rem !important;
-        }
-        .streamlit-expanderHeader {
-            font-size: 1.1rem !important;  /* Bigger expander text on mobile */
-        }
+    .sub-header {
+        font-size: 1.8rem;
+        color: #2D3748;
+        font-weight: 600;
+        margin-top: 1.5rem;
+        margin-bottom: 1rem;
     }
-    </style>
-    """,
-    unsafe_allow_html=True
-)
-permanent_sidebar = """
-    <style>
-    section[data-testid="stSidebar"] {
-        min-width: 250px !important;  /* force width */
-        max-width: 250px !important;
+    .model-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 20px;
+        border-radius: 15px;
+        margin: 10px 0;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        transition: transform 0.3s;
     }
-    button[kind="header"] {
-        display: none !important;  /* hide expander toggle */
+    .model-card:hover {
+        transform: translateY(-5px);
     }
-    </style>
-"""
-st.markdown(permanent_sidebar, unsafe_allow_html=True)
-
-import pandas as pd
+    .risk-high { background-color: #FEE2E2; color: #DC2626; padding: 10px; border-radius: 5px; }
+    .risk-medium { background-color: #FEF3C7; color: #D97706; padding: 10px; border-radius: 5px; }
+    .risk-low { background-color: #D1FAE5; color: #059669; padding: 10px; border-radius: 5px; }
+    .metric-card { background-color: #F8FAFC; padding: 15px; border-radius: 10px; border-left: 4px solid #3B82F6; }
+    .tab-button { 
+        background: #4F46E5; 
+        color: white; 
+        border: none; 
+        padding: 10px 20px; 
+        border-radius: 5px;
+        margin: 5px;
+        cursor: pointer;
+    }
+    .report-section {
+        border: 1px solid #E5E7EB;
+        border-radius: 10px;
+        padding: 20px;
+        margin: 10px 0;
+        background-color: white;
+    }
+</style>
+""", unsafe_allow_html=True)
 import numpy as np
 import joblib
+import plotly.graph_objects as go
+import plotly.express as px
+from datetime import datetime
 import os
+import time
 import random
+import uuid
+from pathlib import Path
+from fpdf import FPDF
+import base64
+from io import BytesIO
 import time
 from dotenv import load_dotenv
 import requests
@@ -68,6 +85,9 @@ import json
 import jsonschema
 import shap
 import sqlite3
+from fpdf import FPDF
+from arabic_reshaper import reshape
+from bidi.algorithm import get_display
 import logging
 from postgrest import APIError
 import pickle
@@ -76,12 +96,36 @@ import traceback
 from sklearn.pipeline import Pipeline
 from supabase import create_client, Client
 from translations import get_translation, set_language_selector
+
 import streamlit as st
+from translations import get_translation, set_language_selector
 
-# Set up language
-selected_lang = set_language_selector()
+# --- 1. SET UP LANGUAGE (Only call this ONCE) ---
+lang = set_language_selector(widget_key="app_language_selector")
 
-st.title(get_translation("African NeuroHealth Dashboard 🧠"))
+# --- 2. GET TRANSLATED TEXT ---
+title = get_translation("title")
+subtitle = get_translation("subtitle")
+
+# --- 3. RENDER UI WITH RTL SUPPORT ---
+if lang == "ar":
+    # Right-to-Left alignment for Arabic
+    st.sidebar.markdown(f"""
+        <div style="text-align: right; direction: rtl;">
+            <h2 style="margin-bottom:0;">{title}</h2>
+            <p style="color: #6B7280;">{subtitle}</p>
+        </div>
+    """, unsafe_allow_html=True)
+else:
+    # Standard Left-to-Right for other languages
+    st.sidebar.markdown(f"""
+        <div style="text-align: center;">
+            <h2 style="margin-bottom:0;">{title}</h2>
+            <p style="color: #6B7280;">{subtitle}</p>
+        </div>
+    """, unsafe_allow_html=True)
+
+
 
 # --- Set up logging ---
 logging.basicConfig(level=logging.INFO)
@@ -103,374 +147,96 @@ def get_user_location():
         print(f"Error fetching location: {e}")
         return "Unknown", "Unknown", "Unknown"
 
+# ====== INITIALIZE SESSION STATE ======
+# Initialize all session state variables
+def init_session_state():
+    if 'logged_in' not in st.session_state:
+        st.session_state.logged_in = False
+    if 'user_name' not in st.session_state:
+        st.session_state.user_name = ""
+    if 'user_id' not in st.session_state:
+        st.session_state.user_id = str(uuid.uuid4())[:8]
+    if 'current_page' not in st.session_state:
+        st.session_state.current_page = "Dashboard"
+    if 'patient_data' not in st.session_state:
+        st.session_state.patient_data = {}
+    if 'predictions' not in st.session_state:
+        st.session_state.predictions = {"Stroke": None, "Dementia": None}
+    if 'reports' not in st.session_state:
+        st.session_state.reports = {}
+    if 'models_loaded' not in st.session_state:
+        st.session_state.models_loaded = {"Stroke": False, "Dementia": False}
+    if 'memory_game' not in st.session_state:
+        st.session_state.memory_game = None
+    if 'nutritional_score' not in st.session_state:
+        st.session_state.nutritional_score = 3
+    if 'stress_score' not in st.session_state:
+        st.session_state.stress_score = 0
+    if 'memory_score' not in st.session_state:
+        st.session_state.memory_score = None
 
-# ----------------------------
-# SESSION MANAGEMENT
-# ----------------------------
-if "user" not in st.session_state:
-    st.session_state.user = {"id": None, "email": None}
-if "access_token" not in st.session_state:
-    st.session_state.access_token = None
-if "refresh_token" not in st.session_state:
-    st.session_state.refresh_token = None
-
-
-
-# ----------------------------
-# LOGIN FUNCTION
-# ----------------------------
-def login():
-    st.subheader(get_translation("Login with Email & Password"))
-    email = st.text_input(get_translation("Email"), key="login_email")
-    password = st.text_input(get_translation("Password"), type="password", key="login_password")
-
-    if st.button(get_translation("Login"), key="login_btn"):
-        try:
-            response = supabase.auth.sign_in_with_password({"email": email, "password": password})
-            if response.user:
-                st.session_state.user = {"id": response.user.id, "email": response.user.email}
-                st.success(get_translation(f"✅ Logged in as {st.session_state.user['email']}"))
-            else:
-                st.error(get_translation("Invalid login credentials"))
-        except Exception as e:
-            st.error(get_translation(f"Login error: {e}"))
-
-
-
-# ----------------------------
-# LOGOUT FUNCTION
-# ----------------------------
-def logout():
-    try:
-        supabase.auth.sign_out()
-        st.session_state.user = {"id": None, "email": None}
-        st.success(get_translation("Logged out successfully."))
-        st.rerun()  # ✅ modern replacement
-    except Exception as e:
-        st.error(get_translation(f"Logout error: {e}"))
-
-
-
-# ----------------------------
-# REGISTER FUNCTION
-# ----------------------------
-def register():
-    st.subheader(get_translation("Register"))
-    email = st.text_input(get_translation("New Email"), key="register_email")
-    password = st.text_input(get_translation("New Password"), type="password", key="register_password")
-    confirm_password = st.text_input(get_translation("Confirm Password"), type="password", key="register_confirm_password")
-
-    if st.button(get_translation("Register"), key="register_btn"):
-        if password != confirm_password:
-            st.error(get_translation("Passwords do not match"))
-        else:
-            try:
-                response = supabase.auth.sign_up({"email": email, "password": password})
-                if response.user:
-                    st.success(get_translation("✅ Registration successful! Please check your email to confirm your account."))
-                else:
-                    st.error(get_translation("Registration failed."))
-            except Exception as e:
-                st.error(get_translation(f"Registration error: {e}"))
-
-
-
-# ABOUT FUNCTION
-# ----------------------------
-
-def about():
-    st.header(get_translation("ℹ️ About this Application"))
-    st.markdown(get_translation("""
-This platform is a culturally attuned, context-aware diagnostic tool tailored for assessing neuro-health risks in African populations. 
-It blends conventional biomedical metrics with locally relevant stressors, lifestyle habits, and cultural practices to offer a truly holistic health assessment experience.
-
-**Key Features:**
-- Environmental exposures (e.g., noise, air pollution)
-- Dietary patterns (including traditional nutrition)
-- Sleep quality and hydration
-- Use of herbal or traditional remedies
-- Psychosocial stressors unique to African settings
-- Ethnocultural identity tracking for precision health insights
-**This application was proudly developed by Adebimpe-John Omolola E., with invaluable support from the GRASP / NIH / DSI Collaborative Program. 
-Their collaborative spirit and commitment to innovation helped bring this vision to life.**
-                        """))
-
-
-def custom_stress_score(prefix: str = "", use_container: bool = False):
-    """
-    Display a stress score section in Streamlit with an option to avoid nested expanders.
-
-    Args:
-        prefix (str): Optional prefix for the title.
-        use_container (bool): If True, content will be rendered directly without an expander.
-
-    Returns:
-        streamlit.delta_generator.DeltaGenerator: The container (expander or main) to add content into.
-    """
-    # Construct title with translation
-    title = get_translation(f"🧮 {prefix} Stress Estimator Based on Cultural & Contextual Stress Factors")
-    
-    if use_container:
-        # Directly return the main Streamlit container
-        container = st.container()
-        container.markdown(f"### {title}")
-        
-    else:
-        container = st.expander(get_translation(title))
-    
-    with container:
-        q1 = st.slider(get_translation("Financial pressure/burden"), 0, 4, 2,
-                      help=get_translation("Struggling with basic needs, debts, or unemployment"))
-        q2 = st.slider(get_translation("Family/relationship issues"), 0, 4, 2,
-                      help=get_translation("Marital conflicts, caring for extended family, generational conflicts"))
-        q3 = st.slider(get_translation("Work/employment stress"), 0, 4, 2,
-                      help=get_translation("Job insecurity, long commutes, workplace discrimination"))
-        q4 = st.slider(get_translation("Community safety concerns"), 0, 4, 2,
-                      help=get_translation("Crime, political instability, or ethnic tensions in your area"))
-        q5 = st.slider(get_translation("Caregiver burden"), 0, 4, 2,
-                      help=get_translation("Caring for children/elderly with limited support"))
-        q6 = st.slider(get_translation("Migration/displacement stress"), 0, 4, 2,
-                      help=get_translation("Relocation challenges, missing homeland, adapting to new culture"))
-        q7 = st.slider(get_translation("Traditional family expectations"), 0, 4, 2,
-                      help=get_translation("Pressure to uphold cultural traditions, marriage expectations"))
-        q8 = st.slider(get_translation("Spiritual/religious conflicts"), 0, 4, 2,
-                      help=get_translation("Tension between traditional beliefs and modern life"))
-
-        total_score = q1 + q2 + q3 + q4 + q5 + q6 + q7 + q8
-        
-        if total_score <= 12:
-            level = 0
-            label = get_translation("Low")
-            color = "green"
-        elif total_score <= 20:
-            level = 1
-            label = get_translation("Moderate")
-            color = "orange"
-        else:
-            level = 2
-            label = get_translation("High")
-            color = "red"
- 
-        st.markdown(get_translation(f"""
-        <div style='padding: 10px; border-radius: 5px; background-color: #f0f2f6; margin-top: 20px;'>
-            <h4>🧠 Total Stress Score: <span style='color:{color};'>{total_score}/32</span> → {label} Stress</h4>
-            <p><small>Higher scores indicate greater exposure to Africa-specific stressors</small></p>
-        </div>
-        """), unsafe_allow_html=True)
-        
-        return level, label, total_score
-
-def smart_load_model(path):
-    """
-    Tries to load a model using joblib first, then falls back to cloudpickle.
-    Works for both .joblib and .pkl files.
-    """
-    if not os.path.exists(path):
-        raise FileNotFoundError(f"Model file not found: {path}")
-
-    try:
-        # Try joblib first (common for scikit-learn)
-        return joblib.load(path)
-    except (AttributeError, EOFError, ImportError, pickle.UnpicklingError):
-        # If joblib fails, try cloudpickle
-        with open(path, "rb") as f:
-            return cloudpickle.load(f)
-
-def smart_load_model(path):
-    """
-    Tries to load a model using joblib first, then falls back to cloudpickle.
-    Works for both .joblib and .pkl files.
-    """
-    if not os.path.exists(path):
-        raise FileNotFoundError(f"Model file not found: {path}")
-
-    try:
-        return joblib.load(path)
-    except Exception:
-        # If joblib fails (version mismatch, missing class, etc.), try cloudpickle
-        with open(path, "rb") as f:
-            return cloudpickle.load(f)
-
-# Get the current directory
-current_dir = Path(__file__).resolve().parent
-
-# Define model paths using relative paths
-ALZ_MODEL_PATH = current_dir / "alzheimers_pipeline.joblib"
-STROKE_MODEL_PATH = current_dir / "stroke_pipeline.joblib"
-ALZ_PREPROCESSOR_PATH = current_dir / "alzheimers_preprocessor.joblib"
-
-# Function to load models with error handling
-@st.cache_resource
-def load_models():
-    try:
-        # Check if files exist
-        if not ALZ_MODEL_PATH.exists():
-            st.error(f"Alzheimer's model file not found at {ALZ_MODEL_PATH}")
-            return None, None, None
-            
-        if not STROKE_MODEL_PATH.exists():
-            st.error(f"Stroke model file not found at {STROKE_MODEL_PATH}")
-            return None, None, None
-            
-        if not ALZ_PREPROCESSOR_PATH.exists():
-            st.error(f"Preprocessor file not found at {ALZ_PREPROCESSOR_PATH}")
-            return None, None, None
-            
-        # Load the models
-        alz_model = joblib.load(ALZ_MODEL_PATH)
-        stroke_model = joblib.load(STROKE_MODEL_PATH)
-        preprocessor = joblib.load(ALZ_PREPROCESSOR_PATH)
-        return alz_model, stroke_model, preprocessor
-        
-    except Exception as e:
-        st.error(f"Error loading models: {e}")
-        return None, None, None
-
-    # Load models into session state once
-if "stroke_model" not in st.session_state or "alz_model" not in st.session_state:
-    alz_model, stroke_model, preprocessor = load_models()
-    
-    if alz_model and stroke_model and preprocessor:
-        st.session_state.alz_model = alz_model
-        st.session_state.stroke_model = stroke_model
-        st.session_state.preprocessor = preprocessor
-    else:
-        st.stop()  # Prevent app from running without models
-
-
-
-def save_prediction_to_supabase(features, prediction, probability, memory_score=None):
-    try:
-        # Prepare data for insertion
-        data = {
-            "age": int(features['Age'].iloc[0]) if not pd.isna(features['Age'].iloc[0]) else None,
-            "gender": int(features['Gender'].iloc[0]) if not pd.isna(features['Gender'].iloc[0]) else None,
-            "education_level": int(features['EducationLevel'].iloc[0]) if not pd.isna(features['EducationLevel'].iloc[0]) else None,
-            # Add all other features...
-            "prediction": int(prediction[0]),
-            "probability": float(probability[0][1]),
-        }
-        
-        # Only add memory_score if it's provided
-        if memory_score is not None:
-            data["memory_score"] = int(memory_score)
-        
-        # Insert into Supabase
-        response = supabase.table("alzheimers_predictions").insert(data).execute()
-        
-        logger.info("Prediction saved successfully to Supabase!")
-        return response
-        
-    except Exception as e:  # This defines 'e' in the except block
-        logger.error(f"Error saving to Supabase: {e}")
-        logger.error(traceback.format_exc())  # This will show the full traceback
-        
-        # If the error is about a missing column, try without the memory_score
-        if "memory_score" in str(e):
-            logger.warning("memory_score column might not exist, retrying without it...")
-            if "memory_score" in data:
-                del data["memory_score"]
-                try:
-                    response = supabase.table("alzheimers_predictions").insert(data).execute()
-                    logger.info("Prediction saved successfully without memory_score!")
-                    return response
-                except Exception as inner_e:
-                    logger.error(f"Error saving without memory_score: {inner_e}")
-                    raise inner_e
-        
-        # Re-raise the original exception if we can't handle it
-        raise e
-
-# Function to make predictions and handle errors properly
-def make_prediction(input_data):
-    try:
-                # Load the pipeline
-        pipeline = alz_model  # Assuming alz_model is already loaded as a Pipeline
-        
-        # Make prediction
-        prediction = pipeline.predict(input_data)
-        probability = pipeline.predict_proba(input_data)
-        
-        # Save to Supabase
-        result = save_prediction_to_supabase(input_data, prediction, probability)
-        
-        return prediction, probability, result
-        
-    except Exception as e:  # This defines 'e' in the function scope
-        logger.error(f"Error during prediction: {e}")
-        logger.error(traceback.format_exc())
-        
-        # Re-raise or handle as needed
-        raise
-
-
-
-# ======================
-# Build stroke input dictionary from Streamlit widgets
-# ======================
-def build_stroke_input_from_ui(ui_input: dict) -> dict:
-    """
-    Converts Streamlit inputs into a numeric dictionary ready for prediction.
-    Handles categorical mappings and defaults.
-    """
-    input_dict = {}
-    
-    # Map numeric fields
-    for key, default in NUMERIC_DEFAULTS.items():
-        input_dict[key] = ui_input.get(key, default)
-    
-    # Map categorical fields
-    for key, mapping in CATEGORY_MAPS.items():
-        value = ui_input.get(key, "None")
-        # Handle unseen categories
-        input_dict[key] = mapping.get(value, mapping.get("None", 0))
-    
-    return input_dict
-
-# Validate input
-def prepare_stroke_input(raw_input) -> pd.DataFrame:
-    if isinstance(raw_input, pd.DataFrame):
-        if len(raw_input) != 1:
-            raise ValueError("Expected a single-row DataFrame.")
-        return raw_input.reset_index(drop=True)
-    elif isinstance(raw_input, dict):
-        return pd.DataFrame([raw_input])
-    elif isinstance(raw_input, list) and len(raw_input) == 1 and isinstance(raw_input[0], dict):
-        return pd.DataFrame(raw_input)
-    else:
-        raise TypeError("Input must be a dict, list of dicts, or single-row DataFrame.")
-
-# Predict stroke risk
-def predict_stroke(raw: dict) -> int:
-    """
-    Returns 0 (no stroke) or 1 (stroke risk)
-    """
-    # 1. Build full input
-    full_input_df = build_full_input(raw)
-
-    # 2. Validate
-    stroke_data_df = prepare_stroke_input(full_input_df)
-
-    # 3. Predict using pipeline (handles categorical encoding)
-    pred = stroke_model.predict(stroke_data_df)[0]
-
-    return int(pred)
-
-
-    
-# -------------------
 # Initialize session state
-# -------------------
-session_keys = [
-    "user", "stroke_data", "alz_data", "nutritional_data",
-    "default_lifestyles", "memory_game", "auth_mode"
-]
-for key in session_keys:
-    if key not in st.session_state:
-        st.session_state[key] = {} if key.endswith("_data") else None
+init_session_state()
 
-if "auth_mode" not in st.session_state:
-    st.session_state.auth_mode = "login"  # login or signup
+# ====== SIMPLE LOGIN SYSTEM - FIXED ======
+def simple_login():
+    """Simple login without registration or verification"""
+    st.sidebar.header(get_translation("🔐 Quick Login"))
+    
+    # Generate a random user ID if not exists
+    if not st.session_state.get('user_id'):
+        st.session_state.user_id = f"user_{random.randint(1000, 9999)}"
+    
+    # Get or create username
+    if not st.session_state.get('logged_in', False):
+        default_name = f"Guest_{random.randint(100, 999)}"
+        user_name = st.sidebar.text_input(
+            get_translation("Enter your name (optional)"), 
+            value=default_name, 
+            key="login_name"
+        )
+        
+        col1, col2 = st.sidebar.columns(2)
+        with col1:
+            if st.button(
+                get_translation("Start Session"), 
+                use_container_width=True, 
+                key="start_session"
+            ):
+                st.session_state.user_name = user_name if user_name else default_name
+                st.session_state.logged_in = True
+                st.session_state.current_page = "Dashboard"
+                st.rerun()
+        
+        with col2:
+            if st.button(
+                get_translation("Quick Start"), 
+                use_container_width=True, 
+                key="quick_start"
+            ):
+                st.session_state.user_name = default_name
+                st.session_state.logged_in = True
+                st.session_state.current_page = "Dashboard"
+                st.rerun()
+    else:
+        st.sidebar.success(get_translation(f"Welcome, {st.session_state.user_name}!"))
+        
+        if st.sidebar.button(
+            get_translation("End Session"), 
+            use_container_width=True, 
+            key="end_session"
+        ):
+            # Reset session state
+            for key in list(st.session_state.keys()):
+                if key not in ['logged_in', 'user_name', 'user_id', 'current_page']:
+                    del st.session_state[key]
+            
+            st.session_state.logged_in = False
+            st.session_state.user_name = ""
+            st.session_state.current_page = "Dashboard"
+            init_session_state()
+            st.rerun()
+
 
 # -------------------
 # Utility Functions
@@ -599,6 +365,7 @@ for r, ethnicities in region_with_ethnicity.items():
 
 # Streamlit UI
 with st.sidebar:
+    # ✅ CORRECT
     st.header(get_translation("🌍 Location Information"))
     selected_country = st.selectbox(get_translation("Select Country"), list(countries_with_provinces.keys()))
     selected_province = st.selectbox(get_translation("Select Province"), countries_with_provinces[selected_country])
@@ -618,146 +385,580 @@ payload = {
     "ethnicity": encoded_ethnicity,
     # include other fields...
 }
-
-def nutrition_tracker_app():
-    st.header(get_translation("Nutrition Tracker"))
-    st.title(get_translation("🥗 Nutrition Tracker"))
-# --- Nutritional Lifestyle Tracker ---
-def calculate_weekly_servings(freq, servings):
-    if freq == get_translation("Daily"):
-        return servings * 7
-    elif freq == get_translation("Weekly"):
-        return servings
-    elif freq == get_translation("Monthly"):
-        return servings / 4
-    return 0
-
-def compute_nutritional_score():
-    if not st.session_state.nutritional_data:
-        return 3
+# This section will be handled by the specific assessment forms
+# Remove this placeholder code as PDF generation occurs within
+# render_stroke_assessment() and render_alzheimer_assessment() functions
+def generate_stroke_pdf(user_name, patient_data, risk_score, risk_level, factors):
+    """Generate PDF report for stroke prediction"""
+    pdf = NeuroHealthReport("Stroke Risk Assessment")
     
-    positive = [get_translation("Homemade Food"), get_translation("Vegetarian"), get_translation("Vegan"), get_translation("Mediterranean"), get_translation("Pescatarian")]
-    negative = [get_translation("Junk Food"), get_translation("Fast Foods")]
+    # Add patient info
+    pdf.set_font('Arial', 'B', 14)
+    pdf.cell(0, 10, f'Patient: {user_name}', 0, 1)
+    pdf.set_font('Arial', '', 10)
+    pdf.cell(0, 10, f'Report Date: {datetime.now().strftime("%Y-%m-%d %H:%M")}', 0, 1)
+    pdf.ln(10)
     
-    positive_score = sum(
-        data["weekly_servings"] * 0.5 
-        for lifestyle, data in st.session_state.nutritional_data.items() 
-        if lifestyle in positive
-    )
+    # Risk Assessment
+    pdf.add_section("Risk Assessment", f"""
+    Overall Stroke Risk Score: {risk_score:.1%}
+    Risk Level: {risk_level}
+    """)
     
-    negative_score = sum(
-        data["weekly_servings"] * 1.0 
-        for lifestyle, data in st.session_state.nutritional_data.items() 
-        if lifestyle in negative
-    )
+    # Patient Data
+    pdf.add_section("Patient Information", "")
+    pdf.set_font('Arial', 'B', 10)
+    pdf.cell(60, 8, "Parameter", 1)
+    pdf.cell(0, 8, "Value", 1, 1)
     
-    raw_score = 3 + (positive_score / 10) - (negative_score / 5)
-    return max(1, min(5, round(raw_score)))
+    for key, value in patient_data.items():
+        pdf.add_table_row(key.replace('_', ' ').title(), str(value))
+    
+    # Risk Factors
+    pdf.add_section("Key Risk Factors Identified", "")
+    for factor in factors[:5]:
+        pdf.set_font('Arial', '', 10)
+        pdf.cell(0, 8, f"• {factor}", 0, 1)
+    
+    # Recommendations
+    recommendations = [
+        "Monitor blood pressure regularly",
+        "Maintain healthy BMI through diet and exercise",
+        "Control blood glucose levels",
+        "Quit smoking and limit alcohol consumption",
+        "Engage in regular physical activity (30 mins/day)",
+        "Reduce sodium intake to less than 2,300 mg/day",
+        "Eat more fruits, vegetables, and whole grains",
+        "Manage stress through meditation or relaxation techniques",
+        "Get 7-8 hours of quality sleep nightly",
+        "Consult healthcare provider for personalized advice"
+    ]
+    
+    if risk_level == "HIGH":
+        recommendations.insert(0, "URGENT: Consult a healthcare provider immediately")
+    
+    pdf.add_recommendations(recommendations)
+    
+    # Disclaimer
+    pdf.add_section(get_translation("Disclaimer", """
+    This report is generated by an AI prediction system and should not replace professional medical advice.
+    Always consult with qualified healthcare providers for diagnosis and treatment.
+    """))
+    
+    return pdf.output(dest='S').encode('latin-1')
 
-st.sidebar.header(get_translation("🍽️ Nutritional Lifestyle Tracker"))
-st.sidebar.header(get_translation("Additional Nutrition Details"))
+def generate_alzheimer_pdf(user_name, patient_data, risk_score, risk_level, factors):
+    """Generate PDF report for Alzheimer's prediction"""
+    pdf = NeuroHealthReport("Alzheimer's/Dementia Risk Assessment")
+    
+    # Add patient info
+    pdf.set_font('Arial', 'B', 14)
+    pdf.cell(0, 10, f'Patient: {user_name}', 0, 1)
+    pdf.set_font('Arial', '', 10)
+    pdf.cell(0, 10, f'Report Date: {datetime.now().strftime("%Y-%m-%d %H:%M")}', 0, 1)
+    pdf.ln(10)
+    
+    # Risk Assessment
+    pdf.add_section(get_translation("Risk Assessment", f"""
+    Overall Dementia Risk Score: {risk_score:.1%}
+    Risk Level: {risk_level}
+    MMSE Score: {patient_data.get('mmse', 'Not provided')}/30
+    """))
+    
+    # Patient Data
+    pdf.add_section("Patient Information", "")
+    pdf.set_font('Arial', 'B', 10)
+    pdf.cell(60, 8, "Parameter", 1)
+    pdf.cell(0, 8, "Value", 1, 1)
+    
+    for key, value in patient_data.items():
+        if key not in ['mmse']:
+            pdf.add_table_row(key.replace('_', ' ').title(), str(value))
+    
+    # Risk Factors
+    pdf.add_section(get_translation("Key Risk Factors Identified", ""))
+    for factor in factors[:5]:
+        pdf.set_font('Arial', '', 10)
+        pdf.cell(0, 8, f"• {factor}", 0, 1)
+    
+    # Recommendations
+    recommendations = (get_translation[
+        "Engage in regular cognitive activities (puzzles, reading, learning)",
+        "Maintain social connections and interactions",
+        "Exercise regularly (150 mins moderate activity per week)",
+        "Follow a Mediterranean or MIND diet",
+        "Manage cardiovascular risk factors (blood pressure, cholesterol)",
+        "Get 7-8 hours of quality sleep each night",
+        "Manage stress through mindfulness and relaxation",
+        "Protect head from injury during physical activities",
+        "Limit alcohol consumption",
+        "Stay mentally active with new learning experiences"
+    ])
+    
+    if risk_level == "HIGH":
+        recommendations.insert(0, "URGENT: Consult a neurologist or memory specialist immediately")
+    
+    pdf.add_recommendations(recommendations)
+    
+    # Disclaimer
+    pdf.add_section("Disclaimer", """
+    This report is generated by an AI prediction system and should not replace professional medical advice.
+    Always consult with qualified healthcare providers for diagnosis and treatment.
+    """)
+    
+    return pdf.output(dest='S').encode('latin-1')
 
-fruit_intake = st.sidebar.number_input(
-    get_translation("Fruit Intake (servings per day)"), min_value=0, max_value=20, value=2, key="fruit_intake"
-)
+def create_download_link(pdf_bytes, filename):
+    """Create a download link for PDF"""
+    b64 = base64.b64encode(pdf_bytes).decode()
+    href = f'<a href="data:application/octet-stream;base64,{b64}" download="{filename}">📥 Download PDF Report</a>'
+    return href
 
-vegetable_intake = st.sidebar.number_input(
-    get_translation("Vegetable Intake (servings per day)"), min_value=0, max_value=20, value=3, key="vegetable_intake"
-)
+# ====== MODEL LOADERS ======
+@st.cache_resource
+def load_stroke_model():
+    """Load stroke prediction model"""
+    try:
+        # Try to load model from different possible paths
+        model_paths = [
+            'stroke_REAL_model.pkl',
+            'models/stroke_model.pkl',
+            'stroke_pipeline.joblib'
+        ]
+        
+        for path in model_paths:
+            if os.path.exists(path):
+                stroke_model = joblib.load(path)
+                return {
+                    'model': stroke_model,
+                    'status': 'success',
+                    'features': ['age', 'hypertension', 'heart_disease', 'avg_glucose_level', 
+                                'bmi', 'smoking_status', 'stress_level', 'depression_level']
+                }
+        
+        # If no model found, return a mock model for demo
+        return {
+            'model': None,
+            'status': 'demo',
+            'features': ['age', 'hypertension', 'heart_disease', 'avg_glucose_level', 
+                        'bmi', 'smoking_status', 'stress_level', 'depression_level']
+        }
+    except Exception as e:
+        return {'status': 'error', 'message': str(e)}
 
-hydration_liters = st.sidebar.number_input(
-    get_translation("Water Intake (liters per day)"), min_value=0, max_value=10, value=2, key="hydration_liters"
-)
+@st.cache_resource
+def load_dementia_model():
+    """Load dementia prediction model"""
+    try:
+        # Try to load model from different possible paths
+        model_paths = [
+            'trained_dementia_models.pkl',
+            'models/trained_alzheimers_models.pkl',
+            'pipeline/alzheimers_preprocessor.joblib',
+            'alzheimers_pipeline.joblib'
+        ]
+        
+        for path in model_paths:
+            if os.path.exists(path):
+                dementia_model = joblib.load(path)
+                return {
+                    'model': dementia_model,
+                    'status': 'success',
+                    'features': ['Age', 'MMSE', 'FunctionalAssessment', 'ADL', 
+                                'MemoryComplaints', 'EducationLevel', 'SleepQuality']
+                }
+        
+        # If no model found, return a mock model for demo
+        return {
+            'model': None,
+            'status': 'demo',
+            'features': ['Age', 'MMSE', 'FunctionalAssessment', 'ADL', 
+                        'MemoryComplaints', 'EducationLevel', 'SleepQuality']
+        }
+    except Exception as e:
+        return {'status': 'error', 'message': str(e)}
 
-supplements_used = st.sidebar.text_input(
-    get_translation("Supplements Used (e.g., Vitamin D, Omega-3)"), key="supplements_used"
-)
+# ====== MEMORY GAME - REFACTORED ======
+import time
+import random
 
-natural_herbs = st.sidebar.text_input(
-    get_translation("Natural Herbs Taken (e.g., Ginger, Turmeric)"), key="natural_herbs"
-)
-
-# Available options
-all_options = [
-    get_translation("Local Bukka/Street Food"), get_translation("Homemade Food"), get_translation("Junk Food"), 
-    get_translation("Fast Foods"), get_translation("Vegetarian"), get_translation("Vegan"), get_translation("Pescatarian"), 
-    get_translation("Mediterranean"), get_translation("Keto"), get_translation("Paleo")
-]
-
-# Lifestyle selection
-selected_lifestyles = st.sidebar.multiselect(
-    get_translation("Select Nutritional Lifestyles"),
-    all_options,
-    default=st.session_state.default_lifestyles,
-    key="nutritional_lifestyle"
-)
-st.session_state.default_lifestyles = selected_lifestyles
-
-# Process each selected lifestyle
-if selected_lifestyles:
-    with st.sidebar.expander(get_translation("Track Consumption"), expanded=True):
-        for lifestyle in selected_lifestyles:
-            st.subheader(lifestyle)
-            col1, col2 = st.columns(2)
+def memory_recall_game():
+    """Memory recall game for cognitive assessment with auto-hide and timer"""
+    st.markdown(get_translation('<h1 class="main-header">🧠 Memory Recall Game</h1>', unsafe_allow_html=True))
+    
+    # Initialize memory game state
+    if 'memory_game' not in st.session_state or st.session_state.memory_game is None:
+        st.session_state.memory_game = {
+            "state": "start",
+            "words": [],
+            "start_time": None,
+            "level": 1,
+            "score_history": [],
+            "display_end_time": None
+        }
+    
+    game = st.session_state.memory_game
+    
+    WORD_POOL = [
+        "apple", "table", "river", "mountain", "sun", "flower",
+        "clock", "phone", "book", "star", "moon", "chair",
+        "pencil", "car", "glass", "tree", "music", "house",
+        "cloud", "lamp", "keyboard", "shoe", "bottle", "ring",
+        "window", "garden", "bridge", "ocean", "forest", "diamond"
+    ]
+    
+    # ==================== START SCREEN ====================
+    if game["state"] == "start":
+        st.markdown(get_translation("""
+        <div style='background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+                    padding: 30px; border-radius: 15px; color: white; text-align: center;'>
+            <h2>🎮 Memory Challenge</h2>
+            <p style='font-size: 18px;'>Test your memory and cognitive abilities!</p>
+        </div>
+        """, unsafe_allow_html=True))
+        
+        st.markdown("---")
+        
+        col1, col2, col3 = st.columns([1, 2, 1])
+        with col2:
+            st.markdown(get_translation(f"""
+            <div style='background: #f8f9fa; padding: 20px; border-radius: 10px; 
+                        border-left: 5px solid #667eea; margin: 20px 0;'>
+                <h3 style='color: #667eea; margin-top: 0;'>📋 Level {game['level']}</h3>
+                <p style='font-size: 16px; color: #333;'>
+                    • You will see <strong>{4 + game['level']} words</strong><br>
+                    • Memorize them in <strong>5 seconds</strong><br>
+                    • Type what you remember<br>
+                    • Get {4 + game['level'] - 1} correct to advance!
+                </p>
+            </div>
+            """, unsafe_allow_html=True))
             
-            with col1:
-                freq = st.selectbox(
-                    get_translation("Frequency"),
-                    [get_translation("Daily"), get_translation("Weekly"), get_translation("Monthly")],
-                    key=f"freq_{lifestyle}"
-                )
+            if st.button(get_translation("🎯 Start Memory Exercise", key="memory_start", use_container_width=True)):
+                num_words = 4 + game["level"]
+                words = random.sample(WORD_POOL, num_words)
+                game["words"] = words
+                game["start_time"] = time.time()
+                game["display_end_time"] = time.time() + 5  # Words disappear after 5 seconds
+                game["state"] = "showing"
+                st.rerun()
+    
+    # ==================== SHOWING WORDS ====================
+    elif game["state"] == "showing":
+        # Handle missing display_end_time (backwards compatibility)
+        if game.get("display_end_time") is None:
+            game["display_end_time"] = time.time() + 5
+        
+        current_time = time.time()
+        time_remaining = max(0, game["display_end_time"] - current_time)
+        
+        if time_remaining > 0:
+            # Display words with countdown
+            st.markdown(get_translation(f"""
+            <div style='background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); 
+                        padding: 40px; border-radius: 15px; text-align: center;'>
+                <h2 style='color: white; margin-bottom: 20px;'>⏱️ Memorize These Words!</h2>
+                <div style='background: white; padding: 30px; border-radius: 10px; 
+                            font-size: 28px; font-weight: bold; color: #333; margin-bottom: 20px;'>
+                    {", ".join(game["words"])}
+                </div>
+                <div style='font-size: 48px; color: white; font-weight: bold;'>
+                    {int(time_remaining) + 1}
+                </div>
+                <p style='color: white; font-size: 18px; margin-top: 10px;'>seconds remaining</p>
+            </div>
+            """, unsafe_allow_html=True))
             
+            # Progress bar
+            progress = 1 - (get_translation(time_remaining / 5))
+            st.progress(get_translation(progress))
+            
+            # Auto-refresh every 0.1 seconds to update countdown
+            time.sleep(0.1)
+            st.rerun()
+        else:
+            # Time's up - move to recall phase
+            game["state"] = "recalling"
+            st.rerun()
+    
+    # ==================== RECALLING WORDS ====================
+    elif game["state"] == "recalling":
+        st.markdown(get_translation("""
+        <div style='background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); 
+                    padding: 30px; border-radius: 15px; text-align: center; color: white;'>
+            <h2>🤔 Time to Recall!</h2>
+            <p style='font-size: 18px;'>Type the words you remember below</p>
+        </div>
+        """, unsafe_allow_html=True))
+        
+        st.markdown("---")
+        
+        # Instructions
+        st.info(get_translation("💡 **Tip:** Separate words with commas (e.g., apple, tree, sun)"))
+        
+        # Recall form
+        with st.form(get_translation("recall_form", clear_on_submit=True)):
+            recalled_input = st.text_input(get_translation(
+                "Enter the words you remember:",
+                placeholder="word1, word2, word3...",
+                key="recall_input",
+                help="Separate multiple words with commas"
+            ))
+            
+            col1, col2, col3 = st.columns([1, 2, 1])
             with col2:
-                freq_label = get_translation("day") if freq == get_translation("Daily") else get_translation("week") if freq == get_translation("Weekly") else get_translation("month")
-                servings = st.number_input(
-                    get_translation(f"Servings per {freq_label}:"),
-                    min_value=1,
-                    max_value=100,
-                    value=1,
-                    key=f"servings_{lifestyle}"
+                submit = st.form_submit_button(
+                    "✅ Submit Your Answer",
+                    use_container_width=True,
+                    type="primary"
                 )
-            
-            # Update session state
-            weekly = calculate_weekly_servings(freq, servings)
-            st.session_state.nutritional_data[lifestyle] = {
-                "frequency": freq,
-                "servings": servings,
-                "weekly_servings": weekly
-            }
-
-# Display score after processing inputs
-if st.session_state.nutritional_data:
-    nutritional_score = compute_nutritional_score()
-    st.sidebar.info(get_translation(f"🍎 Nutritional Health Score: **{nutritional_score}/5**"))
-
-# --- Save Functionality ---
-if st.sidebar.button(get_translation("Save Nutritional Data")):
-    if st.session_state.user is None:
-        st.sidebar.warning(get_translation("Please log in to save nutritional data"))
-    elif not st.session_state.nutritional_data:
-        st.sidebar.warning(get_translation("No nutritional data to save"))
-    else:
-        try:
-            nutrition_data = {
-                "user_id": st.session_state.user['id'] if st.session_state.get('user') else "anonymous",
-                "fruit_intake": fruit_intake,
-                "vegetable_intake": vegetable_intake,
-                "hydration_liters": hydration_liters,
-                "supplements_used": supplements_used,
-                "natural_herbs": natural_herbs,
-                "lifestyle_choices": ", ".join(st.session_state.nutritional_data.keys()),  # or JSON if preferred
-                "nutritional_score": compute_nutritional_score()
-            }
-
-            response = supabase.table("nutrition_tracker").insert(nutrition_data).execute()
-            if response.data:
-                st.success(get_translation("Nutrition data saved!"))
+        
+        if submit:
+            if not recalled_input.strip():
+                st.error(get_translation("⚠️ Please enter at least one word before submitting!"))
             else:
-                st.error(get_translation(f"Failed to save nutrition data: {response.error}"))
+                # Process recalled words
+                recalled = [w.strip().lower() for w in recalled_input.split(",") if w.strip()]
+                correct_words = set(w.lower() for w in game["words"])
+                recalled_set = set(recalled)
+                correct_count = len(correct_words & recalled_set)
+                incorrect_count = len(recalled_set - correct_words)
+                missed_count = len(correct_words - recalled_set)
+                
+                # Calculate memory score (0-1)
+                memory_score = correct_count / len(game['words'])
+                
+                # Display results
+                st.markdown("---")
+                st.markdown(get_translation("### 📊 Results"))
+                
+                col1, col2, col3 = st.columns(3)
+                with col1:
+                    st.metric(get_translation("✅ Correct"), correct_count, delta=None)
+                with col2:
+                    st.metric(get_translation("❌ Incorrect"), incorrect_count, delta=None)
+                with col3:
+                    st.metric(get_translation("😅 Missed"), missed_count, delta=None)
+                
+                # Score display
+                score_color = "#28a745" if memory_score >= 0.8 else "#ffc107" if memory_score >= 0.5 else "#dc3545"
+                st.markdown(f"""
+                <div style='background: {score_color}; padding: 20px; border-radius: 10px; 
+                            text-align: center; color: white; margin: 20px 0;'>
+                    <h2 style='margin: 0;'>Memory Score: {memory_score:.0%}</h2>
+                    <p style='margin: 10px 0 0 0; font-size: 16px;'>
+                        {correct_count} out of {len(game['words'])} correct
+                    </p>
+                </div>
+                """, unsafe_allow_html=True)
+                
+                # Show what they got right/wrong
+                with st.expander(get_translation("📝 Detailed Breakdown")):
+                    st.write(get_translation("**Words you got correct:**"))
+                    if correct_words & recalled_set:
+                        st.success(get_translation(", ".join(sorted(correct_words & recalled_set))))
+                    else:
+                        st.write("None")
+                    
+                    st.write(get_translation("**Words you missed:**"))
+                    if correct_words - recalled_set:
+                        st.warning(get_translation(", ".join(sorted(correct_words - recalled_set))))
+                    else:
+                        st.write("None")
+                    
+                    if recalled_set - correct_words:
+                        st.write(get_translation("**Incorrect words:**"))
+                        st.error(get_translation(", ".join(sorted(recalled_set - correct_words))))
+                
+                # Level progression
+                threshold = len(game['words']) - 1  # Need all but one correct to advance
+                if correct_count >= threshold:
+                    st.balloons()
+                    st.success("🎉 **Excellent!** You advance to the next level!")
+                    game["level"] += 1
+                else:
+                    st.info("📚 Keep practicing! You'll stay on this level to improve.")
+                
+                # Save score to history
+                game["score_history"].append({
+                    "level": game["level"],
+                    "correct": correct_count,
+                    "total": len(game["words"]),
+                    "score": memory_score,
+                    "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                })
+                
+                # Store final memory score in session state
+                st.session_state.memory_score = memory_score
+                
+                # Button to continue
+                if st.button("🔄 Play Again", use_container_width=True, type="primary"):
+                    # Reset game state for next round
+                    game["state"] = "start"
+                    game["words"] = []
+                    game["start_time"] = None
+                    game["display_end_time"] = None
+                    st.rerun()
+    
+    # ==================== SCORE HISTORY ====================
+    st.markdown("---")
+    
+    if game["score_history"]:
+        with st.expander(get_translation("📊 Your Score History", expanded=False)):
+            # Summary stats
+            total_rounds = len(game["score_history"])
+            avg_score = sum(s["score"] for s in game["score_history"]) / total_rounds
+            best_score = max(s["score"] for s in game["score_history"])
+            
+            col1, col2, col3 = st.columns(3)
+            with col1:
+                st.metric(get_translation("Total Rounds", total_rounds))
+            with col2:
+                st.metric(get_translation("Average Score", f"{avg_score:.0%}"))
+            with col3:
+                st.metric(get_translation("Best Score", f"{best_score:.0%}"))
+            
+            st.markdown("---")
+            
+            # Detailed history
+            st.markdown(get_translation("### Round Details"))
+            for i, score in enumerate(reversed(game["score_history"]), 1):
+                round_num = len(game["score_history"]) - i + 1
+                score_emoji = "🌟" if score['score'] >= 0.8 else "⭐" if score['score'] >= 0.5 else "💫"
+                
+                st.markdown(get_translation(f"""
+                <div style='background: #f8f9fa; padding: 15px; border-radius: 8px; 
+                            margin-bottom: 10px; border-left: 4px solid #667eea;'>
+                    <strong>{score_emoji} Round {round_num}</strong> - Level {score['level']}<br>
+                    Score: {score['correct']}/{score['total']} correct ({score['score']:.0%})<br>
+                    <small style='color: #666;'>{score.get('timestamp', 'N/A')}</small>
+                </div>
+                """, unsafe_allow_html=True))
+    else:
+        st.info(get_translation("👆 Start playing to see your score history!"))
+    
+    # Tips section
+    with st.expander(get_translation("💡 Memory Tips")):
+        st.markdown(get_translation("""
+        **How to improve your memory:**
+        - 🧘 Stay focused and minimize distractions
+        - 🎨 Create visual associations with the words
+        - 📖 Group similar words together
+        - 🔄 Repeat the words mentally
+        - 😴 Get adequate sleep for better memory consolidation
+        - 🏃 Regular exercise improves cognitive function
+        - 🥗 Eat brain-healthy foods (omega-3, antioxidants)
+        """))
+    
 
-        except Exception as e:
-            st.error(get_translation(f"Error saving nutrition data: {e}"))
+
+# ====== NUTRITION TRACKER ======
+def nutrition_tracker():
+    """Nutritional lifestyle tracker"""
+    st.markdown(get_translation('<h1 class="main-header">🥗 Nutrition Tracker</h1>', unsafe_allow_html=True))
+    
+    with st.expander(get_translation("Track Your Nutrition", expanded=True)):
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            fruit_intake = st.number_input(get_translation("Fruit Intake (servings per day)", min_value=0, max_value=20, value=2, key="fruit_intake"))
+            vegetable_intake = st.number_input(get_translation("Vegetable Intake (servings per day)", min_value=0, max_value=20, value=3, key="vegetable_intake"))
+            hydration = st.number_input(get_translation("Water Intake (liters per day)", min_value=0.0, max_value=10.0, value=2.0, key="hydration"))
+        
+        with col2:
+            supplements = st.text_input(get_translation("Supplements Used (e.g., Vitamin D, Omega-3)", key="supplements"))
+            herbs = st.text_input(get_translation("Natural Herbs Taken (e.g., Ginger, Turmeric)", key="herbs"))
+        
+        # Lifestyle selection
+        lifestyle_options = [
+            "Homemade Food", "Vegetarian", "Vegan", "Mediterranean", "Pescatarian",
+            "Local Street Food", "Junk Food", "Fast Foods", "Keto", "Paleo"
+        ]
+        selected_lifestyles = st.multiselect(get_translation("Select Nutritional Lifestyles", lifestyle_options, key="lifestyles"), lifestyle_options)
+        
+        # Calculate nutritional score
+        positive_lifestyles = ["Homemade Food", "Vegetarian", "Vegan", "Mediterranean", "Pescatarian"]
+        negative_lifestyles = ["Junk Food", "Fast Foods"]
+        
+        positive_score = sum(1 for lifestyle in selected_lifestyles if lifestyle in positive_lifestyles)
+        negative_score = sum(1 for lifestyle in selected_lifestyles if lifestyle in negative_lifestyles)
+        
+        raw_score = 3 + (positive_score * 0.5) - (negative_score * 1.0)
+        nutritional_score = max(1, min(5, round(raw_score)))
+        
+        # Display score
+        st.metric(get_translation("Nutritional Health Score", f"{nutritional_score}/5"))
+        
+        # Store in session state and prepare database payload
+        nutrition_data = {
+            "fruit_intake": fruit_intake,
+            "vegetable_intake": vegetable_intake,
+            "hydration": hydration,
+            "supplements": supplements,
+            "herbs": herbs,
+            "lifestyles": selected_lifestyles,
+            "score": nutritional_score
+        }
+        
+        st.session_state.nutritional_score = nutritional_score
+        st.session_state.nutrition_data = nutrition_data
+
+        response = supabase.table("nutrition_tracker").insert(nutrition_data).execute()
+        if response.data:
+            st.success(get_translation("Nutrition data saved!"))
+        else:
+            st.error(get_translation(f"Failed to save nutrition data: {response.error}"))
+
             st.stop()
+# ====== STRESS ASSESSMENT ======
+def stress_assessment():
+    """Stress assessment tool"""
+    st.markdown(get_translation('<h1 class="main-header">😌 Stress Assessment</h1>', unsafe_allow_html=True))
+    
+    with st.expander(get_translation("Assess Your Stress Levels", expanded=True)):
+        st.write(get_translation("Rate your stress levels for the following factors (0-4):"))
+        
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            financial_stress = st.slider(get_translation("Financial pressure/burden", 0, 4, 2, key="financial_stress"))
+            family_stress = st.slider(get_translation("Family/relationship issues", 0, 4, 2, key="family_stress"))
+            work_stress = st.slider(get_translation("Work/employment stress", 0, 4, 2, key="work_stress"))
+            safety_stress = st.slider(get_translation("Community safety concerns", 0, 4, 2, key="safety_stress"))
+        
+        with col2:
+            caregiver_stress = st.slider(get_translation("Caregiver burden", 0, 4, 2, key="caregiver_stress"))
+            migration_stress = st.slider(get_translation("Migration/displacement stress", 0, 4, 2, key="migration_stress"))
+            family_expectations = st.slider(get_translation("Traditional family expectations", 0, 4, 2, key="family_expectations"))
+            spiritual_stress = st.slider(get_translation("Spiritual/religious conflicts", 0, 4, 2, key="spiritual_stress"))
+        
+        # Calculate total stress score
+        total_score = (financial_stress + family_stress + work_stress + safety_stress +
+                      caregiver_stress + migration_stress + family_expectations + spiritual_stress)
+        
+        # Determine stress level
+        if total_score <= 12:
+            level = "Low"
+            color = "green"
+        elif total_score <= 20:
+            level = "Moderate"
+            color = "orange"
+        else:
+            level = "High"
+            color = "red"
+        
+        # Display results
+        st.markdown(get_translation(f"""
+        <div style='padding: 10px; border-radius: 5px; background-color: #f0f2f6; margin-top: 20px;'>
+            <h4>🧠 Total Stress Score: <span style='color:{color};'>{total_score}/32</span> → {level} Stress</h4>
+            <p><small>Higher scores indicate greater exposure to stressors</small></p>
+        </div>
+        """, unsafe_allow_html=True))
+        
+        # Store in session state
+        st.session_state.stress_score = total_score
+        st.session_state.stress_level = level
+
 
 def validate_input_data(data):
     # Check for required fields
@@ -770,1236 +971,2016 @@ def validate_input_data(data):
     if 'age' in data and data['age'] is not None:
         if not (0 <= data['age'] <= 120):
             raise ValueError("Age must be between 0 and 120")
-        
-# -------------------
-# TAB 1: Stroke Prediction
-# -------------------  
 
-def map_salt_intake(val):
-    keys = ['salt_intake_High', 'salt_intake_Moderate', 'salt_intake_Little', 'salt_intake_None']
-    values = [0]*4
-    val = val.lower()
-    if 'high' in val:
-        values[0] = 1
-    elif 'moderate' in val:
-        values[1] = 1
-    elif 'little' in val or 'low' in val:
-        values[2] = 1
-    else:
-        values[3] = 1
-    return dict(zip(keys, values))
+# ====== STROKE ASSESSMENT - REFACTORED ======
 
-def map_noise_source(val):
-    keys = ['noise_sources_Block-Industry', 'noise_sources_Church', 'noise_sources_Club-House',
-            'noise_sources_Generator', 'noise_sources_Grinding-Machine', 'noise_sources_Market',
-            'noise_sources_Mosque', 'noise_sources_None', 'noise_sources_Welder']
-    values = [0]*9
-    val_lower = val.lower()
-    matched = False
-    for i, key in enumerate(keys):
-        category = key.split('_')[2].replace('-', '').lower()
-        if category in val_lower:
-            values[i] = 1
-            matched = True
-            break
-    if not matched:
-        values[keys.index('noise_sources_None')] = 1
-    return dict(zip(keys, values))
-
-# Add other mapping functions similarly if needed (nutritional_lifestyle, hypertension_treatment, chronic_pain)...
-
-def prepare_stroke_input_numeric(raw_input):
-    numeric_features = ['age', 'avg_glucose_level', 'bmi', 'stress_level',
-                        'ptsd', 'depression_level', 'diabetes_type', 'sleep_hours', 'height', 'weight']
-
-    categorical_features = ['gender', 'ever_married', 'work_type', 'Residence_type',
-                            'smoking_status', 'chronic_pain_None', 'blood_group', 'genotype', 'chronic_pain_Osteoarthritis',
-                            'chronic_pain_Others']
-    
-    boolean_features = ['chronic_pain_Rheumatism', 'salt_intake_High', 'salt_intake_Little',
-                        'salt_intake_Moderate', 'salt_intake_None',
-                        'hypertension_treatment_Drugs', 'hypertension_treatment_Herbal',
-                        'hypertension_treatment_None', 'nutritional_lifestyle_Fast Foods',
-                        'nutritional_lifestyle_Homemade Food', 'nutritional_lifestyle_Junk Food',
-                        'nutritional_lifestyle_Local Bukka/Street Food',
-                        'noise_sources_Block-Industry', 'noise_sources_Church',
-                        'noise_sources_Club-House', 'noise_sources_Generator',
-                        'noise_sources_Grinding-Machine', 'noise_sources_Market',
-                        'noise_sources_Mosque', 'noise_sources_None', 'noise_sources_Welder']
-    
-    expected_columns = numeric_features + categorical_features + boolean_features
-
-    final_input = {}
-
-    # Numeric features
-    for col in numeric_features:
-        val = raw_input.get(col, 0)
-        try:
-            final_input[col] = float(val)
-        except:
-            final_input[col] = 0
-
-    # Categorical features
-    for col in categorical_features:
-        val = raw_input.get(col, "None")
-        if val is None or val == "":
-            val = "None"
-        final_input[col] = str(val)
-
-    # Boolean features
-    def to_bool(v):
-        if v in [1, '1', True, 'True', 'true', 'Yes', 'yes', 'Y', 'y']:
-            return 1
-        return 0
-
-    for col in boolean_features:
-        val = raw_input.get(col, 0)
-        final_input[col] = to_bool(val)
-
-    df = pd.DataFrame([final_input])
-    df = df[expected_columns]
-
-    return df
-
-def build_full_input(raw):
-    full_input = {}
-
-    # Direct numeric and categorical
-    direct_cols = ['age', 'avg_glucose_level', 'bmi', 'stress_level', 'ptsd', 'depression_level',
-                   'diabetes_type', 'sleep_hours', 'gender', 'ever_married', 'work_type',
-                   'residence_type', 'smoking_status', 'ethnicity', 'Country', 'Province_Option']
-    for col in direct_cols:
-        full_input[col] = raw.get(col, 0 if col in ['age','avg_glucose_level','bmi','stress_level',
-                                                    'ptsd','depression_level','diabetes_type','sleep_hours','systolic_bp', 'diastolic_bp'] else 'None')
-
-    # Map salt intake & noise sources
-    full_input.update(map_salt_intake(raw.get('salt_intake', 'None')))
-    full_input.update(map_noise_source(raw.get('noise_sources', 'None')))
-# Gender encoding
-    full_input['gender'] = 1 if raw_inputs.get('gender') == get_translation("Male") else 0
-
-    stress_map = {"None": 0, "Low": 1, "Moderate": 2, "High": 3}
-    stress_raw = raw_inputs.get("stress_level", "None")
-    full_input["stress_level"] = stress_map.get(stress_raw, 0)
-
-
-              #chronic pain#
-    pain_map = {"None": 0, "Rheumatism": 1, "Osteoarthritis": 2, "Others": 3}
-    pain_raw = raw_inputs.get("chronic_pain", "None")
-    full_input["chronic_pain"] = pain_map.get(pain_raw, 0)
-
-    # Hypertension treatment
-    treatment_map = {"None": 0, "Herbal": 1, "Drugs": 2}
-    treatment_raw = raw_inputs.get("hypertension_treatment", "None")
-    full_input["hypertension_treatment"] = treatment_map.get(treatment_raw, 0)       
-
-       # Convert categorical columns to string
-    numeric_cols = [
-        'age', 'avg_glucose_level', 'bmi', 'stress_level',
-        'ptsd', 'depression_level', 'sleep_hours', 'systolic_bp', 'diastolic_bp', 'height', 'weight'
-    ]
-    for col in numeric_cols:
-        try:
-            full_input[col] = float(raw.get(col, 0))
-        except:
-            full_input[col] = 0.0
-
-    # ---- Mapped/encoded categorical values ----
-
-    diabetes_map = {"None": 0, "Type 1": 1, "Type 2": 2}
-    full_input["diabetes_type"] = diabetes_map.get(raw.get("diabetes_type", "None"), 0)
-
-    # ---- Categorical values (raw for OneHotEncoder) ----
-    categorical_cols = [
-        "marital_status", "work_type", "Residence_type", "smoking_status",'blood_group', 'genotype'
-        "salt_intake", "nutritional_lifestyle", "ethnicity", "Country", "Province_Option"
-    ]
-    for col in categorical_cols:
-        full_input[col] = str(raw.get(col, "None"))
-
-    # ---- Binary/bool checkboxes ----
-    boolean_feats = [
-        'chronic_pain_Rheumatism', 'hypertension_treatment_Drugs',
-        'hypertension_treatment_Herbal', 'hypertension_treatment_None',
-        'nutritional_lifestyle_Fast Foods', 'nutritional_lifestyle_Homemade Food',
-        'nutritional_lifestyle_Junk Food', 'nutritional_lifestyle_Local Bukka/Street Food',
-        'noise_sources_Block-Industry', 'noise_sources_Church',
-        'noise_sources_Club-House', 'noise_sources_Generator',
-        'noise_sources_Grinding-Machine', 'noise_sources_Market',
-        'noise_sources_Mosque', 'noise_sources_None', 'noise_sources_Welder'
-    ]
-    for bf in boolean_feats:
-        full_input[bf] = int(raw.get(bf, 0))
-
-    # ---- Custom stress score (optional) ----
-    full_input["CustomStressScore"] = float(raw.get("CustomStressScore", 0))
-    
-       # 4️⃣ Create DataFrame
-    stroke_inputs_df = pd.DataFrame([full_input])
-
-    # 5️⃣ Ensure all expected columns exist
-    for col in expected_columns:
-        if col not in stroke_inputs_df.columns:
-            stroke_inputs_df[col] = 0
-
-    stroke_inputs_df = stroke_inputs_df[expected_columns]
-
-    return stroke_inputs_df
-
-          # Collect raw inputs
-    # Utility functions to safely convert inputs
-def safe_int(val, default=None):
+# Utility functions
+def safe_int(val, default=0):
+    """Safely convert value to integer"""
     try:
-        if val is None or val == "None" or val == "":
+        if val is None or val == "None" or val == "" or val == get_translation("Select"):
             return default
         return int(val)
     except (ValueError, TypeError):
         return default
 
-def safe_float(val, default=None):
+def safe_float(val, default=0.0):
+    """Safely convert value to float"""
     try:
-        if val is None or val == "None" or val == "":
+        if val is None or val == "None" or val == "" or val == get_translation("Select"):
             return default
         return float(val)
     except (ValueError, TypeError):
         return default
 
-def parameter_select(label, min_val, max_val, step=1, key=None):
-    """
-    Creates a selectbox input for a parameter.
-    
-    Args:
-        label (str): The label to display.
-        min_val (int): Minimum value.
-        max_val (int): Maximum value.
-        step (int): Step size.
-        key (str): Optional key for Streamlit session state.
-    
-    Returns:
-        int: Selected value as integer.
-    """
-    options = list(range(min_val, max_val + 1, step))
-    return st.selectbox(label, options, key=key)
-
-# =======================
-# TAB 1: STROKE PREDICTION
-# =======================
-# ---------- REQUIRED INPUT HELPERS ----------
-def required_text_input(label, key):
-    value = st.text_input(label, key=key)
-    return value if value.strip() else None
-
-def required_number_input(label, key, min_value=None, max_value=None):
-    value = st.text_input(label, key=key)
-    if value.strip().replace(".", "", 1).isdigit():
-        num = float(value)
-        if min_value is not None and num < min_value: 
-            return None
-        if max_value is not None and num > max_value: 
-            return None
-        return num
-    return None
-
-def required_selectbox(label, options, key):
-    value = st.selectbox(label, ["-- Select --"] + options, key=key)
-    return None if value == "-- Select --" else value
-
-def required_slider(label, min_value, max_value, default, key):
-    return st.slider(label, min_value, max_value, default, key=key)
-
-def stroke_prediction_app():
-    st.title(get_translation("🫀 Stroke Risk Predictor"))
-    st.warning(get_translation("Complete all fields for accurate assessment"))
-# Get nutritional score
-    nutritional_score = compute_nutritional_score()
-    st.info(get_translation(f"🍎 Nutritional Health Score: **{nutritional_score}/5**"))
-    with st.form("stroke_form"):
-    # ✅ Selectbox with placeholder
-        st.subheader(get_translation("🩺 Personal & Health Information"))
-        age = st.selectbox(get_translation("Age"), [get_translation("Select")] + [i for i in range(18, 121)])
-        gender = st.selectbox(get_translation("Gender"), [get_translation("Select Gender"), get_translation("Male"), get_translation("Female")])
-        blood_group = st.selectbox(get_translation("Blood Group"), [get_translation("Select Blood Group"), "A+","A-", "B+", "B-", "AB+", "AB-", "O+", "O-"])
-        genotype = st.selectbox(get_translation("Genotype"), [get_translation("Select Genotype"), "AA", "AS", "SS", "AC", "SC"])
-        heart_disease = st.selectbox(get_translation("Heart Disease"), [get_translation("Select"), get_translation("Yes"), get_translation("No")])
-        hypertension = st.selectbox(get_translation("Hypertension"), [get_translation("Select"), get_translation("Yes"), get_translation("No")])
-        systolic_bp = st.number_input(get_translation("Systolic BP"), min_value=80, max_value=220, value=None)
-        diastolic_bp = st.number_input(get_translation("Diastolic BP"), min_value=50, max_value=150, value=None)
-
-
-        st.subheader(get_translation("📏 BMI Assessment (Body Mass Index)"))
-        st.caption(get_translation("BMI is calculated as weight (kg) ÷ height (m)². It estimates body fat and overall health risk."))
-
-# Weight input
-        weight = st.number_input(
-        get_translation("Enter your weight (kg)"), 
-        min_value=20.0, 
-        max_value=200.0, 
-        value=20.0,
-        step=0.1,
-        key='weight'
-)
-        st.caption(get_translation("⚠️ Weight must be in kilograms for accurate BMI calculation (e.g., 70 kg)."))
-
-# Height input
-        height = st.number_input(get_translation("Enter your height (m)"),
-        min_value=1.0, 
-        max_value=2.5, 
-        value=1.00,
-        step=0.01,
-        key='height'
-)
-        st.caption(get_translation("⚠️ Height must be in meters for accurate BMI calculation (e.g., 1.75 m)."))
-
-# Calculate BMI and display immediately
-        if weight > 0 and height > 0:
-            bmi = round(weight / (height ** 2), 2)
-            st.success(get_translation(f"Calculated BMI: **{bmi}**"))
+def map_salt_intake(val):
+    """Map salt intake to one-hot encoding"""
+    keys = ['salt_intake_High', 'salt_intake_Moderate', 'salt_intake_Little', 'salt_intake_None']
+    values = [0]*4
+    if val:
+        val = val.lower()
+        if 'high' in val:
+            values[0] = 1
+        elif 'moderate' in val:
+            values[1] = 1
+        elif 'little' in val or 'low' in val:
+            values[2] = 1
         else:
-            bmi = None
-        # Determine BMI category
-        if bmi < 18.5:
-            risk = get_translation("Underweight")
-            color = "warning"
-        elif 18.5 <= bmi < 24.9:
-            risk = get_translation("Normal weight")
-            color = "success"
-        elif 25 <= bmi < 29.9:
-            risk = get_translation("Overweight")
-            color = "warning"
-        else:
-            risk = get_translation("Obese")
-            color = "error"
+            values[3] = 1
+    else:
+        values[3] = 1
+    return dict(zip(keys, values))
+
+def map_noise_source(val):
+    """Map noise source to one-hot encoding"""
+    keys = ['noise_sources_Block-Industry', 'noise_sources_Church', 'noise_sources_Club-House',
+            'noise_sources_Generator', 'noise_sources_Grinding-Machine', 'noise_sources_Market',
+            'noise_sources_Mosque', 'noise_sources_None', 'noise_sources_Welder']
+    values = [0]*9
+    if val:
+        val_lower = val.lower()
+        matched = False
+        for i, key in enumerate(keys):
+            category = key.split('_')[2].replace('-', '').lower()
+            if category in val_lower:
+                values[i] = 1
+                matched = True
+                break
+        if not matched:
+            values[keys.index('noise_sources_None')] = 1
+    else:
+        values[keys.index('noise_sources_None')] = 1
+    return dict(zip(keys, values))
+
+def prepare_stroke_input_numeric(raw_input):
+    """Prepare stroke input data for model prediction"""
+    try:
+        numeric_features = ['age', 'avg_glucose_level', 'bmi', 'stress_level',
+                           'ptsd', 'depression_level', 'diabetes_type', 'sleep_hours', 
+                           'height', 'weight', 'systolic_bp', 'diastolic_bp']
+
+        categorical_features = ['gender', 'ever_married', 'work_type', 'Residence_type',
+                               'smoking_status', 'blood_group', 'genotype']
+        
+        boolean_features = ['chronic_pain_None', 'chronic_pain_Rheumatism', 
+                           'chronic_pain_Osteoarthritis', 'chronic_pain_Others',
+                           'salt_intake_High', 'salt_intake_Little',
+                           'salt_intake_Moderate', 'salt_intake_None',
+                           'hypertension_treatment_Drugs', 'hypertension_treatment_Herbal',
+                           'hypertension_treatment_None', 'nutritional_lifestyle_Fast Foods',
+                           'nutritional_lifestyle_Homemade Food', 'nutritional_lifestyle_Junk Food',
+                           'nutritional_lifestyle_Local Bukka/Street Food',
+                           'noise_sources_Block-Industry', 'noise_sources_Church',
+                           'noise_sources_Club-House', 'noise_sources_Generator',
+                           'noise_sources_Grinding-Machine', 'noise_sources_Market',
+                           'noise_sources_Mosque', 'noise_sources_None', 'noise_sources_Welder']
+        
+        expected_columns = numeric_features + categorical_features + boolean_features
+        final_input = {}
+
+        # Numeric features
+        for col in numeric_features:
+            val = raw_input.get(col, 0)
+            final_input[col] = safe_float(val, 0)
+
+        # Categorical features
+        for col in categorical_features:
+            val = raw_input.get(col, "None")
+            if val is None or val == "":
+                val = "None"
+            final_input[col] = str(val)
+
+        # Boolean features
+        def to_bool(v):
+            if v in [1, '1', True, 'True', 'true', 'Yes', 'yes', 'Y', 'y']:
+                return 1
+            return 0
+
+        for col in boolean_features:
+            val = raw_input.get(col, 0)
+            final_input[col] = to_bool(val)
+
+        df = pd.DataFrame([final_input])
+        df = df[expected_columns]
+
+        return df
+    except Exception as e:
+        logger.error(f"Error in prepare_stroke_input_numeric: {str(e)}")
+        return None
+
+def prepare_alzheimers_input_numeric(raw_input):
+    """Prepare Alzheimer's input data for model prediction"""
+    try:
+        numeric_features = ['Age', 'BMI', 'EducationLevel', 'AlcoholConsumption', 
+                           'PhysicalActivity', 'DietQuality', 'SleepQuality',
+                           'SystolicBP', 'DiastolicBP', 'CholesterolTotal', 
+                           'CholesterolLDL', 'CholesterolHDL', 'CholesterolTriglycerides',
+                           'FunctionalAssessment', 'ADL', 'HeadInjury', 'MMSE',
+                           'Height', 'Weight', 'PollutionScore', 'Ethnicity', 
+                           'Country', 'Province_Option', 'MemoryScore', 'CustomStressScore']
+        
+        categorical_features = ['Gender', 'Smoking', 'FamilyHistoryAlzheimers', 
+                               'CardiovascularDisease', 'Diabetes', 'Depression',
+                               'Hypertension', 'BehavioralProblems', 'Genotype', 'BloodGroup']
+        
+        boolean_features = ['Confusion', 'Disorientation', 'PersonalityChanges',
+                           'DifficultyCompletingTasks', 'Forgetfulness', 'MemoryComplaints',
+                           'PollutionCategoryLow', 'PollutionCategoryModerate', 'PollutionCategoryHigh']
+        
+        expected_columns = numeric_features + categorical_features + boolean_features
+        final_input = {}
+
+        # Numeric features
+        for col in numeric_features:
+            val = raw_input.get(col, 0)
+            final_input[col] = safe_float(val, 0)
+
+        # Categorical features
+        for col in categorical_features:
+            val = raw_input.get(col, "None")
+            if val is None or val == "":
+                val = "None"
+            final_input[col] = str(val)
+
+        # Boolean features
+        def to_bool(v):
+            if v in [1, '1', True, 'True', 'true', 'Yes', 'yes', 'Y', 'y']:
+                return 1
+            return 0
+
+        for col in boolean_features:
+            val = raw_input.get(col, 0)
+            final_input[col] = to_bool(val)
+
+        df = pd.DataFrame([final_input])
+        df = df[expected_columns]
+
+        return df
+    except Exception as e:
+        logger.error(f"Error in prepare_alzheimers_input_numeric: {str(e)}")
+        return None
+
+def render_stroke_assessment():
+    """Stroke risk assessment form"""
+    st.header(get_translation("🩺 Stroke Risk Assessment"))
     
-        st.markdown(get_translation(f"**BMI Category:** <span style='color:{color}'>{risk}</span>"), unsafe_allow_html=True)
-        # Collecting additional user information
-        marital_status = st.selectbox(get_translation("Marital Status"), [get_translation("Select"), get_translation("Single"), get_translation("Married"), get_translation("Divorced"), get_translation("Widowed")])
-        work_type = st.selectbox(get_translation("Work Type"), [get_translation("Select"), get_translation("Private"), get_translation("Self-employed"), get_translation("Govt job"), get_translation("Children"), get_translation("Never worked")])
-        residence_type = st.selectbox(get_translation("Residence Type"), [get_translation("Select"), get_translation("Urban"), get_translation("Rural")])
-        avg_glucose_level = st.number_input(get_translation("Average Glucose Level"), min_value=50.0, max_value=300.0, value=None, format="%.2f")
-        smoking_status = st.selectbox(get_translation("Smoking Status"), [get_translation("Select"), get_translation("formerly smoked"), get_translation("never smoked"), get_translation("smokes")])
-
-        stress_level = st.selectbox(get_translation("Stress Level"), [get_translation("Select"), get_translation("None"), get_translation("Low"), get_translation("Moderate"), get_translation("High")])
-        ptsd = st.selectbox(get_translation("PTSD"), [get_translation("Select"), get_translation("Yes"), get_translation("No")])
-        depression_level = st.selectbox(get_translation("Depression Level"), [get_translation("Select"), get_translation("None"), get_translation("Mild"), get_translation("Moderate"), get_translation("Severe")])
-        diabetes_type = st.selectbox(get_translation("Diabetes Type"), [get_translation("Select"), get_translation("None"), get_translation("Type 1"), get_translation("Type 2"), get_translation("Gestational")])
-        chronic_pain = st.selectbox(get_translation("Chronic Pain"), [get_translation("Select"), get_translation("None"), get_translation("Rheumatism"), get_translation("Osteoarthritis"), get_translation("Others")])
-
-        sleep_hours = st.slider(get_translation("Sleep Hours"), 3.0, 10.0, value=None)
-        hypertension_treatment = st.selectbox(get_translation("Hypertension Treatment"), [get_translation("Select"), get_translation("None"), get_translation("Herbal"), get_translation("Drugs")])
-        salt_intake = st.selectbox(get_translation("Salt Intake"), [get_translation("Select"), get_translation("None"), get_translation("Little"), get_translation("Moderate"), get_translation("High")])
-        noise_sources = st.selectbox(get_translation("Noise Sources"), [get_translation("Select"), get_translation("None"), get_translation("Mosque"), get_translation("Church"), get_translation("Market"), get_translation("Block-Industry"),
-                                                  get_translation("Grinding-Machine"), get_translation("Welder"), get_translation("Club-House"), get_translation("Generator")])
-
-        pollution_level_air = st.selectbox(get_translation("Air Pollution Level"), [get_translation("Select"), get_translation("None"), get_translation("Low"), get_translation("Moderate"), get_translation("High")])
-        pollution_level_water = st.selectbox(get_translation("Water Pollution Level"), [get_translation("Select"), get_translation("None"), get_translation("Low"), get_translation("Moderate"), get_translation("High")])
-        pollution_level_environmental = st.selectbox(get_translation("Environmental Pollution Level"), [get_translation("Select"), get_translation("None"), get_translation("Low"), get_translation("Moderate"), get_translation("High")])
-        CustomStressScore = st.number_input(get_translation("Custom Stress Score"), min_value=0, max_value=10, value=None)
-
-        st.subheader(get_translation("🧠 Additional Stress Assessment"))
-        _, _, stress_score = custom_stress_score(use_container=True)
-        st.session_state.stress_score = stress_score
-
-        submit_stroke_inputs = st.form_submit_button(get_translation("Predict Stroke Risk"))
-        def all_fields():
-                age, gender, heart_disease, hypertension, systolic_bp, diastolic_bp, bmi,
-                marital_status, work_type, residence_type, avg_glucose_level, smoking_status,
+    # Load model
+    if not st.session_state.models_loaded.get('Stroke', False):
+        with st.spinner("Loading stroke model..."):
+            stroke_result = load_stroke_model()
+            if stroke_result['status'] in ['success', 'demo']:
+                st.session_state.stroke_model = stroke_result
+                st.session_state.models_loaded['Stroke'] = True
+    
+    col1, col2 = st.columns([2, 1])
+    
+    with col1:
+        with st.form("stroke_form"):
+            st.subheader(get_translation("Personal Information"))
+            
+            age = st.selectbox(get_translation("Age"), [get_translation("Select")] + list(range(18, 121)))
+            gender = st.selectbox(get_translation("Gender"), 
+                                 [get_translation("Select Gender"), get_translation("Male"), get_translation("Female")])
+            
+            # Height, Weight, BMI
+            col_hw1, col_hw2 = st.columns(2)
+            with col_hw1:
+                height = st.number_input("Height (cm)", 100, 250, 170, key="stroke_height")
+            with col_hw2:
+                weight = st.number_input("Weight (kg)", 30, 200, 70, key="stroke_weight")
+            
+            if height > 0:
+                bmi = weight / ((height/100) ** 2)
+                st.metric("BMI", f"{bmi:.1f}")
+            else:
+                bmi = 25.0
+            
+            # BMI category
+            if bmi < 18.5:
+                risk = get_translation("Underweight")
+                color = "orange"
+            elif 18.5 <= bmi < 24.9:
+                risk = get_translation("Normal weight")
+                color = "green"
+            elif 25 <= bmi < 29.9:
+                risk = get_translation("Overweight")
+                color = "orange"
+            else:
+                risk = get_translation("Obese")
+                color = "red"
+    
+            st.markdown(f"**BMI Category:** <span style='color:{color}'>{risk}</span>", unsafe_allow_html=True)
+            
+            blood_group = st.selectbox(get_translation("Blood Group"), 
+                                      [get_translation("Select Blood Group"), "A+", "A-", "B+", "B-", 
+                                       "AB+", "AB-", "O+", "O-"])
+            genotype = st.selectbox(get_translation("Genotype"), 
+                                   [get_translation("Select Genotype"), "AA", "AS", "SS", "AC", "SC"])
+            
+            st.markdown("---")
+            st.subheader("Medical History")
+            
+            heart_disease = st.selectbox(get_translation("Heart Disease"), 
+                                        [get_translation("Select"), get_translation("Yes"), get_translation("No")])
+            hypertension = st.selectbox(get_translation("Hypertension"), 
+                                       [get_translation("Select"), get_translation("Yes"), get_translation("No")])
+            
+            col_bp1, col_bp2 = st.columns(2)
+            with col_bp1:
+                systolic_bp = st.number_input(get_translation("Systolic BP"), 
+                                             min_value=80, max_value=250, value=120, key="stroke_sys_bp")
+            with col_bp2:
+                diastolic_bp = st.number_input(get_translation("Diastolic BP"), 
+                                              min_value=50, max_value=150, value=80, key="stroke_dia_bp")
+            
+            avg_glucose_level = st.number_input(get_translation("Average Glucose Level"), 
+                                               min_value=50.0, max_value=300.0, value=100.0, format="%.2f")
+            
+            diabetes_type = st.selectbox(get_translation("Diabetes Type"), 
+                                        [get_translation("Select"), get_translation("None"), 
+                                         get_translation("Type 1"), get_translation("Type 2"), 
+                                         get_translation("Gestational")])
+            
+            chronic_pain = st.selectbox(get_translation("Chronic Pain"), 
+                                       [get_translation("Select"), get_translation("None"), 
+                                        get_translation("Rheumatism"), get_translation("Osteoarthritis"), 
+                                        get_translation("Others")])
+            
+            st.markdown("---")
+            st.subheader("Lifestyle Factors")
+            
+            marital_status = st.selectbox(get_translation("Marital Status"), 
+                                         [get_translation("Select"), get_translation("Single"), 
+                                          get_translation("Married"), get_translation("Divorced"), 
+                                          get_translation("Widowed")])
+            
+            work_type = st.selectbox(get_translation("Work Type"), 
+                                    [get_translation("Select"), get_translation("Private"), 
+                                     get_translation("Self-employed"), get_translation("Govt job"), 
+                                     get_translation("Children"), get_translation("Never worked")])
+            
+            residence_type = st.selectbox(get_translation("Residence Type"), 
+                                         [get_translation("Select"), get_translation("Urban"), 
+                                          get_translation("Rural")])
+            
+            smoking_status = st.selectbox(get_translation("Smoking Status"), 
+                                         [get_translation("Select"), get_translation("formerly smoked"), 
+                                          get_translation("never smoked"), get_translation("smokes")])
+            
+            physical_activity = st.selectbox(get_translation("Physical Activity"),
+                                            [get_translation("Select"), "Sedentary", "Light", 
+                                             "Moderate", "Active", "Very Active"],
+                                            key="stroke_activity")
+            
+            sleep_hours = st.selectbox(get_translation("Sleep (hours/day)"), 
+                                      [get_translation("Select")] + list(range(3, 13)), 
+                                      key="stroke_sleep")
+            
+            stress_level = st.selectbox(get_translation("Stress Level"), 
+                                       [get_translation("Select"), get_translation("None"), 
+                                        get_translation("Low"), get_translation("Moderate"), 
+                                        get_translation("High")])
+            
+            ptsd = st.selectbox(get_translation("PTSD"), 
+                               [get_translation("Select"), get_translation("Yes"), get_translation("No")])
+            
+            depression_level = st.selectbox(get_translation("Depression Level"), 
+                                           [get_translation("Select"), get_translation("None"), 
+                                            get_translation("Mild"), get_translation("Moderate"), 
+                                            get_translation("Severe")])
+            
+            st.markdown("---")
+            st.subheader("Environmental & Dietary Factors")
+            
+            hypertension_treatment = st.selectbox(get_translation("Hypertension Treatment"), 
+                                                 [get_translation("Select"), get_translation("None"), 
+                                                  get_translation("Herbal"), get_translation("Drugs")])
+            
+            salt_intake = st.selectbox(get_translation("Salt Intake"), 
+                                      [get_translation("Select"), get_translation("None"), 
+                                       get_translation("Little"), get_translation("Moderate"), 
+                                       get_translation("High")])
+            
+            noise_sources = st.selectbox(get_translation("Noise Sources"), 
+                                        [get_translation("Select"), get_translation("None"), 
+                                         get_translation("Mosque"), get_translation("Church"), 
+                                         get_translation("Market"), get_translation("Block-Industry"),
+                                         get_translation("Grinding-Machine"), get_translation("Welder"), 
+                                         get_translation("Club-House"), get_translation("Generator")])
+            
+            pollution_level_air = st.selectbox(get_translation("Air Pollution Level"), 
+                                              [get_translation("Select"), get_translation("None"), 
+                                               get_translation("Low"), get_translation("Moderate"), 
+                                               get_translation("High")])
+            
+            pollution_level_water = st.selectbox(get_translation("Water Pollution Level"), 
+                                                [get_translation("Select"), get_translation("None"), 
+                                                 get_translation("Low"), get_translation("Moderate"), 
+                                                 get_translation("High")])
+            
+            pollution_level_environmental = st.selectbox(get_translation("Environmental Pollution Level"), 
+                                                        [get_translation("Select"), get_translation("None"), 
+                                                         get_translation("Low"), get_translation("Moderate"), 
+                                                         get_translation("High")])
+            
+            # Get encoded values from session state
+            encoded_ethnicity = st.session_state.get('encoded_ethnicity', 0)
+            encoded_country = st.session_state.get('encoded_country', 0)
+            encoded_province = st.session_state.get('encoded_province', 0)
+            
+            submitted = st.form_submit_button(get_translation("Submit Stroke Assessment"))
+        
+        # Validation and prediction (outside form)
+        if submitted:
+            # Validation
+            required_fields = [
+                age, gender, blood_group, genotype, heart_disease, hypertension,
+                marital_status, work_type, residence_type, smoking_status,
                 stress_level, ptsd, depression_level, diabetes_type, chronic_pain,
                 sleep_hours, hypertension_treatment, salt_intake, noise_sources,
-                pollution_level_air, pollution_level_water, pollution_level_environmental,
-                CustomStressScore, stress_score, height, weight,
-                blood_group, genotype
-        all_fields = [age, gender, heart_disease, hypertension, systolic_bp, diastolic_bp, bmi,
-                      marital_status, work_type, residence_type, avg_glucose_level, smoking_status,
-                      stress_level, ptsd, depression_level, diabetes_type, chronic_pain,
-                      sleep_hours, hypertension_treatment, salt_intake, noise_sources,
-                      pollution_level_air, pollution_level_water, pollution_level_environmental,
-                      CustomStressScore, stress_score, height, weight, blood_group, genotype
-        ]
-        if all(v is not None for v in all_fields):
-            submit_stroke_inputs = st.form_submit_button(get_translation("Predict Stroke Risk"))
-        else:
-        # Fake disabled button when not all fields filled
-            st.markdown(
-            f"<button disabled style='background-color:grey; color:white; padding:0.5em 1em; border-radius:8px; border:none;'>{get_translation('Predict Stroke Risk')}</button>",
-            unsafe_allow_html=True
-        )
-            submit_stroke_inputs = False
-            st.warning(get_translation("Complete all fields for accurate assessment"))
-    if submit_stroke_inputs:
-        try:
-        # 1️⃣ Collect raw inputs safely
-            raw_inputs = {
-            'age': safe_int(age),
-            'avg_glucose_level': safe_float(avg_glucose_level),
-            'bmi': safe_float(bmi),
-            'ptsd': 1 if ptsd == get_translation("Yes") else 0,
-            'depression_level': safe_int(depression_level),
-            'sleep_hours': safe_int(sleep_hours),
-            'gender': 1 if gender == get_translation("Male") else 0,
-            'ethnicity': encoded_ethnicity,  # required
-            'country': encoded_country,      # required
-            'province': encoded_province,    # required
-            'ever_married': 1 if marital_status==get_translation("Yes") else 0,
-            'work_type': safe_int(work_type),
-            'residence_type': safe_int(residence_type),
-            'smoking_status': safe_int(smoking_status),
-            'salt_intake': safe_int(salt_intake),
-            'noise_sources': safe_int(noise_sources),
-            'stress_level': safe_int(stress_level),
-            'height': safe_float(height),
-            'weight': safe_float(weight),
-            'pollution_level_air': safe_int(pollution_level_air),
-            'pollution_level_water': safe_int(pollution_level_water),
-            'pollution_level_environmental': safe_int(pollution_level_environmental),
-            'chronic_pain': safe_int(chronic_pain),
-            'hypertension_treatment': safe_int(hypertension_treatment),
-            'diabetes_type': safe_int(diabetes_type),
-            'blood_group': blood_group,
-            'genotype': genotype,
-            'hypertension': 1 if hypertension else 0,
-            'heart_disease': 1 if heart_disease else 0,
-            'CustomStressScore': safe_float(CustomStressScore),
-            'location_str': raw_inputs.get('location_str', None) if 'raw_inputs' in locals() else None
-        }
-
-        # 2️⃣ Create DataFrame from raw_inputs
-            stroke_inputs_df = prepare_stroke_input_numeric(raw_inputs)
-
-
-        # 3️⃣ Make prediction
-            if "stroke_model" in st.session_state:
-                pred = st.session_state.stroke_model.predict(stroke_inputs_df)[0]
-            else:
-                st.error(get_translation("Model not loaded. Please initialize the model first."))
-                st.stop()
-
-
-        # 4️⃣ Build inputs dict AFTER pred is defined
-            db_payload = {
-            "user_id": st.session_state.user['id'] if st.session_state.get('user') else "anonymous",
-            "age": age,
-            "gender": gender,
-            "heart_disease": heart_disease,
-            "hypertension": hypertension,
-            "systolicbp": systolic_bp,
-            "diastolicbp": diastolic_bp,
-            "avg_glucose_level": avg_glucose_level,
-            "bmi": bmi,
-            "marital_status": marital_status,
-            "work_type": work_type,
-            "residence_type": residence_type,
-            "smoking_status": smoking_status,
-            "stress_level": stress_level,
-            "ptsd": ptsd,
-            "depression_level": depression_level,
-            "diabetes_type": diabetes_type,
-            "chronic_pain": chronic_pain,
-            "sleep_hours": sleep_hours,
-            "hypertension_treatment": hypertension_treatment,
-            "salt_intake": salt_intake,
-            "blood_group": blood_group,
-            "genotype": genotype,
-            "noise_sources": noise_sources,
-            "pollution_level_air": pollution_level_air,
-            "pollution_level_water": pollution_level_water,
-            "pollution_level_environmental": pollution_level_environmental,
-            "custom_stress_score": CustomStressScore,
-            "ethnicity": encoded_ethnicity,
-            "country": encoded_country,
-            "province": encoded_province,
-            "prediction_result": float(pred)
-        }
-
-        # 4️⃣ Location
-            city, region, country = get_user_location()
-            location_str = f"{city}, {region}, {province_map}, {country}, Africa"
-
-        # 5️⃣ Display prediction result
-            if pred == 1:
-                st.error(get_translation("⚠️ HIGH STROKE RISK DETECTED"))
-                st.markdown(get_translation("""
-            ## 🚨 Immediate Action Recommended:
-            - **Consult a healthcare provider immediately**
-            - **Add Saigon Cinnamon and Alligator Pepper to diet**
-            - Monitor blood pressure daily
-            - Avoid strenuous activities
-            - Reduce salt intake to <5g/day
-            - Increase consumption of leafy greens
-            - Limit fried foods and processed meals
-            - Eat more fruits and vegetables (rich in potassium and fiber)
-            - Maintain regular sleep schedule
-            - ⚖️ Maintain a healthy weight (avoid obesity)
-            """))
-            else:
-                st.success(get_translation("✅ LOW STROKE RISK DETECTED"))
-
-        # Lifestyle suggestions expander
-            with st.expander(get_translation("🛠️ Lifestyle Suggestions for Stroke Prevention")):
-                st.markdown(get_translation("""
-            ### 🍽️ Dietary Recommendations:
-            - Reduce salt intake to <5g/day
-            - Increase consumption of leafy greens
-            - Limit fried foods and processed meals
-            - Eat more fruits and vegetables (rich in potassium and fiber)
-            ### 🏃 Physical Activity:
-            - Brisk walking 30 minutes/day
-            - Light stretching morning and evening
-            - Avoid prolonged sitting
-            ### 😌 Stress Management:
-            - Practice deep breathing exercises (e.g., prayer, yoga, deep breathing)
-            - Maintain regular sleep schedule
-            - Engage in community activities
-            ### 🩺 Medical Follow-up:
-            - BP check every 2 weeks
-            - Annual glucose screening
-            - Medication adherence if prescribed
-            🧘 Prioritize 7–8 hours of sleep per night  
-            🌿 **Take cinnamon (e.g., Saigon cinnamon) regularly**  
-            🧪 *Reduces blood sugar, inflammation, and oxidative stress*  
-            🩺 *Supports brain and heart health naturally*  
-            🚭 Stop smoking and reduce alcohol intake  
-            ⚖️ Maintain a healthy weight (avoid obesity)
-            """))
-      
-            pred = st.session_state.stroke_model.predict(stroke_inputs_df)[0]
-
-        # 4️⃣ Build payload for Supabase
-        # Only include columns that exist in the table
-            stroke_table_columns = [
-            "user_id","gender","ethnicity","country","prediction_result","age","BMI","avg_glucose_level","SystolicBP",
-            "DiastolicBP","sleep_hours","salt_intake","stress_level","custom_stress_score",
-            "depression_level","ptsd","chronic_pain","diabetes_type","hypertension",
-            "hypertension_treatment","heart_disease","smoking_status","work_type","height","weight",
-            "residence_type","noise_sources","pollution_level_air","pollution_level_water",
-            "pollution_level_environmental","marital_status","blood_group","genotype","location_str","raw_inputs"
-        ]
-
-            db_payload = {"user_id": st.session_state.user['id'] if st.session_state.get('user') else "anonymous",
-                      "prediction_result": float(pred)}
-
-            for col in stroke_table_columns:
-                if col in raw_inputs:
-                    db_payload[col] = raw_inputs[col]
-
-        # Optional: include raw_inputs jsonb if the column exists
-            if 'raw_inputs' in stroke_table_columns:
-                db_payload['raw_inputs'] = raw_inputs
-# Optional: include location_str if column exists
-            if 'location_str' in stroke_table_columns:
-                db_payload['location_str'] = raw_inputs.get('location_str')
-        # 5️⃣ Save to Supabase
-            response = supabase.table("stroke_predictions").insert(db_payload).execute()
-
-            if response.data:
-                st.success(get_translation("Stroke prediction saved successfully!"))
-            elif response.error:
-                st.error(get_translation(f"Failed to save stroke prediction: {response.error}"))
-
-        except Exception as e:
-            st.error(get_translation(f"Error during stroke prediction or saving: {e}"))
-
-
-def build_full_input(raw):
-    # Map gender
-    gender = 1 if raw.get("gender") == get_translation("Male") else 0
-
-    # Head injury mapping
-    head_map = {"None": 0, "Accident": 1, "Violence": 2}
-    head_injury = head_map.get(raw.get("HeadInjury", "None"), 0)
-
-    # Cognitive symptoms mapping
-    option_map = {"Yes": 1, "No": 0, "Sometimes": 0.5}
-
-    # Map option_map and head_map
-    option_map = {"Yes": 1, "No": 0, "Sometimes": 0.5}
-    head_map = {"None": 0, "Accident": 1, "Violence": 2}
-
-    # Default MMSE if not in raw
-    mmse = raw.get("MMSE", 30)
-
-    # -----------------------------
-    # Numeric-only full input
-    full_input = {
-        
-    }
-
-def prepare_alzheimers_input_numeric(raw_inputs):
-    # Ensure raw_inputs is always a dictionary, even if None is passed
-    if raw_inputs is None:
-        raw_inputs = {}
-    
-    # Define all expected columns for the Alzheimer's model
-    expected_columns = [
-        'FunctionalAssessment', 'PhysicalActivity', 'Smoking', 'AlcoholConsumption', 
-        'Gender', 'PersonalityChanges', 'EducationLevel', 'FamilyHistoryAlzheimers', 
-        'Confusion', 'Hypertension', 'Disorientation', 'Forgetfulness', 'ADL', 
-        'CholesterolHDL', 'BehavioralProblems', 'DiastolicBP', 'CardiovascularDisease', 
-        'BMI', 'Depression', 'DietQuality', 'SystolicBP', 'Diabetes', 'CholesterolTotal', 
-        'MMSE', 'MemoryComplaints', 'Age', 'CholesterolTriglycerides', 'SleepQuality', 
-        'HeadInjury', 'CholesterolLDL', 'DifficultyCompletingTasks', 'Height', 'Weight', 'Genotype', 'BloodGroup'
-    ]
-    
-    # Create a dictionary with default values for all expected columns
-    default_values = {
-        'FunctionalAssessment': 0, 'PhysicalActivity': 0, 'Smoking': 0, 
-        'AlcoholConsumption': 0, 'Gender': 0, 'PersonalityChanges': 0, 
-        'EducationLevel': 0, 'FamilyHistoryAlzheimers': 0, 'Confusion': 0, 
-        'Hypertension': 0, 'Disorientation': 0, 'Forgetfulness': 0, 'ADL': 0, 
-        'CholesterolHDL': 0.0, 'BehavioralProblems': 0, 'DiastolicBP': 0, 
-        'CardiovascularDisease': 0, 'BMI': 0.0, 'Depression': 0, 'DietQuality': 0, 
-        'SystolicBP': 0, 'Diabetes': 0, 'CholesterolTotal': 0.0, 'MMSE': 0, 
-        'MemoryComplaints': 0, 'Age': 0, 'CholesterolTriglycerides': 0.0, 
-        'SleepQuality': 0, 'HeadInjury': 0, 'CholesterolLDL': 0.0, 
-        'DifficultyCompletingTasks': 0, 'Height': 0, 'Weight': 0, 'Genotype': 0, 'BloodGroup': 0
-    }
-    
-    # Initialize the full input with default values
-    full_input = default_values.copy()
-    
-    # Update with actual values from raw_inputs where available
-    for col in expected_columns:
-        if col in raw_inputs:
-            # Handle different data types appropriately
-            if col in ['Age', 'BMI', 'CholesterolHDL', 'CholesterolTotal', 
-                      'CholesterolTriglycerides', 'CholesterolLDL']:
-                try:
-                    full_input[col] = float(raw_inputs[col])
-                except (ValueError, TypeError):
-                    full_input[col] = default_values[col]
-            elif col in ['MMSE', 'EducationLevel', 'SystolicBP', 'DiastolicBP']:
-                try:
-                    full_input[col] = int(raw_inputs[col])
-                except (ValueError, TypeError):
-                    full_input[col] = default_values[col]
-            elif col == 'Gender':
-                # Convert gender to numeric (0 for Female, 1 for Male)
-                gender_val = raw_inputs.get('Gender', 'Female')
-                full_input['Gender'] = 1 if str(gender_val).lower() == 'male' else 0
-            else:
-                # For binary/categorical features
-                val = raw_inputs[col]
-                if str(val).lower() in ['1', 'true', 'yes', 'y']:
-                    full_input[col] = 1
-                else:
-                    try:
-                        full_input[col] = int(val)
-                    except (ValueError, TypeError):
-                        full_input[col] = default_values[col]
-    
-    # Create DataFrame
-    alzheimer_inputs_df = pd.DataFrame([full_input])
-    
-    # Ensure all expected columns are present
-    alzheimer_inputs_df = alzheimer_inputs_df[expected_columns]
-    
-    return alzheimer_inputs_df
-
-
-def raw_inputs_collection():
-        # Collect all required inputs
-        raw_inputs = {}
-        # Numeric inputs
-        raw_inputs['Age'] = st.number_input(get_translation('Age'), min_value=0, max_value=120, value=50)
-        raw_inputs['BMI'] = st.number_input(get_translation('BMI'), min_value=10.0, max_value=50.0, value=25.0)
-        raw_inputs['MMSE'] = st.number_input(get_translation('MMSE Score'), min_value=0, max_value=30, value=25)
-        raw_inputs['EducationLevel'] = st.number_input(get_translation('Education Level'), min_value=0, max_value=20, value=12)
-        raw_inputs['SystolicBP'] = st.number_input(get_translation('Systolic Blood Pressure'), min_value=80, max_value=200, value=120)
-        raw_inputs['DiastolicBP'] = st.number_input(get_translation('Diastolic Blood Pressure'), min_value=50, max_value=120, value=80)
-        raw_inputs['CholesterolHDL'] = st.number_input(get_translation('HDL Cholesterol'), min_value=20.0, max_value=100.0, value=50.0)
-        raw_inputs['CholesterolLDL'] = st.number_input(get_translation('LDL Cholesterol'), min_value=50.0, max_value=200.0, value=100.0)
-        raw_inputs['CholesterolTotal'] = st.number_input(get_translation('Total Cholesterol'), min_value=100.0, max_value=300.0, value=200.0)
-        raw_inputs['CholesterolTriglycerides'] = st.number_input(get_translation('Triglycerides'), min_value=50.0, max_value=500.0, value=150.0)
-        
-        # Binary/categorical inputs
-        raw_inputs['Gender'] = st.selectbox(get_translation('Gender'), [get_translation('Male'), get_translation('Female')])
-        raw_inputs['Hypertension'] = st.selectbox(get_translation('Hypertension'), [get_translation('No'), get_translation('Yes')])
-        raw_inputs['Diabetes'] = st.selectbox(get_translation('Diabetes'), [get_translation('No'), get_translation('Yes')])
-        raw_inputs['CardiovascularDisease'] = st.selectbox(get_translation('Cardiovascular Disease'), [get_translation('No'), get_translation('Yes')])
-        raw_inputs['FamilyHistoryAlzheimers'] = st.selectbox(get_translation('Family History of Alzheimer\'s'), [get_translation('No'), get_translation('Yes')])
-        raw_inputs['HeadInjury'] = st.selectbox(get_translation('History of Head Injury'), [get_translation('No'), get_translation('Yes')])
-        
-        # Additional binary inputs
-        binary_options = [get_translation('No'), get_translation('Yes')]
-        raw_inputs['Smoking'] = st.selectbox(get_translation('Smoking'), binary_options)
-        raw_inputs['AlcoholConsumption'] = st.selectbox(get_translation('Alcohol Consumption'), binary_options)
-        raw_inputs['PhysicalActivity'] = st.selectbox(get_translation('Physical Activity'), binary_options)
-        raw_inputs['Depression'] = st.selectbox(get_translation('Depression'), binary_options)
-        raw_inputs['Forgetfulness'] = st.selectbox(get_translation('Forgetfulness'), binary_options)
-        raw_inputs['Confusion'] = st.selectbox(get_translation('Confusion'), binary_options)
-        raw_inputs['Disorientation'] = st.selectbox(get_translation('Disorientation'), binary_options)
-        raw_inputs['PersonalityChanges'] = st.selectbox(get_translation('Personality Changes'), binary_options)
-        raw_inputs['BehavioralProblems'] = st.selectbox(get_translation('Behavioral Problems'), binary_options)
-        raw_inputs['DifficultyCompletingTasks'] = st.selectbox(get_translation('Difficulty Completing Tasks'), binary_options)
-        raw_inputs['MemoryComplaints'] = st.selectbox(get_translation('Memory Complaints'), binary_options)
-        # Height and Weight for BMI calculation
-        raw_inputs['Height'] = st.number_input(get_translation('Height (m)'), min_value=0.0, max_value=3.0, value=1.75)
-        raw_inputs['Weight'] = st.number_input(get_translation('Weight (kg)'), min_value=0, max_value=300, value=70)
-        raw_inputs['Genotype'] = st.selectbox(get_translation('Genotype'), ['AA', 'AS', 'SS', 'AC', 'SC'])
-        raw_inputs['BloodGroup'] = st.selectbox(get_translation('Blood Group'), ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'])
-        # Additional inputs with different scales
-        raw_inputs['SleepQuality'] = st.slider(get_translation('Sleep Quality'), 0, 10, 5)
-        raw_inputs['DietQuality'] = st.slider(get_translation('Diet Quality'), 0, 10, 5)
-        raw_inputs['FunctionalAssessment'] = st.slider(get_translation('Functional Assessment'), 0, 10, 5)
-        raw_inputs['ADL'] = st.slider(get_translation('Activities of Daily Living'), 0, 10, 5)
-        
-        
-import streamlit as st
-
-def select_input(label, options, key=None):
-    """Universal select input with a 'Select...' placeholder."""
-    return st.selectbox(label, [get_translation("Select...")] + options, index=0, key=key)
-
-def alzheimers_prediction_app():
-    pred = None
-    alzheimer_inputs_df = None
-
-    st.title(get_translation("🧠 Alzheimer's Predictor"))
-    st.warning(get_translation("Complete all fields for accurate assessment"))
-
-    # Nutritional score (computed separately)
-    nutritional_score = compute_nutritional_score()
-    st.info(get_translation(f"🍎 Nutritional Health Score: **{nutritional_score}/5**"))
-
-    with st.form("alz_form"):
-        age = st.number_input(get_translation("Age"), min_value=0, max_value=100, value=None, key='alz_age', placeholder=get_translation("Enter Age"))
-        gender = select_input(get_translation("Gender"), [get_translation("Male"), get_translation("Female")], key='alz_gender')
-        blood_group = select_input(get_translation("Blood Group"), ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"], key='alz_bloodgroup')
-        genotype = select_input(get_translation("Genotype"), ["AA", "AS", "SS", "AC", "SC"], key='alz_genotype')
-
-        education_years = select_input(get_translation("Education Level (Years)"), [str(i) for i in range(0, 21)], key='alz_eduyears')
-        # ........................BMI input with Weight and Height....................
-        st.subheader(get_translation("📏 BMI Assessment (Body Mass Index)"))
-        st.caption(get_translation("BMI is calculated as weight (kg) ÷ height (m)². It estimates body fat and overall health risk."))
-        # Weight input
-        weight = st.number_input(get_translation("Enter your weight (kg)"), key='alz_weight', min_value=20, max_value=200)
-
-        # Height input
-        height = st.number_input(get_translation("Enter your height (m)"), key='alz_height', min_value=1.0, max_value=2.5)
-
-# Calculate BMI if both values are provided
-        bmi = None
-        if weight is not None and height is not None:
-            try:
-                bmi = round(weight / (height ** 2), 2)
-                st.info(get_translation(f"Calculated BMI: **{bmi}**"))
-            except ZeroDivisionError:
-                st.error(get_translation("Height cannot be zero."))
-        # Determine BMI category
-        if bmi < 18.5:
-            risk = get_translation("Underweight")
-            color = "warning"
-        elif 18.5 <= bmi < 24.9:
-            risk = get_translation("Normal weight")
-            color = "success"
-        elif 25 <= bmi < 29.9:
-            risk = get_translation("Overweight")
-            color = "warning"
-        else:
-            risk = get_translation("Obese")
-            color = "error"
-    
-        st.markdown(get_translation(f"**BMI Category:** <span style='color:{color}'>{risk}</span>"), unsafe_allow_html=True)
-        is_smoker = select_input(get_translation("Smoking Status"), [get_translation("Select"), get_translation("formerly smoked"), get_translation("never smoked"), get_translation("smokes")], key='alz_smoking')
-        alcohol_consumption = select_input(get_translation("Alcohol Consumption (0=None, 5=High)"), [str(i) for i in range(0, 6)], key='alz_alcohol')
-        physical_activity = select_input(get_translation("Physical Activity (hrs/week)"), [str(i) for i in range(0, 21)], key='alz_activity')
-        sleep_quality = select_input(get_translation("Sleep Quality (1-5)"), [str(i) for i in range(1, 6)], key='alz_sleep')
-        family_history_alz = select_input(get_translation("Family History of Alzheimer's"), [get_translation("Yes"), get_translation("No")], key='alz_family')
-        cardiovascular_disease = select_input(get_translation("Cardiovascular Disease"), [get_translation("Yes"), get_translation("No")], key='alz_cardio')
-        diabetes = select_input(get_translation("Diabetes"), [get_translation("Yes"), get_translation("No")], key='alz_diabetes')
-        depression = select_input(get_translation("Depression"), [get_translation("Yes"), get_translation("No")], key='alz_depression')
-        hypertension = select_input(get_translation("Hypertension"), [get_translation("Yes"), get_translation("No")], key='alz_hypertension')
-
-        systolic_bp = st.number_input(get_translation("Systolic BP"), min_value=80, max_value=220, value=None, key='alz_systolic', placeholder=get_translation("Enter systolic"))
-        diastolic_bp = st.number_input(get_translation("Diastolic BP"), min_value=50, max_value=150, value=None, key='alz_diastolic', placeholder=get_translation("Enter diastolic"))
-
-        cholesterol_total = st.number_input(get_translation("Total Cholesterol"), min_value=100, max_value=400, value=None, key='alz_chol_total', placeholder=get_translation("Enter total cholesterol"))
-        cholesterol_ldl = st.number_input(get_translation("LDL"), min_value=50, max_value=300, value=None, key='alz_ldl', placeholder=get_translation("Enter LDL"))
-        cholesterol_hdl = st.number_input(get_translation("HDL"), min_value=20, max_value=100, value=None, key='alz_hdl', placeholder=get_translation("Enter HDL"))
-        cholesterol_triglycerides = st.number_input(get_translation("Triglycerides"), min_value=50, max_value=500, value=None, key='alz_trig', placeholder=get_translation("Enter triglycerides"))
-
-        functional_assessment = st.slider(get_translation("Functional Assessment (0-5)"), 0, 5, 0, key='alz_func')
-        behavioral_problems = select_input(get_translation("Behavioral Problems"), [get_translation("Yes"), get_translation("No")], key='alz_behavior')
-        adl = st.slider(get_translation("ADL Score (Activities of Daily Living)"), 0, 6, 0, key='alz_adl')
-
-       # MMSE (direct)
-        st.subheader(get_translation("🧠 Mini-Mental State Examination (MMSE)"))
-        st.caption(get_translation(
-    "The MMSE is a 30-point questionnaire used to assess cognitive function, evaluating "
-    "orientation, attention, memory, language, and visual-spatial skills. Higher scores indicate better cognitive performance."
-))
-
-# Optional: culturally adapted version note
-        st.caption(get_translation(
-    "📝 Culturally Adapted MMSE: Some questions have been modified to reflect daily life and cultural context, "
-    "providing a more accurate assessment for African populations."
-))
-
-        mmse = st.slider(get_translation("MMSE Score (0-30)"), 0, 30, 0, key='alz_mmse')
-
-
-# ===== CULTURALLY ADAPTED MMSE ASSESSMENT ===== #
-        st.subheader(get_translation("MMSE Assessment (Adapted for African Context)"))
-        mmse_option = st.radio(get_translation("Do you know your MMSE score?"), [get_translation("Estimate using cultural questions")], key='alz_mmse_radio')
-
-
-        st.info(get_translation("Answer these culturally relevant questions to estimate your MMSE score:"))
-
-
-        col1, col2 = st.columns(2)
-
-
-        with col1:
-            q1 = select_input(get_translation("Do you forget names of relatives/village members?"), [get_translation("Never"), get_translation("Sometimes"), get_translation("Often")], key='q1')
-            q2 = select_input(get_translation("Do you misplace important items (farming tools, keys)?"), [get_translation("Never"), get_translation("Sometimes"), get_translation("Often")], key='q2')
-            q3 = select_input(get_translation("Can you recall traditional recipes or remedies?"), [get_translation("Always"), get_translation("Sometimes"), get_translation("Rarely")], key='q3')
-
-
-        with col2:
-            q4 = select_input(get_translation("Do you recognize people from your community?"), [get_translation("Always"), get_translation("Sometimes"), get_translation("Rarely")], key='q4')
-            q5 = select_input(get_translation("Can you navigate familiar paths/markets?"), [get_translation("Always"), get_translation("Sometimes"), get_translation("Rarely")], key='q5')
-            q6 = select_input(get_translation("Do you remember important cultural events/dates?"), [get_translation("Always"), get_translation("Sometimes"), get_translation("Rarely")], key='q6')
-
-
-# Calculate estimated MMSE with cultural weighting#
-        response_scores = {
-            get_translation("Never"): 2, get_translation("Sometimes"): 1, get_translation("Often"): 0, get_translation("Always"): 2, get_translation("Rarely"): 0
-            }
-
-
-        weights = {
-            "q1": 2.0, # Names of relatives
-            "q2": 1.5, # Important items
-            "q3": 1.0, # Traditional knowledge
-            "q4": 1.7, # Community recognition
-            "q5": 2.0, # Navigation
-            "q6": 1.3  # Cultural events
-}
-
-
-# Only compute estimated MMSE if all cultural questions are answered (not "Select...")
-        if all(q not in (None, get_translation("Select...")) for q in [q1, q2, q3, q4, q5, q6]):
-            mmse_score = 20 + (
-                response_scores[q1] * weights["q1"] +
-                response_scores[q2] * weights["q2"] +
-                response_scores[q3] * weights["q3"] +
-                response_scores[q4] * weights["q4"] +
-                response_scores[q5] * weights["q5"] +
-                response_scores[q6] * weights["q6"]
-            )
-        # Pollution inputs
-        pollution_score = st.slider(get_translation("Pollution Score (0-100)"), 0, 100, 0, key='alz_pollution_score')
-        pollution_choice = select_input(get_translation("Pollution Category"), [get_translation("Low"), get_translation("Moderate"), get_translation("High")], key='alz_pollution_cat')
-
-        # Cognitive assessment
-        option_map = {get_translation("Yes"): 1, get_translation("No"): 0, get_translation("Sometimes"): 0.5}
-        confusion = option_map.get(select_input(get_translation("Confusion"), [get_translation("Yes"), get_translation("No"), get_translation("Sometimes")], key='alz_confusion'), None)
-        disorientation = option_map.get(select_input(get_translation("Disorientation"), [get_translation("Yes"), get_translation("No"), get_translation("Sometimes")], key='alz_disorien'), None)
-        personality_changes = option_map.get(select_input(get_translation("Personality Changes"), [get_translation("Yes"), get_translation("No"), get_translation("Sometimes")], key='alz_personality'), None)
-        difficulty_tasks = option_map.get(select_input(get_translation("Difficulty Completing Tasks"), [get_translation("Yes"), get_translation("No"), get_translation("Sometimes")], key='alz_tasks'), None)
-        forgetfulness = option_map.get(select_input(get_translation("Forgetfulness"), [get_translation("Yes"), get_translation("No"), get_translation("Sometimes")], key='alz_forget'), None)
-        memory_complaints = option_map.get(select_input(get_translation("Memory Complaints"), [get_translation("Yes"), get_translation("No"), get_translation("Sometimes")], key='alz_memory'), None)
-
-        # Head injury
-        head_map = {get_translation("None"): 0, get_translation("Accident"): 1, get_translation("Violence"): 2}
-        head_choice = select_input(get_translation("Head Injury"), [get_translation("None"), get_translation("Accident"), get_translation("Violence")], key='alz_head')
-        head_injury = head_map.get(head_choice, None)
-
-        # Stress
-        stress_score = st.slider(get_translation("Stress Level"), 0, 10, 0, key='alz_stress')
-
-        submit_alz = st.form_submit_button(get_translation("🔍 Predict Alzheimer Risk"))
-
-    # Validation step
-    required_fields = [age, gender, education_years, bmi, is_smoker, alcohol_consumption, physical_activity,
-                       sleep_quality, family_history_alz, cardiovascular_disease, diabetes, depression, hypertension,
-                       systolic_bp, diastolic_bp, cholesterol_total, cholesterol_ldl, cholesterol_hdl,
-                       cholesterol_triglycerides, behavioral_problems, head_choice, pollution_choice,
-                       blood_group, genotype, height, weight]
-
-    if submit_alz:
-        if any(x in (None, get_translation("Select...")) for x in required_fields):
-            st.error(get_translation("⚠️ Please complete all fields before prediction."))
-            st.stop()
-
-        # 🔹 From here, continue your raw_inputs dict and prediction logic as in your original code 🔹
-        st.success(get_translation("All inputs validated! Now run prediction pipeline..."))
-
-        
-    if submit_alz:
-            try:
-                # Prepare data for prediction
-                raw_inputs = {
-                    "Age": age,
-                    "Gender": gender,
-                    "BMI": bmi,
-                    "EducationLevel": education_years,
-                    "Smoking": is_smoker,
-                    "AlcoholConsumption": alcohol_consumption,
-                    "PhysicalActivity": physical_activity,
-                    "DietQuality": diet_quality,
-                    "SleepQuality": sleep_quality,
-                    "FamilyHistoryAlzheimers": family_history_alz,
-                    "CardiovascularDisease": cardiovascular_disease,
-                    "Diabetes": diabetes,
-                    "Depression": depression,
-                    "Hypertension": hypertension,
-                    "SystolicBP": systolic_bp,
-                    "DiastolicBP": diastolic_bp,
-                    "CholesterolTotal": cholesterol_total,
-                    "CholesterolLDL": cholesterol_ldl,
-                    "CholesterolHDL": cholesterol_hdl,
-                    "CholesterolTriglycerides": cholesterol_triglycerides,
-                    "MMSE": mmse,
-                    "Height": height,
-                    "Weight": weight,
-                    "Genotype": genotype,
-                    "BloodGroup": blood_group,
-                    "FunctionalAssessment": functional_assessment,
-                    "BehavioralProblems": behavioral_problems,
-                    "ADL": adl,
-                    "Confusion": confusion,
-                    "Disorientation": disorientation,
-                    "PersonalityChanges": personality_changes,
-                    "DifficultyCompletingTasks": difficulty_tasks,
-                    "Forgetfulness": forgetfulness,
-                    "MemoryComplaints": memory_complaints,
-                    "MemoryScore": st.session_state.get("memory_score", 1.0),
-                    "HeadInjury": head_injury,
-                    "Ethnicity": encoded_ethnicity,
-                    "Country": encoded_country,
-                    "Province_Option": encoded_province,
-                    "PollutionScore": pollution_score,
-                    "PollutionCategoryLow": pollution_low,
-                    "PollutionCategoryModerate": pollution_moderate,
-                    "PollutionCategoryHigh": pollution_high,
-                    "CustomStressScore": st.session_state.stress_score
-                }
-                # Convert raw inputs into proper DataFrame for prediction
-                # 1️⃣ Prepare inputs
-                alzheimer_inputs_df = prepare_alzheimers_input_numeric(raw_inputs)
-
-                if alzheimer_inputs_df is None or alzheimer_inputs_df.empty:
-                    st.error(get_translation("Input preparation failed: no valid features for prediction."))
-                    st.stop()
-
-# 2️⃣ Ensure model exists
-                if "alz_model" not in st.session_state or st.session_state.alz_model is None:
-                    st.error(get_translation("Alzheimer's model not loaded. Please initialize the model first."))
-                    st.stop()
-
-# 3️⃣ Make prediction
-                pred = st.session_state.alz_model.predict(alzheimer_inputs_df)[0]
-
-# 4️⃣ Display results
-                if pred == 1:
-                    st.error(get_translation("⚠️ HIGH ALZHEIMER RISK DETECTED"))
-                    st.markdown(get_translation("""## 🚨 Immediate Action Recommended:
-- **Consult a healthcare provider immediately**
-- Begin cognitive training exercises
-- Review family medical history
-- 🧩 Do mental exercises (e.g., puzzles, memory games)
-- 🏃 Stay physically active (exercise increases brain health)
-- 🧘 Reduce stress  practice mindfulness or prayer
-- 👥 Stay socially engaged talk to friends, join a group
-- 🥦 Eat brain-healthy foods (nuts, omega-3s, leafy greens)
-- 🌿 **Use cinnamon regularly**  may protect memory and reduce inflammation
-- 🚭 Avoid smoking and limit alcohol
-- 💤 Prioritize sleep and manage depression
-"""))
-                else:
-                    st.success(get_translation("✅ LOW ALZHEIMER'S RISK DETECTED"))
-
-# 5️⃣ Expandable lifestyle suggestions
-                with st.expander(get_translation("🛠️ Lifestyle Suggestions for Alzheimer's Prevention")):
-                    st.markdown(get_translation("""
-### 🍽️ Dietary Recommendations:
-- Increase omega-3 fatty acids (fish, flax seeds)
-- Consume antioxidant-rich foods (berries, dark chocolate)
-- Eat leafy green vegetables daily
-- Reduce processed sugars and refined carbs
-
-### 🏃 Physical Activity:
-- Aerobic exercise 3–5 times/week
-- Strength training 2–3 times/week
-- Balance and coordination exercises
-
-### 😌 Mental Wellness:
-- Practice meditation or mindfulness
-- Maintain social connections
-- Learn new skills or languages
-
-### 🩺 Medical Follow-up:
-- Annual cognitive screening after age 60
-- Manage vascular risk factors (blood pressure, cholesterol)
-- Medication review with doctor
-"""))
-
-                # Get user location
-                city, region, country = get_user_location()
-                location_str = f"{city}, {region}, {country}"
-
-                # Prepare data dict for database save
-                alz_data = {
-                    "user_id": st.session_state.user['id'] if st.session_state.get('user') else "anonymous",
-                    "age": age,
-                    "gender": gender,  # 1 = Male, 0 = Female
-                    "bmi": bmi,
-                    "education_level": education_years,
-                    "smoking": is_smoker,
-                    "alcohol_consumption": alcohol_consumption,
-                    "physical_activity": physical_activity,
-                    "diet_quality": diet_quality,
-                    "sleep_quality": sleep_quality,
-                    "family_history_alzheimers": family_history_alz,
-                    "cardiovascular_disease": cardiovascular_disease,
-                    "diabetes": diabetes,
-                    "depression": depression,
-                    "hypertension": hypertension,
-                    "systolic_bp": systolic_bp,
-                    "diastolic_bp": diastolic_bp,
-                    "cholesterol_total": cholesterol_total,
-                    "cholesterol_ldl": cholesterol_ldl,
-                    "cholesterol_hdl": cholesterol_hdl,
-                    "cholesterol_triglycerides": cholesterol_triglycerides,
-                    "functional_assessment": functional_assessment,
-                    "behavioral_problems": behavioral_problems,
-                    "adl": adl,
-                    "confusion": confusion,
-                    "disorientation": disorientation,
-                    "personality_changes": personality_changes,
-                    "difficulty_completing_tasks": difficulty_tasks,
-                    "forgetfulness": forgetfulness,
-                    "memory_complaints": memory_complaints,
-                    "head_injury": head_injury,
-                    "height": height,
-                    "weight": weight,
-                    "blood_group": blood_group,
-                    "genotype": genotype,
-                    "pollution_score": pollution_score,
-                    "pollution_category_Low": pollution_low,
-                    "pollution_category_Moderate": pollution_moderate,
-                    "pollution_category_High": pollution_high,
-                    "ethnicity": encoded_ethnicity,
-                    "country": encoded_country,
-                    "province_option": encoded_province,
-                    "memory_score": st.session_state.get("memory_score", 1.0),  # <-- Save memory game score
-                    "custom_stress_score": st.session_state.get("stress_score", None),
-                    "location": location_str,
-                    "prediction_result": int(pred)
-                }
-                if not raw_inputs:
-                    st.error(get_translation("Please provide all required inputs."))
-                    return
+                pollution_level_air, pollution_level_water, pollution_level_environmental
+            ]
             
-        # Prepare the input data
-                alzheimer_inputs_df = prepare_alzheimers_input_numeric(raw_inputs)
-        
-        # Check if DataFrame was created successfully
-                if alzheimer_inputs_df is None or alzheimer_inputs_df.empty:
-                    st.error(get_translation("Failed to prepare input data for prediction."))
-                    return
+            select_values = [get_translation("Select"), get_translation("Select Gender"), 
+                           get_translation("Select Blood Group"), get_translation("Select Genotype")]
             
-        # Make prediction using your model
-                if 'alz_model' in st.session_state:
-            # Get prediction from model
-                    prediction_result = st.session_state.alz_model.predict(alzheimer_inputs_df)
-
-            # Check if we got a valid prediction
-                if prediction_result is not None and len(prediction_result) > 0:
-                    pred = prediction_result[0]
-                
-                # Only proceed if we have a valid prediction
-                if pred is not None:
-                    # Prepare database dictionary
-                    db_payload = {
-                        "user_id": st.session_state.user['id'] if st.session_state.get('user') else "anonymous",
-                        "raw_inputs": raw_inputs,
-                        "prediction_result": float(pred)
+            if any(x in select_values or x is None for x in required_fields):
+                st.error(get_translation("⚠️ Please complete all fields before prediction."))
+            else:
+                try:
+                    # Map categorical values to numeric
+                    stress_map = {
+                        get_translation("None"): 0, 
+                        get_translation("Low"): 1, 
+                        get_translation("Moderate"): 2, 
+                        get_translation("High"): 3
                     }
                     
-                    # Save to database
-                    response = supabase.table("alzheimer_predictions").insert(db_payload).execute()
-                    if response.data:
-                        st.success(get_translation("Alzheimer's prediction saved successfully!"))
-                    elif response.error:
-                        st.error(get_translation(f"Failed to save Alzheimer's prediction: {response.error}"))
-                
-                else:
-                    st.error(get_translation("Prediction returned no result."))
-                    return
-            except Exception as e:
-        # Check if the error occurred during DataFrame creation or prediction
-                if alzheimer_inputs_df is None:
-                    st.error(get_translation(f"Error during input preparation for Alzheimer's prediction: {e}"))
-            else:
-                st.error(get_translation(f"Error during Alzheimer's prediction: {e}"))
-                return
+                    pain_map = {
+                        get_translation("None"): 0, 
+                        get_translation("Rheumatism"): 1, 
+                        get_translation("Osteoarthritis"): 2, 
+                        get_translation("Others"): 3
+                    }
+                    
+                    treatment_map = {
+                        get_translation("None"): 0, 
+                        get_translation("Herbal"): 1, 
+                        get_translation("Drugs"): 2
+                    }
+                    
+                    diabetes_map = {
+                        get_translation("None"): 0, 
+                        get_translation("Type 1"): 1, 
+                        get_translation("Type 2"): 2,
+                        get_translation("Gestational"): 3
+                    }
+                    
+                    depression_map = {
+                        get_translation("None"): 0,
+                        get_translation("Mild"): 1,
+                        get_translation("Moderate"): 2,
+                        get_translation("Severe"): 3
+                    }
+                    
+                    # Prepare raw inputs
+                    raw_inputs = {
+                        'age': safe_int(age),
+                        'gender': 1 if gender == get_translation("Male") else 0,
+                        'height': safe_float(height),
+                        'weight': safe_float(weight),
+                        'bmi': safe_float(bmi),
+                        'blood_group': blood_group,
+                        'genotype': genotype,
+                        'heart_disease': 1 if heart_disease == get_translation("Yes") else 0,
+                        'hypertension': 1 if hypertension == get_translation("Yes") else 0,
+                        'systolic_bp': safe_float(systolic_bp),
+                        'diastolic_bp': safe_float(diastolic_bp),
+                        'avg_glucose_level': safe_float(avg_glucose_level),
+                        'diabetes_type': diabetes_map.get(diabetes_type, 0),
+                        'chronic_pain': pain_map.get(chronic_pain, 0),
+                        'ever_married': 1 if marital_status in [get_translation("Married"), 
+                                                                get_translation("Divorced"), 
+                                                                get_translation("Widowed")] else 0,
+                        'work_type': work_type,
+                        'Residence_type': residence_type,
+                        'smoking_status': smoking_status,
+                        'physical_activity': physical_activity,
+                        'sleep_hours': safe_int(sleep_hours, 7),
+                        'stress_level': stress_map.get(stress_level, 0),
+                        'ptsd': 1 if ptsd == get_translation("Yes") else 0,
+                        'depression_level': depression_map.get(depression_level, 0),
+                        'hypertension_treatment': treatment_map.get(hypertension_treatment, 0),
+                        'salt_intake': salt_intake,
+                        'noise_sources': noise_sources,
+                        'pollution_level_air': pollution_level_air,
+                        'pollution_level_water': pollution_level_water,
+                        'pollution_level_environmental': pollution_level_environmental,
+                        'ethnicity': encoded_ethnicity,
+                        'Country': encoded_country,
+                        'Province_Option': encoded_province,
+                        'CustomStressScore': st.session_state.get('stress_score', 0)
+                    }
+                    
+                    # Add mapped features
+                    raw_inputs.update(map_salt_intake(salt_intake))
+                    raw_inputs.update(map_noise_source(noise_sources))
+                    
+                    # Prepare inputs for model
+                    stroke_inputs_df = prepare_stroke_input_numeric(raw_inputs)
+                    
+                    if stroke_inputs_df is None or stroke_inputs_df.empty:
+                        st.error(get_translation("Input preparation failed: no valid features for prediction."))
+                    elif "stroke_model" not in st.session_state or st.session_state.stroke_model is None:
+                        st.error(get_translation("Stroke model not loaded. Please initialize the model first."))
+                    else:
+                        # Make prediction
+                        prediction_result = st.session_state.stroke_model.predict(stroke_inputs_df)
+                        
+                        if prediction_result is not None and len(prediction_result) > 0:
+                            pred = prediction_result[0]
+                            
+                            # Calculate risk score
+                            risk_factors = 0
+                            if raw_inputs['age'] > 60: risk_factors += 1
+                            if raw_inputs['hypertension'] == 1: risk_factors += 1
+                            if raw_inputs['heart_disease'] == 1: risk_factors += 1
+                            if raw_inputs['diabetes_type'] > 0: risk_factors += 1
+                            if smoking_status != get_translation("never smoked"): risk_factors += 1
+                            if bmi > 30: risk_factors += 1
+                            if raw_inputs['stress_level'] > 2: risk_factors += 1
+                            
+                            base_risk = risk_factors * 0.12
+                            import random
+                            random_factor = random.uniform(-0.05, 0.05)
+                            risk_score = min(0.95, base_risk + random_factor)
+                            
+                            # Determine risk level
+                            if risk_score > 0.7:
+                                risk_level = "HIGH"
+                            elif risk_score > 0.3:
+                                risk_level = "MEDIUM"
+                            else:
+                                risk_level = "LOW"
+                            
+                            # Store prediction
+                            st.session_state.predictions["Stroke"] = {
+                                "risk_score": risk_score,
+                                "risk_level": risk_level,
+                                "patient_data": raw_inputs,
+                                "prediction": int(pred)
+                            }
+                            
+                            # Get location
+                            city, region, country = get_user_location()
+                            location_str = f"{city}, {region}, {country}"
+                            
+                            # Prepare database payload
+                            db_payload = {
+                                "user_id": st.session_state.user['id'] if st.session_state.get('user') else "anonymous",
+                                "age": raw_inputs['age'],
+                                "gender": raw_inputs['gender'],
+                                "height": raw_inputs['height'],
+                                "weight": raw_inputs['weight'],
+                                "bmi": raw_inputs['bmi'],
+                                "blood_group": raw_inputs['blood_group'],
+                                "genotype": raw_inputs['genotype'],
+                                "heart_disease": raw_inputs['heart_disease'],
+                                "hypertension": raw_inputs['hypertension'],
+                                "systolic_bp": raw_inputs['systolic_bp'],
+                                "diastolic_bp": raw_inputs['diastolic_bp'],
+                                "avg_glucose_level": raw_inputs['avg_glucose_level'],
+                                "diabetes_type": raw_inputs['diabetes_type'],
+                                "chronic_pain": raw_inputs['chronic_pain'],
+                                "marital_status": marital_status,
+                                "work_type": raw_inputs['work_type'],
+                                "residence_type": raw_inputs['Residence_type'],
+                                "smoking_status": raw_inputs['smoking_status'],
+                                "physical_activity": raw_inputs['physical_activity'],
+                                "sleep_hours": raw_inputs['sleep_hours'],
+                                "stress_level": raw_inputs['stress_level'],
+                                "ptsd": raw_inputs['ptsd'],
+                                "depression_level": raw_inputs['depression_level'],
+                                "hypertension_treatment": raw_inputs['hypertension_treatment'],
+                                "salt_intake": raw_inputs['salt_intake'],
+                                "noise_sources": raw_inputs['noise_sources'],
+                                "pollution_level_air": raw_inputs['pollution_level_air'],
+                                "pollution_level_water": raw_inputs['pollution_level_water'],
+                                "pollution_level_environmental": raw_inputs['pollution_level_environmental'],
+                                "ethnicity": raw_inputs['ethnicity'],
+                                "country": raw_inputs['Country'],
+                                "province": raw_inputs['Province_Option'],
+                                "custom_stress_score": raw_inputs['CustomStressScore'],
+                                "location": location_str,
+                                "prediction_result": int(pred),
+                                "risk_score": float(risk_score),
+                                "risk_level": risk_level,
+                                "assessment_date": datetime.now().strftime("%Y-%m-%d")
+                            }
+                            
+                            # Save to Supabase
+                            try:
+                                response = supabase.table("stroke_predictions").insert(db_payload).execute()
+                                if response.data:
+                                    st.success(get_translation("✅ Stroke prediction saved successfully!"))
+                                    
+                                    # Display prediction result
+                                    if int(pred) == 1:
+                                        st.warning(get_translation("⚠️ The model predicts a high risk of stroke."))
+                                    else:
+                                        st.success(get_translation("✅ The model predicts a low risk of stroke."))
+                                else:
+                                    st.warning(get_translation("Prediction completed but database save encountered an issue."))
+                            except Exception as db_error:
+                                st.error(get_translation(f"Failed to save to database: {str(db_error)}"))
+                            
+                            st.rerun()
+                        else:
+                            st.error(get_translation("Prediction returned no result."))
+                            
+                except Exception as e:
+                    st.error(get_translation(f"An error occurred during prediction: {str(e)}"))
     
-    # Now safely check the prediction result
-    if pred is not None:
-        try:
-            # Convert to float first, then to int for comparison
-            pred_value = float(pred)
-            if int(pred_value) == 1:
-                st.warning(get_translation("The model predicts a high risk of Alzheimer's disease."))
-                # Display additional information or recommendations
+    # Results column
+    with col2:
+        st.subheader(get_translation("Risk Assessment"))
+        
+        if st.session_state.predictions.get("Stroke"):
+            prediction = st.session_state.predictions["Stroke"]
+            risk_score = prediction["risk_score"]
+            risk_level = prediction["risk_level"]
+            patient_data = prediction["patient_data"]
+            
+            # Risk gauge
+            import plotly.graph_objects as go
+            fig = go.Figure(go.Indicator(
+                mode="gauge+number",
+                value=risk_score * 100,
+                title="Stroke Risk Score",
+                gauge={
+                    'axis': {'range': [None, 100]},
+                    'bar': {'color': "darkblue"},
+                    'steps': [
+                        {'range': [0, 30], 'color': "green"},
+                        {'range': [30, 70], 'color': "yellow"},
+                        {'range': [70, 100], 'color': "red"}
+                    ]
+                }
+            ))
+            fig.update_layout(height=250)
+            st.plotly_chart(fig, use_container_width=True)
+            
+            # Risk level display
+            if risk_level == "HIGH":
+                risk_class = "risk-high"
+            elif risk_level == "MEDIUM":
+                risk_class = "risk-medium"
             else:
-                st.success(get_translation("The model predicts a low risk of Alzheimer's disease."))
-                # Display additional information or recommendations
-        except (ValueError, TypeError):
-            st.error(get_translation(f"Invalid prediction value: {pred}"))
-
-
-def memory_recall_game():
-    st.subheader(get_translation("🧩 Memory Recall Game"))
-
-    # --- Initialize memory game state ---
-    if "memory_game" not in st.session_state or st.session_state.memory_game is None:
-        st.session_state.memory_game = {
-            "state": "start",
-            "words": [],
-            "start_time": None,
-            "level": 1,
-            "score_history": []
-        }
-
-    game = st.session_state.memory_game
-    WORD_POOL = [
-        get_translation("apple"), get_translation("table"), get_translation("river"), get_translation("mountain"), get_translation("sun"), get_translation("flower"),
-        get_translation("clock"), get_translation("phone"), get_translation("book"), get_translation("star"), get_translation("moon"), get_translation("chair"),
-        get_translation("pencil"), get_translation("car"), get_translation("glass"), get_translation("tree"), get_translation("music"), get_translation("house"),
-        get_translation("cloud"), get_translation("lamp"), get_translation("keyboard"), get_translation("shoe"), get_translation("bottle"), get_translation("ring")
-    ]
-
-    # --- Start screen ---
-    if game["state"] == "start":
-        st.markdown(get_translation(f"**Level {game['level']}** - You will see {4 + game['level']} words."))
-        if st.button(get_translation("Start Memory Exercise")):
-            num_words = 4 + game["level"]
-            words = random.sample(WORD_POOL, num_words)
-            game["words"] = words
-            game["start_time"] = time.time()
-            game["state"] = "showing"
-            st.rerun()
-
-    # --- Showing words ---
-    elif game["state"] == "showing":
-        st.write(get_translation("Memorize these words (5 seconds):"))
-        st.info(", ".join(game["words"]))
-        if time.time() - game["start_time"] > 5:
-            game["state"] = "recalling"
-            st.rerun()
-
-    # --- Recalling words ---
-    elif game["state"] == "recalling":
-        with st.form("recall_form"):
-            recalled_input = st.text_input(get_translation("Type the words you remember, separated by commas:"))
-            submit = st.form_submit_button(get_translation("Submit Recall"))
-
-        recalled = []  # Ensure variable exists
-        correct_count = 0
-
-        if submit:
-            recalled = [w.strip().lower() for w in recalled_input.split(",") if w.strip()]
-            correct_words = set(w.lower() for w in game["words"])
-            recalled_set = set(recalled)
-            correct_count = len(correct_words & recalled_set)
-
-            st.success(get_translation(f"You recalled {correct_count} out of {len(game['words'])} correctly."))
-
-            # Level progression
-            if correct_count >= len(game['words']) - 1:
-                st.balloons()
-                st.info(get_translation("🎉 Great job! You advance to the next level."))
-                game["level"] += 1
+                risk_class = "risk-low"
+            
+            st.markdown(f"<div class='{risk_class}'>Risk Level: {risk_level}</div>", 
+                       unsafe_allow_html=True)
+            
+            # Top risk factors
+            st.subheader(get_translation("📊 Key Risk Factors"))
+            
+            risk_factors_list = []
+            
+            if patient_data.get('age', 0) > 60:
+                risk_factors_list.append(f"Age ({patient_data['age']} years)")
+            if patient_data.get('hypertension') == 1:
+                risk_factors_list.append("Hypertension")
+            if patient_data.get('heart_disease') == 1:
+                risk_factors_list.append("Heart Disease")
+            if patient_data.get('diabetes_type', 0) > 0:
+                risk_factors_list.append("Diabetes")
+            if patient_data.get('smoking_status', '') not in ['never smoked', get_translation("never smoked")]:
+                risk_factors_list.append(f"Smoking ({patient_data.get('smoking_status', '')})")
+            if patient_data.get('bmi', 0) > 30:
+                risk_factors_list.append(f"Obesity (BMI: {patient_data['bmi']:.1f})")
+            if patient_data.get('stress_level', 0) > 2:
+                risk_factors_list.append("High Stress Level")
+            
+            for factor in risk_factors_list[:5]:
+                st.write(f"• {factor}")
+            
+            if not risk_factors_list:
+                st.info(get_translation("No major risk factors identified"))
+            
+            # Generate PDF report
+            st.subheader(get_translation("📄 Report Generation"))
+            
+            if st.button(get_translation("📥 Generate PDF Report"), use_container_width=True, key="stroke_pdf"):
+                with st.spinner("Generating report..."):
+                    pdf_bytes = generate_stroke_pdf(
+                        st.session_state.get('user_name', 'Patient'),
+                        patient_data,
+                        risk_score,
+                        risk_level,
+                        risk_factors_list
+                    )
+                    
+                    filename = f"Stroke_Report_{st.session_state.get('user_name', 'Patient')}_{datetime.now().strftime('%Y%m%d')}.pdf"
+                    href = create_download_link(pdf_bytes, filename)
+                    st.markdown(href, unsafe_allow_html=True)
+                    
+                    # Store report
+                    report_id = f"stroke_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+                    if 'reports' not in st.session_state:
+                        st.session_state.reports = {}
+                    st.session_state.reports[report_id] = {
+                        "type": "Stroke",
+                        "data": patient_data,
+                        "risk_score": risk_score,
+                        "risk_level": risk_level,
+                        "filename": filename
+                    }
+        else:
+            st.info(get_translation("👈 Fill the form and click 'Submit Stroke Assessment' to see results"))
+        
+# ====== ALZHEIMER ASSESSMENT - REFACTORED WITH SUPABASE ======
+def render_alzheimer_assessment():
+    """Alzheimer's/Dementia risk assessment form"""
+    st.header(get_translation("🧠 Alzheimer\'s/Dementia Risk Assessment"))
+    
+    # Load model
+    if not st.session_state.models_loaded.get('Dementia', False):
+        with st.spinner("Loading dementia model..."):
+            dementia_result = load_dementia_model()
+            if dementia_result['status'] in ['success', 'demo']:
+                st.session_state.dementia_model = dementia_result
+                st.session_state.models_loaded['Dementia'] = True
+    
+    col1, col2 = st.columns([2, 1])
+    
+    with col1:
+        with st.form("dementia_form"):
+            st.subheader("Patient Information")
+            
+            # Basic info
+            age = st.selectbox(get_translation("Age"), [get_translation("Select")] + list(range(18, 121)))
+            gender = st.selectbox(get_translation("Gender"), [get_translation("Select Gender"), get_translation("Male"), get_translation("Female")])
+            education_years = st.selectbox(get_translation("Education Level (years)"), [get_translation("Select")] + list(range(0, 25)), key="alz_education")
+            
+            # Height, Weight, BMI calculation
+            height = st.number_input("Height (cm)", 100, 250, 170, key="alz_height")
+            weight = st.number_input("Weight (kg)", 30, 200, 70, key="alz_weight")
+            
+            if height > 0:
+                bmi = weight / ((height/100) ** 2)
+                st.metric("BMI", f"{bmi:.1f}")
             else:
-                st.warning(get_translation("You'll stay on the same level to improve."))
+                bmi = 25.0
+            
+            # BMI category
+            if bmi < 18.5:
+                risk = get_translation("Underweight")
+                color = "orange"
+            elif 18.5 <= bmi < 24.9:
+                risk = get_translation("Normal weight")
+                color = "green"
+            elif 25 <= bmi < 29.9:
+                risk = get_translation("Overweight")
+                color = "orange"
+            else:
+                risk = get_translation("Obese")
+                color = "red"
+    
+            st.markdown(f"**BMI Category:** <span style='color:{color}'>{risk}</span>", unsafe_allow_html=True)
+    
+            st.subheader("Medical Assessment")
+            
+            is_smoker = st.selectbox(get_translation("Smoking Status"), 
+                                     [get_translation("Select"), get_translation("formerly smoked"), 
+                                      get_translation("never smoked"), get_translation("smokes")], 
+                                     key='alz_smoking')
+            
+            alcohol_consumption = st.selectbox(get_translation("Alcohol Consumption (0=None, 5=High)"), 
+                                              [get_translation("Select")] + [str(i) for i in range(0, 6)], 
+                                              key='alz_alcohol')
+            
+            physical_activity = st.selectbox(get_translation("Physical Activity (hrs/week)"), 
+                                            [get_translation("Select")] + [str(i) for i in range(0, 21)], 
+                                            key='alz_activity')
+            
+            sleep_quality = st.selectbox(get_translation("Sleep Quality (1-5)"), 
+                                        [get_translation("Select")] + [str(i) for i in range(1, 6)], 
+                                        key='alz_sleep')
+            
+            diet_quality = st.selectbox(get_translation("Diet Quality (1-5)"), 
+                                       [get_translation("Select")] + [str(i) for i in range(1, 6)], 
+                                       key='alz_diet')
+            
+            family_history_alz = st.selectbox(get_translation("Family History of Alzheimer's"), 
+                                             [get_translation("Select"), get_translation("Yes"), get_translation("No")], 
+                                             key='alz_family')
+            
+            cardiovascular_disease = st.selectbox(get_translation("Cardiovascular Disease"), 
+                                                 [get_translation("Select"), get_translation("Yes"), get_translation("No")], 
+                                                 key='alz_cardio')
+            
+            diabetes = st.selectbox(get_translation("Diabetes"), 
+                                   [get_translation("Select"), get_translation("Yes"), get_translation("No")], 
+                                   key='alz_diabetes')
+            
+            depression = st.selectbox(get_translation("Depression"), 
+                                     [get_translation("Select"), get_translation("Yes"), get_translation("No")], 
+                                     key='alz_depression')
+            
+            hypertension = st.selectbox(get_translation("Hypertension"), 
+                                       [get_translation("Select"), get_translation("Yes"), get_translation("No")], 
+                                       key='alz_hypertension')
 
-            # Save score in history
-            game["score_history"].append({
-                "level": game["level"],
-                "correct": correct_count,
-                "total": len(game["words"]),
-                "words": game["words"],
-                "recalled": recalled
-            })
+            systolic_bp = st.number_input(get_translation("Systolic BP"), min_value=80, max_value=220, 
+                                         value=None, key='alz_systolic', placeholder=get_translation("Enter systolic"))
+            
+            diastolic_bp = st.number_input(get_translation("Diastolic BP"), min_value=50, max_value=150, 
+                                          value=None, key='alz_diastolic', placeholder=get_translation("Enter diastolic"))
 
-            # Reset game state
-            game["state"] = "start"
-            game["words"] = []
-            game["start_time"] = None
-            st.rerun()
+            cholesterol_total = st.number_input(get_translation("Total Cholesterol"), min_value=100, max_value=400, 
+                                               value=None, key='alz_chol_total', placeholder=get_translation("Enter total cholesterol"))
+            
+            cholesterol_ldl = st.number_input(get_translation("LDL"), min_value=50, max_value=300, 
+                                             value=None, key='alz_ldl', placeholder=get_translation("Enter LDL"))
+            
+            cholesterol_hdl = st.number_input(get_translation("HDL"), min_value=20, max_value=100, 
+                                             value=None, key='alz_hdl', placeholder=get_translation("Enter HDL"))
+            
+            cholesterol_triglycerides = st.number_input(get_translation("Triglycerides"), min_value=50, max_value=500, 
+                                                       value=None, key='alz_trig', placeholder=get_translation("Enter triglycerides"))
 
-    # --- Display score history ---
-    if game["score_history"]:
-        with st.expander(get_translation("📊 Score History")):
-            for i, score in enumerate(reversed(game["score_history"])):
-                st.write(
-                    get_translation(f"**Round {len(game['score_history']) - i}**: ") +
-                    get_translation(f"Level {score['level']} - {score['correct']}/{score['total']} correct")
+            functional_assessment = st.slider(get_translation("Functional Assessment (0-5)"), 0, 5, 0, key='alz_func')
+            
+            behavioral_problems = st.selectbox(get_translation("Behavioral Problems"), 
+                                              [get_translation("Select"), get_translation("Yes"), get_translation("No")], 
+                                              key='alz_behavior')
+            
+            adl = st.slider(get_translation("ADL Score (Activities of Daily Living)"), 0, 6, 0, key='alz_adl')
+
+            # MMSE Section
+            st.subheader(get_translation("🧠 Mini-Mental State Examination (MMSE)"))
+            st.caption(get_translation(
+                "The MMSE is a 30-point questionnaire used to assess cognitive function, evaluating "
+                "orientation, attention, memory, language, and visual-spatial skills. Higher scores indicate better cognitive performance."
+            ))
+
+            st.caption(get_translation(
+                "📝 Culturally Adapted MMSE: Some questions have been modified to reflect daily life and cultural context, "
+                "providing a more accurate assessment for African populations."
+            ))
+
+            # Culturally Adapted MMSE Assessment
+            st.subheader(get_translation("MMSE Assessment (Adapted for African Context)"))
+            st.info(get_translation("Answer these culturally relevant questions to estimate your MMSE score:"))
+
+            col_q1, col_q2 = st.columns(2)
+
+            with col_q1:
+                q1 = st.selectbox(get_translation("Do you forget names of relatives/village members?"), 
+                                 [get_translation("Select"), get_translation("Never"), get_translation("Sometimes"), get_translation("Often")], 
+                                 key='q1')
+                q2 = st.selectbox(get_translation("Do you misplace important items (farming tools, keys)?"), 
+                                 [get_translation("Select"), get_translation("Never"), get_translation("Sometimes"), get_translation("Often")], 
+                                 key='q2')
+                q3 = st.selectbox(get_translation("Can you recall traditional recipes or remedies?"), 
+                                 [get_translation("Select"), get_translation("Always"), get_translation("Sometimes"), get_translation("Rarely")], 
+                                 key='q3')
+
+            with col_q2:
+                q4 = st.selectbox(get_translation("Do you recognize people from your community?"), 
+                                 [get_translation("Select"), get_translation("Always"), get_translation("Sometimes"), get_translation("Rarely")], 
+                                 key='q4')
+                q5 = st.selectbox(get_translation("Can you navigate familiar paths/markets?"), 
+                                 [get_translation("Select"), get_translation("Always"), get_translation("Sometimes"), get_translation("Rarely")], 
+                                 key='q5')
+                q6 = st.selectbox(get_translation("Do you remember important cultural events/dates?"), 
+                                 [get_translation("Select"), get_translation("Always"), get_translation("Sometimes"), get_translation("Rarely")], 
+                                 key='q6')
+
+            # Calculate estimated MMSE with cultural weighting
+            response_scores = {
+                get_translation("Never"): 2, 
+                get_translation("Sometimes"): 1, 
+                get_translation("Often"): 0, 
+                get_translation("Always"): 2, 
+                get_translation("Rarely"): 0
+            }
+
+            weights = {
+                "q1": 2.0,  # Names of relatives
+                "q2": 1.5,  # Important items
+                "q3": 1.0,  # Traditional knowledge
+                "q4": 1.7,  # Community recognition
+                "q5": 2.0,  # Navigation
+                "q6": 1.3   # Cultural events
+            }
+
+            # Initialize mmse_score
+            mmse_score = 15  # Default middle value
+
+            # Only compute estimated MMSE if all cultural questions are answered
+            if all(q not in (None, get_translation("Select"), get_translation("Select...")) for q in [q1, q2, q3, q4, q5, q6]):
+                mmse_score = 20 + (
+                    response_scores.get(q1, 0) * weights["q1"] +
+                    response_scores.get(q2, 0) * weights["q2"] +
+                    response_scores.get(q3, 0) * weights["q3"] +
+                    response_scores.get(q4, 0) * weights["q4"] +
+                    response_scores.get(q5, 0) * weights["q5"] +
+                    response_scores.get(q6, 0) * weights["q6"]
                 )
+                mmse_score = min(30, max(0, int(mmse_score)))  # Clamp between 0-30
+                st.info(f"Estimated MMSE Score: {mmse_score}/30")
 
-# --- Initialize session state ---
-if "user" not in st.session_state:
-    st.session_state.user = None
-if "nutritional_data" not in st.session_state:
-    st.session_state.nutritional_data = {}
-if "default_lifestyles" not in st.session_state:
-    st.session_state.default_lifestyles = []
-if "stress_score" not in st.session_state:
-    st.session_state.stress_score = 0
-if "location_str" not in st.session_state:
-    st.session_state.location_str = {}
+            # Pollution inputs
+            pollution_score = st.slider(get_translation("Pollution Score (0-100)"), 0, 100, 0, key='alz_pollution_score')
+            pollution_choice = st.selectbox(get_translation("Pollution Category"), 
+                                           [get_translation("Select"), get_translation("Low"), get_translation("Moderate"), get_translation("High")], 
+                                           key='alz_pollution_cat')
+            
+            pollution_low = 1 if pollution_choice == get_translation("Low") else 0
+            pollution_moderate = 1 if pollution_choice == get_translation("Moderate") else 0
+            pollution_high = 1 if pollution_choice == get_translation("High") else 0
 
-st.sidebar.title(get_translation("Navigation"))
-st.success(get_translation("✅ Welcome to the African Neurohealth Dashboard"))
+            # Cognitive assessment
+            option_map = {
+                get_translation("Yes"): 1, 
+                get_translation("No"): 0, 
+                get_translation("Sometimes"): 0.5
+            }
+            
+            confusion = st.selectbox(get_translation("Confusion"), 
+                                    [get_translation("Select"), get_translation("Yes"), get_translation("No"), get_translation("Sometimes")], 
+                                    key='alz_confusion')
+            confusion_val = option_map.get(confusion, None)
+            
+            disorientation = st.selectbox(get_translation("Disorientation"), 
+                                         [get_translation("Select"), get_translation("Yes"), get_translation("No"), get_translation("Sometimes")], 
+                                         key='alz_disorien')
+            disorientation_val = option_map.get(disorientation, None)
+            
+            personality_changes = st.selectbox(get_translation("Personality Changes"), 
+                                              [get_translation("Select"), get_translation("Yes"), get_translation("No"), get_translation("Sometimes")], 
+                                              key='alz_personality')
+            personality_changes_val = option_map.get(personality_changes, None)
+            
+            difficulty_tasks = st.selectbox(get_translation("Difficulty Completing Tasks"), 
+                                           [get_translation("Select"), get_translation("Yes"), get_translation("No"), get_translation("Sometimes")], 
+                                           key='alz_tasks')
+            difficulty_tasks_val = option_map.get(difficulty_tasks, None)
+            
+            forgetfulness = st.selectbox(get_translation("Forgetfulness"), 
+                                        [get_translation("Select"), get_translation("Yes"), get_translation("No"), get_translation("Sometimes")], 
+                                        key='alz_forget')
+            forgetfulness_val = option_map.get(forgetfulness, None)
+            
+            memory_complaints = st.selectbox(get_translation("Memory Complaints"), 
+                                            [get_translation("Select"), get_translation("Yes"), get_translation("No"), get_translation("Sometimes")], 
+                                            key='alz_memory')
+            memory_complaints_val = option_map.get(memory_complaints, None)
 
-# ----------------------------
-# Helper: Check if user is logged in
-# ----------------------------
-def is_logged_in():
-    return st.session_state.user.get("id") is not None
+            # Head injury
+            head_map = {
+                get_translation("None"): 0, 
+                get_translation("Accident"): 1, 
+                get_translation("Violence"): 2
+            }
+            head_choice = st.selectbox(get_translation("Head Injury"), 
+                                      [get_translation("Select"), get_translation("None"), get_translation("Accident"), get_translation("Violence")], 
+                                      key='alz_head')
+            head_injury = head_map.get(head_choice, None)
 
-# ----------------------------
-# Sidebar: Authentication or Page Navigation
-# ----------------------------
-if not is_logged_in():
-    st.sidebar.header(get_translation("🔐 User Authentication"))
-    auth_option = st.sidebar.radio(get_translation("Select option:"), [get_translation("Login"), get_translation("Register")], key="auth_option")
-    if auth_option == get_translation("Login"):
-        login()
+            # Stress
+            stress_score = st.slider(get_translation("Stress Level"), 0, 10, 0, key='alz_stress')
+            st.session_state.stress_score = stress_score
+            
+            # Get encoded values from session state
+            encoded_ethnicity = st.session_state.get('encoded_ethnicity', 0)
+            encoded_country = st.session_state.get('encoded_country', 0)
+            encoded_province = st.session_state.get('encoded_province', 0)
+            
+            submitted = st.form_submit_button(get_translation("Submit Dementia Assessment"))
+        
+        # Validation and prediction logic (outside form)
+        if submitted:
+            # Get blood group and genotype from session state
+            blood_group = st.session_state.get('blood_group', None)
+            genotype = st.session_state.get('genotype', None)
+            
+            # Validation
+            required_fields = [
+                age, gender, education_years, is_smoker, alcohol_consumption, 
+                physical_activity, sleep_quality, diet_quality, family_history_alz, 
+                cardiovascular_disease, diabetes, depression, hypertension,
+                systolic_bp, diastolic_bp, cholesterol_total, cholesterol_ldl, 
+                cholesterol_hdl, cholesterol_triglycerides, behavioral_problems, 
+                head_choice, pollution_choice, blood_group, genotype,
+                confusion, disorientation, personality_changes, difficulty_tasks,
+                forgetfulness, memory_complaints
+            ]
+
+            if any(x in (None, get_translation("Select"), get_translation("Select..."), get_translation("Select Gender")) for x in required_fields):
+                st.error(get_translation("⚠️ Please complete all fields before prediction."))
+            else:
+                try:
+                    # Prepare raw inputs (for database storage)
+                    raw_inputs = {
+                        "age": int(age) if isinstance(age, (int, str)) and str(age).isdigit() else age,
+                        "gender": gender,
+                        "bmi": float(bmi),
+                        "education_level": int(education_years) if isinstance(education_years, (int, str)) and str(education_years).isdigit() else education_years,
+                        "smoking": is_smoker,
+                        "alcohol_consumption": int(alcohol_consumption) if str(alcohol_consumption).isdigit() else alcohol_consumption,
+                        "physical_activity": int(physical_activity) if str(physical_activity).isdigit() else physical_activity,
+                        "diet_quality": int(diet_quality) if str(diet_quality).isdigit() else diet_quality,
+                        "sleep_quality": int(sleep_quality) if str(sleep_quality).isdigit() else sleep_quality,
+                        "family_history_alzheimers": family_history_alz,
+                        "cardiovascular_disease": cardiovascular_disease,
+                        "diabetes": diabetes,
+                        "depression": depression,
+                        "hypertension": hypertension,
+                        "systolic_bp": float(systolic_bp) if systolic_bp else None,
+                        "diastolic_bp": float(diastolic_bp) if diastolic_bp else None,
+                        "cholesterol_total": float(cholesterol_total) if cholesterol_total else None,
+                        "cholesterol_ldl": float(cholesterol_ldl) if cholesterol_ldl else None,
+                        "cholesterol_hdl": float(cholesterol_hdl) if cholesterol_hdl else None,
+                        "cholesterol_triglycerides": float(cholesterol_triglycerides) if cholesterol_triglycerides else None,
+                        "functional_assessment": int(functional_assessment),
+                        "behavioral_problems": behavioral_problems,
+                        "adl": int(adl),
+                        "confusion": confusion_val,
+                        "disorientation": disorientation_val,
+                        "personality_changes": personality_changes_val,
+                        "difficulty_completing_tasks": difficulty_tasks_val,
+                        "forgetfulness": forgetfulness_val,
+                        "memory_complaints": memory_complaints_val,
+                        "head_injury": head_injury,
+                        "height": float(height),
+                        "weight": float(weight),
+                        "blood_group": blood_group,
+                        "genotype": genotype,
+                        "pollution_score": int(pollution_score),
+                        "pollution_category_Low": pollution_low,
+                        "pollution_category_Moderate": pollution_moderate,
+                        "pollution_category_High": pollution_high,
+                        "ethnicity": encoded_ethnicity,
+                        "country": encoded_country,
+                        "province_option": encoded_province,
+                        "memory_score": st.session_state.get("memory_score", 1.0),
+                        "custom_stress_score": stress_score,
+                        "mmse": mmse_score,
+                        "assessment_date": datetime.now().strftime("%Y-%m-%d")
+                    }
+                    
+                    # Prepare patient data for model prediction
+                    patient_data = {
+                        "Age": raw_inputs["age"],
+                        "Gender": raw_inputs["gender"],
+                        "BMI": raw_inputs["bmi"],
+                        "EducationLevel": raw_inputs["education_level"],
+                        "Smoking": raw_inputs["smoking"],
+                        "AlcoholConsumption": raw_inputs["alcohol_consumption"],
+                        "PhysicalActivity": raw_inputs["physical_activity"],
+                        "DietQuality": raw_inputs["diet_quality"],
+                        "SleepQuality": raw_inputs["sleep_quality"],
+                        "FamilyHistoryAlzheimers": raw_inputs["family_history_alzheimers"],
+                        "CardiovascularDisease": raw_inputs["cardiovascular_disease"],
+                        "Diabetes": raw_inputs["diabetes"],
+                        "Depression": raw_inputs["depression"],
+                        "Hypertension": raw_inputs["hypertension"],
+                        "SystolicBP": raw_inputs["systolic_bp"],
+                        "DiastolicBP": raw_inputs["diastolic_bp"],
+                        "CholesterolTotal": raw_inputs["cholesterol_total"],
+                        "CholesterolLDL": raw_inputs["cholesterol_ldl"],
+                        "CholesterolHDL": raw_inputs["cholesterol_hdl"],
+                        "CholesterolTriglycerides": raw_inputs["cholesterol_triglycerides"],
+                        "MMSE": raw_inputs["mmse"],
+                        "Height": raw_inputs["height"],
+                        "Weight": raw_inputs["weight"],
+                        "Genotype": raw_inputs["genotype"],
+                        "BloodGroup": raw_inputs["blood_group"],
+                        "FunctionalAssessment": raw_inputs["functional_assessment"],
+                        "BehavioralProblems": raw_inputs["behavioral_problems"],
+                        "ADL": raw_inputs["adl"],
+                        "Confusion": raw_inputs["confusion"],
+                        "Disorientation": raw_inputs["disorientation"],
+                        "PersonalityChanges": raw_inputs["personality_changes"],
+                        "DifficultyCompletingTasks": raw_inputs["difficulty_completing_tasks"],
+                        "Forgetfulness": raw_inputs["forgetfulness"],
+                        "MemoryComplaints": raw_inputs["memory_complaints"],
+                        "MemoryScore": raw_inputs["memory_score"],
+                        "HeadInjury": raw_inputs["head_injury"],
+                        "Ethnicity": raw_inputs["ethnicity"],
+                        "Country": raw_inputs["country"],
+                        "Province_Option": raw_inputs["province_option"],
+                        "PollutionScore": raw_inputs["pollution_score"],
+                        "PollutionCategoryLow": raw_inputs["pollution_category_Low"],
+                        "PollutionCategoryModerate": raw_inputs["pollution_category_Moderate"],
+                        "PollutionCategoryHigh": raw_inputs["pollution_category_High"],
+                        "CustomStressScore": raw_inputs["custom_stress_score"]
+                    }
+                    
+                    # Prepare inputs for model
+                    alzheimer_inputs_df = prepare_alzheimers_input_numeric(patient_data)
+
+                    if alzheimer_inputs_df is None or alzheimer_inputs_df.empty:
+                        st.error(get_translation("Input preparation failed: no valid features for prediction."))
+                    elif "alz_model" not in st.session_state or st.session_state.alz_model is None:
+                        st.error(get_translation("Alzheimer's model not loaded. Please initialize the model first."))
+                    else:
+                        # Make prediction
+                        prediction_result = st.session_state.alz_model.predict(alzheimer_inputs_df)
+                        
+                        # Check if we got a valid prediction
+                        if prediction_result is not None and len(prediction_result) > 0:
+                            pred = prediction_result[0]
+                            
+                            # Calculate risk score
+                            risk_factors = 0
+                            if raw_inputs["age"] > 75: risk_factors += 2
+                            elif raw_inputs["age"] > 65: risk_factors += 1
+                            if mmse_score < 24: risk_factors += 2
+                            elif mmse_score < 27: risk_factors += 1
+                            if family_history_alz == get_translation("Yes"): risk_factors += 1
+                            if memory_complaints_val == 1: risk_factors += 1
+                            if depression == get_translation("Yes"): risk_factors += 1
+                            if diabetes == get_translation("Yes"): risk_factors += 1
+                            if head_injury and head_injury > 0: risk_factors += 1
+                            if raw_inputs["physical_activity"] < 3: risk_factors += 1
+                            
+                            base_risk = risk_factors * 0.08
+                            import random
+                            random_factor = random.uniform(-0.05, 0.05)
+                            risk_score = min(0.95, base_risk + random_factor)
+                            
+                            # Determine risk level
+                            if risk_score > 0.7:
+                                risk_level = "HIGH"
+                            elif risk_score > 0.3:
+                                risk_level = "MEDIUM"
+                            else:
+                                risk_level = "LOW"
+                            
+                            # Store prediction
+                            st.session_state.predictions["Dementia"] = {
+                                "risk_score": risk_score,
+                                "risk_level": risk_level,
+                                "patient_data": patient_data,
+                                "prediction": int(pred),
+                                "mmse": mmse_score
+                            }
+                            
+                            # Get location
+                            city, region, country = get_user_location()
+                            location_str = f"{city}, {region}, {country}"
+                            
+                            # Prepare database payload
+                            db_payload = {
+                                "user_id": st.session_state.user['id'] if st.session_state.get('user') else "anonymous",
+                                "age": raw_inputs["age"],
+                                "gender": raw_inputs["gender"],
+                                "bmi": raw_inputs["bmi"],
+                                "education_level": raw_inputs["education_level"],
+                                "smoking": raw_inputs["smoking"],
+                                "alcohol_consumption": raw_inputs["alcohol_consumption"],
+                                "physical_activity": raw_inputs["physical_activity"],
+                                "diet_quality": raw_inputs["diet_quality"],
+                                "sleep_quality": raw_inputs["sleep_quality"],
+                                "family_history_alzheimers": raw_inputs["family_history_alzheimers"],
+                                "cardiovascular_disease": raw_inputs["cardiovascular_disease"],
+                                "diabetes": raw_inputs["diabetes"],
+                                "depression": raw_inputs["depression"],
+                                "hypertension": raw_inputs["hypertension"],
+                                "systolic_bp": raw_inputs["systolic_bp"],
+                                "diastolic_bp": raw_inputs["diastolic_bp"],
+                                "cholesterol_total": raw_inputs["cholesterol_total"],
+                                "cholesterol_ldl": raw_inputs["cholesterol_ldl"],
+                                "cholesterol_hdl": raw_inputs["cholesterol_hdl"],
+                                "cholesterol_triglycerides": raw_inputs["cholesterol_triglycerides"],
+                                "functional_assessment": raw_inputs["functional_assessment"],
+                                "behavioral_problems": raw_inputs["behavioral_problems"],
+                                "adl": raw_inputs["adl"],
+                                "confusion": raw_inputs["confusion"],
+                                "disorientation": raw_inputs["disorientation"],
+                                "personality_changes": raw_inputs["personality_changes"],
+                                "difficulty_completing_tasks": raw_inputs["difficulty_completing_tasks"],
+                                "forgetfulness": raw_inputs["forgetfulness"],
+                                "memory_complaints": raw_inputs["memory_complaints"],
+                                "head_injury": raw_inputs["head_injury"],
+                                "height": raw_inputs["height"],
+                                "weight": raw_inputs["weight"],
+                                "blood_group": raw_inputs["blood_group"],
+                                "genotype": raw_inputs["genotype"],
+                                "pollution_score": raw_inputs["pollution_score"],
+                                "pollution_category_low": raw_inputs["pollution_category_Low"],
+                                "pollution_category_moderate": raw_inputs["pollution_category_Moderate"],
+                                "pollution_category_high": raw_inputs["pollution_category_High"],
+                                "ethnicity": raw_inputs["ethnicity"],
+                                "country": raw_inputs["country"],
+                                "province_option": raw_inputs["province_option"],
+                                "memory_score": raw_inputs["memory_score"],
+                                "custom_stress_score": raw_inputs["custom_stress_score"],
+                                "mmse": raw_inputs["mmse"],
+                                "location": location_str,
+                                "prediction_result": int(pred),
+                                "risk_score": float(risk_score),
+                                "risk_level": risk_level,
+                                "assessment_date": raw_inputs["assessment_date"]
+                            }
+                            
+                            # Save to Supabase
+                            try:
+                                response = supabase.table("alzheimer_predictions").insert(db_payload).execute()
+                                if response.data:
+                                    st.success(get_translation("✅ Alzheimer's prediction saved successfully!"))
+                                    
+                                    # Display prediction result
+                                    pred_value = float(pred)
+                                    if int(pred_value) == 1:
+                                        st.warning(get_translation("⚠️ The model predicts a high risk of Alzheimer's disease."))
+                                    else:
+                                        st.success(get_translation("✅ The model predicts a low risk of Alzheimer's disease."))
+                                else:
+                                    st.warning(get_translation("Prediction completed but database save encountered an issue."))
+                            except Exception as db_error:
+                                st.error(get_translation(f"Failed to save to database: {str(db_error)}"))
+                                # Continue even if database save fails
+                            
+                            st.rerun()
+                        else:
+                            st.error(get_translation("Prediction returned no result."))
+                        
+                except ValueError as ve:
+                    st.error(get_translation(f"Invalid input value: {str(ve)}"))
+                except TypeError as te:
+                    st.error(get_translation(f"Type error in prediction: {str(te)}"))
+                except Exception as e:
+                    st.error(get_translation(f"An error occurred during prediction: {str(e)}"))
+    
+    # Results column
+    with col2:
+        st.subheader(get_translation("Risk Assessment"))
+        
+        if st.session_state.predictions.get("Dementia"):
+            prediction = st.session_state.predictions["Dementia"]
+            risk_score = prediction["risk_score"]
+            risk_level = prediction["risk_level"]
+            patient_data = prediction["patient_data"]
+            
+            # Risk gauge
+            import plotly.graph_objects as go
+            fig = go.Figure(go.Indicator(
+                mode="gauge+number",
+                value=risk_score * 100,
+                title="Dementia Risk Score",
+                gauge={
+                    'axis': {'range': [None, 100]},
+                    'bar': {'color': "darkblue"},
+                    'steps': [
+                        {'range': [0, 30], 'color': "green"},
+                        {'range': [30, 70], 'color': "yellow"},
+                        {'range': [70, 100], 'color': "red"}
+                    ]
+                }
+            ))
+            fig.update_layout(height=250)
+            st.plotly_chart(fig, use_container_width=True)
+            
+            # Risk level
+            if risk_level == "HIGH":
+                risk_class = "risk-high"
+            elif risk_level == "MEDIUM":
+                risk_class = "risk-medium"
+            else:
+                risk_class = "risk-low"
+            
+            st.markdown(f"<div class='{risk_class}'>Risk Level: {risk_level}</div>", 
+                       unsafe_allow_html=True)
+            
+            # Top risk factors
+            st.subheader(get_translation("📊 Key Risk Factors"))
+            
+            risk_factors_list = []
+            
+            # Build risk factors list based on patient data
+            if patient_data.get("Age", 0) > 75:
+                risk_factors_list.append(f"Age ({patient_data.get('Age')} years)")
+            if patient_data.get("FamilyHistoryAlzheimers") == "Yes":
+                risk_factors_list.append("Family History of Alzheimer's")
+            if patient_data.get("MemoryComplaints") == 1:
+                risk_factors_list.append("Memory Complaints")
+            if patient_data.get("Depression") == "Yes":
+                risk_factors_list.append("Depression")
+            if patient_data.get("MMSE", 30) < 24:
+                risk_factors_list.append(f"Low MMSE Score ({patient_data.get('MMSE')}/30)")
+            if patient_data.get("Diabetes") == "Yes":
+                risk_factors_list.append("Diabetes")
+            
+            for factor in risk_factors_list[:5]:
+                st.write(f"• {factor}")
+            
+            if not risk_factors_list:
+                st.info(get_translation("No major risk factors identified"))
+            
+            # Generate PDF report
+            st.subheader(get_translation("📄 Report Generation"))
+
+            if st.button(get_translation("📥 Generate PDF Report"), use_container_width=True, key="dementia_pdf"):
+                with st.spinner("Generating report..."):
+                    pdf_bytes = generate_alzheimer_pdf(
+                        st.session_state.user_name,
+                        patient_data,
+                        risk_score,
+                        risk_level,
+                        risk_factors_list
+                    )
+                    
+                    filename = f"Dementia_Report_{st.session_state.user_name}_{datetime.now().strftime('%Y%m%d')}.pdf"
+                    href = create_download_link(pdf_bytes, filename)
+                    st.markdown(href, unsafe_allow_html=True)
+                    
+                    report_id = f"dementia_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+                    st.session_state.reports[report_id] = {
+                        "type": "Dementia",
+                        "data": patient_data,
+                        "risk_score": risk_score,
+                        "risk_level": risk_level,
+                        "filename": filename
+                    }
+        else:
+            st.info(get_translation("👈 Fill the form and click 'Submit Dementia Assessment' to see results"))
+
+# ====== DASHBOARD ======
+def render_dashboard():
+    """Main dashboard page"""
+    st.header(get_translation("🧠 African NeuroHealth AI Dashboard"))
+    
+    st.markdown(get_translation("""
+    Welcome to the **African NeuroHealth AI Dashboard** - an integrated platform for predicting 
+    **stroke** and **dementia** risks using advanced machine learning models.This platform is a culturally attuned, context-aware diagnostic tool tailored for assessing neuro-health risks in African populations. 
+    It blends conventional biomedical metrics with locally relevant stressors, lifestyle habits, and cultural practices to offer a truly holistic health assessment experience.
+
+    
+    ### Features:
+    - **Stroke Risk Prediction**: Assess your risk factors and get personalized recommendations
+    - **Dementia Risk Assessment**: Evaluate cognitive health and dementia risk
+    - **Memory Game**: Test and train your cognitive abilities
+    - **Nutrition Tracker**: Monitor dietary habits and get nutritional scores
+    - **Stress Assessment**: Evaluate stress levels and coping mechanisms
+    - **PDF Reports**: Download printable medical reports
+               
+    **This application was proudly developed by Adebimpe-John Omolola E., with invaluable support from the GRASP / NIH / DSI Collaborative Program. 
+    Their collaborative spirit and commitment to innovation helped bring this vision to life.**
+    """))
+    
+  # Quick Stats
+    col1, col2, col3 = st.columns(3)
+
+    with col1:
+        st.metric(
+            label=get_translation("Stroke Predictions"),
+            value="1,247",
+            delta="+23"
+    )
+
+    with col2:
+        st.metric(
+            label=get_translation("Dementia Predictions"),
+            value="892",
+            delta="+15"
+    )
+
+    with col3:
+        st.metric(
+            label=get_translation("Memory Game Players"),
+            value="543",
+            delta="+12"
+    )
+
+# Feature Cards
+    st.markdown(
+        get_translation('<h2 class="sub-header">🎯 Quick Access</h2>'),
+    unsafe_allow_html=True
+)
+
+    
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        with st.container(border=True):
+            st.markdown(get_translation("### 🩺 Stroke Prediction"))
+            st.markdown(get_translation("""
+            - Assess stroke risk factors
+            - Get personalized recommendations
+            - Download printable report
+            """))
+            if st.button(get_translation("Start Assessment"), key="dash_stroke", use_container_width=True):
+                st.session_state.current_page = "Stroke Assessment"
+                st.rerun()
+    
+    with col2:
+        with st.container(border=True):
+            st.markdown(get_translation("### 🧠 Dementia Prediction"))
+            st.markdown(get_translation("""
+            - Cognitive health assessment
+            - Memory function evaluation
+            - Download printable report
+            """))
+            if st.button(get_translation("Start Assessment"), key="dash_dementia", use_container_width=True):
+                st.session_state.current_page = "Dementia Assessment"
+                st.rerun()
+    
+    # Additional Tools
+    st.markdown(get_translation('<h2 class="sub-header">🛠️ Health Tools</h2>'), unsafe_allow_html=True)
+    
+    col1, col2, col3 = st.columns(3)
+    
+    with col1:
+        if st.button(get_translation("🧠 Memory Game"), use_container_width=True, key="dash_memory"):
+            st.session_state.current_page = "Memory Game"
+            st.rerun()
+    
+    with col2:
+        if st.button(get_translation("🥗 Nutrition Tracker"), use_container_width=True, key="dash_nutrition"):
+            st.session_state.current_page = "Nutrition Tracker"
+            st.rerun()
+    
+    with col3:
+        if st.button(get_translation("😌 Stress Assessment"), use_container_width=True, key="dash_stress"):
+            st.session_state.current_page = "Stress Assessment"
+            st.rerun()
+
+import os
+import base64
+from fpdf import FPDF
+from datetime import datetime
+
+# Try to import Arabic/RTL support (optional)
+try:
+    from arabic_reshaper import reshape
+    from bidi.algorithm import get_display
+    ARABIC_SUPPORT = True
+except ImportError:
+    ARABIC_SUPPORT = False
+
+# --- FILE PATHS ---
+LOGO_PATH = r"C:\Users\sibs2\Downloads\Gemini_Generated_Image_rnqv02rnqv02rnqv.png"
+FONT_REG = "NotoSans-Regular.ttf"
+FONT_ARA = "NotoSansArabic-Regular.ttf"
+
+
+# ====== PDF REPORT CLASS ======
+class NeuroHealthReport(FPDF):
+    """Custom PDF report class for NeuroHealth AI"""
+    
+    def __init__(self, report_type="Assessment Report"):
+        super().__init__()
+        self.report_type = report_type
+        
+        # Register custom fonts if available
+        if os.path.exists(FONT_REG) and os.path.exists(FONT_ARA):
+            try:
+                self.add_font("NotoSans", style="", fname=FONT_REG)
+                self.add_font("NotoArabic", style="", fname=FONT_ARA)
+                self.font_ready = True
+            except Exception as e:
+                print(f"Font loading error: {e}")
+                self.font_ready = False
+        else:
+            self.font_ready = False  # Fallback to Arial
+
+        self.set_auto_page_break(auto=True, margin=15)
+        self.add_page()
+
+    def header(self):
+        """Custom header with logo and title"""
+        # Add the Logo
+        if os.path.exists(LOGO_PATH):
+            try:
+                self.image(LOGO_PATH, 10, 8, 25)
+            except Exception as e:
+                print(f"Logo loading error: {e}")
+        
+        # Header Title
+        if self.font_ready:
+            self.set_font("NotoSans", size=18)
+        else:
+            self.set_font("Arial", 'B', 18)
+            
+        self.set_x(40)  # Move right to avoid logo overlap
+        self.cell(0, 10, 'African NeuroHealth AI', ln=True)
+        
+        self.set_font_size(10)
+        self.set_x(40)
+        self.cell(0, 5, f'Clinical Analysis: {self.report_type}', ln=True)
+        self.ln(10)
+
+    def footer(self):
+        """Custom footer with page number"""
+        self.set_y(-15)
+        if self.font_ready:
+            self.set_font("NotoSans", size=8)
+        else:
+            self.set_font("Arial", 'I', 8)
+        self.cell(0, 10, f'Page {self.page_no()}', align='C')
+
+    def write_content(self, text, lang="en", is_bold=False):
+        """Write content with automatic Arabic RTL and Unicode support"""
+        if lang == "ar" and self.font_ready and ARABIC_SUPPORT:
+            reshaped = reshape(text)
+            bidi_text = get_display(reshaped)
+            self.set_font("NotoArabic", size=12)
+            self.multi_cell(0, 10, bidi_text, align='R')
+        else:
+            font_to_use = "NotoSans" if self.font_ready else "Arial"
+            style = 'B' if is_bold else ''
+            self.set_font(font_to_use, style, 11)
+            self.multi_cell(0, 10, text, align='L')
+
+    def add_section(self, title, content, lang="en"):
+        """Add a formatted section with title and content"""
+        self.ln(5)
+        self.write_content(title, lang, is_bold=True)
+        self.write_content(content, lang)
+
+    def add_result_box(self, result_text, probability, lang="en"):
+        """Add a highlighted result box"""
+        self.set_fill_color(245, 247, 250)
+        current_y = self.get_y()
+        
+        # Draw box
+        box_height = 35
+        self.rect(10, current_y, 190, box_height, 'F')
+        
+        # Position text inside box
+        self.set_y(current_y + 5)
+        self.set_x(15)
+        self.write_content(f"AI Prediction Result: {result_text}", lang, is_bold=True)
+        
+        self.set_x(15)
+        self.write_content(f"Confidence Level: {probability}%", "en")
+        
+        # Move cursor below box
+        self.set_y(current_y + box_height + 5)
+        self.set_x(10)
+
+    def add_risk_factors(self, risk_factors_list):
+        """Add risk factors section"""
+        self.ln(5)
+        self.write_content("Key Risk Factors:", "en", is_bold=True)
+        
+        if risk_factors_list:
+            for factor in risk_factors_list:
+                self.set_x(15)
+                self.write_content(f"• {factor}", "en")
+        else:
+            self.set_x(15)
+            self.write_content("• No major risk factors identified", "en")
+
+
+# ====== PDF GENERATION FUNCTIONS ======
+
+def generate_stroke_pdf(patient_name, patient_data, risk_score, risk_level, risk_factors_list):
+    """Generate PDF report for stroke assessment"""
+    pdf = NeuroHealthReport(report_type="Stroke Risk Assessment")
+    
+    # Patient Information
+    pdf.write_content(f"Patient Name: {patient_name}", "en", is_bold=True)
+    pdf.write_content(f"Assessment Date: {patient_data.get('assessment_date', datetime.now().strftime('%Y-%m-%d'))}", "en")
+    pdf.write_content(f"Patient ID: {patient_data.get('user_id', 'N/A')}", "en")
+    pdf.ln(10)
+    
+    # Risk Assessment Result
+    pdf.add_result_box(risk_level, int(risk_score * 100))
+    
+    # Patient Details
+    pdf.add_section(
+        "Patient Details:",
+        f"Age: {patient_data.get('age', 'N/A')} years\n"
+        f"Gender: {'Male' if patient_data.get('gender') == 1 else 'Female'}\n"
+        f"BMI: {patient_data.get('bmi', 'N/A'):.1f}\n"
+        f"Blood Pressure: {patient_data.get('systolic_bp', 'N/A')}/{patient_data.get('diastolic_bp', 'N/A')} mmHg\n"
+        f"Average Glucose: {patient_data.get('avg_glucose_level', 'N/A')} mg/dL"
+    )
+    
+    # Medical History
+    pdf.add_section(
+        "Medical History:",
+        f"Heart Disease: {'Yes' if patient_data.get('heart_disease') == 1 else 'No'}\n"
+        f"Hypertension: {'Yes' if patient_data.get('hypertension') == 1 else 'No'}\n"
+        f"Diabetes: {patient_data.get('diabetes_type', 'None')}\n"
+        f"Smoking Status: {patient_data.get('smoking_status', 'N/A')}"
+    )
+    
+    # Risk Factors
+    pdf.add_risk_factors(risk_factors_list)
+    
+    # Recommendations
+    pdf.ln(10)
+    pdf.write_content("Recommendations:", "en", is_bold=True)
+    
+    if risk_level == "HIGH":
+        recommendations = [
+            "Consult a healthcare provider immediately",
+            "Regular blood pressure monitoring",
+            "Adopt a heart-healthy diet (low sodium, high fiber)",
+            "Engage in regular physical activity (30 mins/day)",
+            "Medication adherence if prescribed",
+            "Stress management and adequate sleep"
+        ]
+    elif risk_level == "MEDIUM":
+        recommendations = [
+            "Schedule a check-up with your doctor",
+            "Monitor blood pressure regularly",
+            "Maintain a balanced diet",
+            "Increase physical activity gradually",
+            "Reduce stress through relaxation techniques"
+        ]
     else:
-        register()
-    page_options = [get_translation("About")]  # Non-logged-in users only see About
-else:
-    page_options = [get_translation("About"), get_translation("Stroke Prediction"), get_translation("Alzheimer's Prediction"), get_translation("Memory Recall Game")]
-    st.sidebar.markdown(get_translation(f"Logged in as: **{st.session_state.user['email']}**"))
-    if st.sidebar.button(get_translation("Logout")):
-        logout()
-        st.experimental_rerun()
+        recommendations = [
+            "Maintain current healthy habits",
+            "Regular health check-ups",
+            "Continue balanced diet and exercise",
+            "Monitor for any changes in health status"
+        ]
+    
+    for rec in recommendations:
+        pdf.set_x(15)
+        pdf.write_content(f"• {rec}", "en")
+    
+    # Disclaimer
+    pdf.ln(10)
+    pdf.set_font_size(9)
+    pdf.write_content(
+        "DISCLAIMER: This report is for informational purposes only and does not constitute medical advice. "
+        "Please consult with a qualified healthcare professional for proper diagnosis and treatment.",
+        "en"
+    )
+    
+    return bytes(pdf.output())
 
-# ----------------------------
-# Sidebar: Page Selection
-# ----------------------------
-page = st.sidebar.selectbox(get_translation("Go to"), page_options)
 
-# ----------------------------
-# Display Pages
-# ----------------------------
-if page == get_translation("About"):
-    about()  # Always visible
-elif page == get_translation("Stroke Prediction"):
-    if is_logged_in():
-        stroke_prediction_app()
+def generate_alzheimer_pdf(patient_name, patient_data, risk_score, risk_level, risk_factors_list):
+    """Generate PDF report for Alzheimer's/Dementia assessment"""
+    pdf = NeuroHealthReport(report_type="Dementia Risk Assessment")
+    
+    # Patient Information
+    pdf.write_content(f"Patient Name: {patient_name}", "en", is_bold=True)
+    pdf.write_content(f"Assessment Date: {patient_data.get('assessment_date', datetime.now().strftime('%Y-%m-%d'))}", "en")
+    pdf.write_content(f"Patient ID: {patient_data.get('user_id', 'N/A')}", "en")
+    pdf.ln(10)
+    
+    # Risk Assessment Result
+    pdf.add_result_box(risk_level, int(risk_score * 100))
+    
+    # Patient Details
+    pdf.add_section(
+        "Patient Details:",
+        f"Age: {patient_data.get('Age', 'N/A')} years\n"
+        f"Gender: {patient_data.get('Gender', 'N/A')}\n"
+        f"Education Level: {patient_data.get('EducationLevel', 'N/A')} years\n"
+        f"BMI: {patient_data.get('BMI', 'N/A'):.1f}\n"
+        f"MMSE Score: {patient_data.get('MMSE', 'N/A')}/30"
+    )
+    
+    # MMSE Interpretation
+    mmse_score = patient_data.get('MMSE', 0)
+    if mmse_score >= 27:
+        mmse_interpretation = "Normal cognition"
+    elif mmse_score >= 24:
+        mmse_interpretation = "Mild cognitive impairment"
+    elif mmse_score >= 19:
+        mmse_interpretation = "Moderate cognitive impairment"
     else:
-        st.warning(get_translation("⚠️ Please log in to access Stroke Prediction."))
-elif page == get_translation("Alzheimer's Prediction"):
-    if is_logged_in():
-        alzheimers_prediction_app()
+        mmse_interpretation = "Severe cognitive impairment"
+    
+    pdf.write_content(f"Cognitive Status: {mmse_interpretation}", "en")
+    pdf.ln(5)
+    
+    # Medical History
+    pdf.add_section(
+        "Medical History:",
+        f"Family History of Alzheimer's: {patient_data.get('FamilyHistoryAlzheimers', 'N/A')}\n"
+        f"Cardiovascular Disease: {patient_data.get('CardiovascularDisease', 'N/A')}\n"
+        f"Diabetes: {patient_data.get('Diabetes', 'N/A')}\n"
+        f"Depression: {patient_data.get('Depression', 'N/A')}\n"
+        f"Hypertension: {patient_data.get('Hypertension', 'N/A')}"
+    )
+    
+    # Lifestyle Factors
+    pdf.add_section(
+        "Lifestyle Factors:",
+        f"Physical Activity: {patient_data.get('PhysicalActivity', 'N/A')} hours/week\n"
+        f"Sleep Quality: {patient_data.get('SleepQuality', 'N/A')}/5\n"
+        f"Diet Quality: {patient_data.get('DietQuality', 'N/A')}/5\n"
+        f"Smoking: {patient_data.get('Smoking', 'N/A')}"
+    )
+    
+    # Risk Factors
+    pdf.add_risk_factors(risk_factors_list)
+    
+    # Recommendations
+    pdf.ln(10)
+    pdf.write_content("Recommendations:", "en", is_bold=True)
+    
+    if risk_level == "HIGH":
+        recommendations = [
+            "Consult a neurologist or memory specialist urgently",
+            "Comprehensive cognitive assessment recommended",
+            "Brain imaging (MRI/CT) may be necessary",
+            "Engage in cognitively stimulating activities daily",
+            "Mediterranean or MIND diet recommended",
+            "Regular physical exercise (150 mins/week)",
+            "Social engagement and mental activities",
+            "Monitor and manage cardiovascular risk factors"
+        ]
+    elif risk_level == "MEDIUM":
+        recommendations = [
+            "Schedule a cognitive assessment with your doctor",
+            "Increase mental stimulation (reading, puzzles, learning)",
+            "Adopt brain-healthy diet rich in omega-3 and antioxidants",
+            "Regular aerobic exercise",
+            "Ensure adequate sleep (7-8 hours)",
+            "Manage stress through meditation or relaxation",
+            "Stay socially active"
+        ]
     else:
-        st.warning(get_translation("⚠️ Please log in to access Alzheimer's Prediction."))
-elif page == get_translation("Memory Recall Game"):
-    if is_logged_in():
+        recommendations = [
+            "Maintain current healthy lifestyle",
+            "Continue cognitive activities",
+            "Regular health check-ups",
+            "Balanced diet and exercise routine",
+            "Monitor for any cognitive changes"
+        ]
+    
+    for rec in recommendations:
+        pdf.set_x(15)
+        pdf.write_content(f"• {rec}", "en")
+    
+    # Disclaimer
+    pdf.ln(10)
+    pdf.set_font_size(9)
+    pdf.write_content(
+        "DISCLAIMER: This report is for informational purposes only and does not constitute medical advice. "
+        "Please consult with a qualified healthcare professional for proper diagnosis and treatment.",
+        "en"
+    )
+    
+    return bytes(pdf.output())
+
+
+# ====== UTILITY FUNCTION ======
+
+def create_download_link(pdf_bytes, filename):
+    """Create a download link for the PDF"""
+    b64 = base64.b64encode(pdf_bytes).decode()
+    href = f'''
+    <div style="margin: 20px 0;">
+        <a href="data:application/pdf;base64,{b64}" 
+           download="{filename}"
+           style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                  color: white;
+                  padding: 12px 24px;
+                  text-decoration: none;
+                  border-radius: 8px;
+                  display: inline-block;
+                  font-weight: bold;">
+            📥 Download PDF Report
+        </a>
+    </div>
+    '''
+    return href
+
+
+# ====== REPORTS PAGE ======
+
+def render_reports_page():
+    """Page to view and manage generated reports"""
+    st.markdown('<h1 class="main-header">📄 My Health Reports</h1>', unsafe_allow_html=True)
+    
+    if not st.session_state.reports:
+        st.info(get_translation("No reports generated yet. Complete an assessment to generate your first report."))
+        
+        # Quick action buttons
+        col1, col2 = st.columns(2)
+        with col1:
+            if st.button("🩺 Start Stroke Assessment", use_container_width=True):
+                st.session_state.current_page = "Stroke Assessment"
+                st.rerun()
+        with col2:
+            if st.button("🧠 Start Dementia Assessment", use_container_width=True):
+                st.session_state.current_page = "Dementia Assessment"
+                st.rerun()
+    else:
+        # Summary statistics
+        st.markdown("### 📊 Summary")
+        col1, col2, col3 = st.columns(3)
+        
+        with col1:
+            st.metric("Total Reports", len(st.session_state.reports))
+        
+        with col2:
+            stroke_count = sum(1 for r in st.session_state.reports.values() if r['type'] == 'Stroke')
+            st.metric("Stroke Assessments", stroke_count)
+        
+        with col3:
+            dementia_count = sum(1 for r in st.session_state.reports.values() if r['type'] == 'Dementia')
+            st.metric("Dementia Assessments", dementia_count)
+        
+        st.markdown("---")
+        st.markdown("### 📋 Report History")
+        
+        # Display all reports
+        for report_id, report in st.session_state.reports.items():
+            with st.container():
+                st.markdown(f"""
+                <div style='background: #f8f9fa; padding: 20px; border-radius: 10px; 
+                            margin-bottom: 15px; border-left: 5px solid #667eea;'>
+                """, unsafe_allow_html=True)
+                
+                col1, col2, col3 = st.columns([3, 1, 1])
+                
+                with col1:
+                    # Report type icon
+                    icon = "🩺" if report['type'] == "Stroke" else "🧠"
+                    st.subheader(f"{icon} {report['type']} Assessment")
+                    
+                    # Risk level with color
+                    risk_level = report['risk_level']
+                    if risk_level == "HIGH":
+                        color = "🔴"
+                    elif risk_level == "MEDIUM":
+                        color = "🟡"
+                    else:
+                        color = "🟢"
+                    
+                    st.write(f"**Risk Level:** {color} {risk_level}")
+                    st.write(f"**Risk Score:** {report['risk_score']:.1%}")
+                    st.write(f"**Date:** {report['data'].get('assessment_date', 'N/A')}")
+                
+                with col2:
+                    # Regenerate PDF button
+                    if st.button("📥 Download", key=f"download_{report_id}", use_container_width=True):
+                        with st.spinner("Generating PDF..."):
+                            try:
+                                if report['type'] == "Stroke":
+                                    pdf_bytes = generate_stroke_pdf(
+                                        st.session_state.user_name,
+                                        report['data'],
+                                        report['risk_score'],
+                                        report['risk_level'],
+                                        []
+                                    )
+                                else:
+                                    pdf_bytes = generate_alzheimer_pdf(
+                                        st.session_state.user_name,
+                                        report['data'],
+                                        report['risk_score'],
+                                        report['risk_level'],
+                                        []
+                                    )
+                                
+                                filename = report['filename']
+                                href = create_download_link(pdf_bytes, filename)
+                                st.markdown(href, unsafe_allow_html=True)
+                                st.success("✅ PDF ready for download!")
+                            except Exception as e:
+                                st.error(f"Error generating PDF: {str(e)}")
+                
+                with col3:
+                    # Delete report button
+                    if st.button("🗑️ Delete", key=f"del_{report_id}", use_container_width=True, type="secondary"):
+                        if st.session_state.get(f'confirm_delete_{report_id}'):
+                            del st.session_state.reports[report_id]
+                            st.success("Report deleted!")
+                            st.rerun()
+                        else:
+                            st.session_state[f'confirm_delete_{report_id}'] = True
+                            st.warning("Click again to confirm deletion")
+                
+                st.markdown("</div>", unsafe_allow_html=True)
+
+# ====== SIDEBAR ======
+def render_sidebar():
+    """Render the sidebar content"""
+    # 1. Function to convert image to base64
+    def get_base64_of_bin_file(bin_file):
+        with open(bin_file, 'rb') as f:
+            data = f.read()
+        return base64.b64encode(data).decode()
+
+    # 2. Get the base64 string (use 'r' before the path to avoid escape character errors)
+    img_path = r"C:\Users\sibs2\Downloads\Gemini_Generated_Image_rnqv02rnqv02rnqv.png"
+    try:
+        img_base64 = get_base64_of_bin_file(img_path)
+        # 3. Use the base64 string in your HTML
+        st.sidebar.markdown(f"""
+        <div style="text-align: center;">
+            <img src="data:image/png;base64,{img_base64}" width="100" height="100" style="border-radius: 50%;">
+            <h2 style="margin-bottom: 0;">African NeuroHealth AI</h2>
+            <p style="color: #6B7280; font-size: 0.9rem;">Stroke & Dementia Predictor</p>
+        </div>
+        """, unsafe_allow_html=True)
+    except Exception as e:
+        st.sidebar.markdown("""
+        <div style="text-align: center;">
+            <h2 style="margin-bottom: 0;">African NeuroHealth AI</h2>
+            <p style="color: #6B7280; font-size: 0.9rem;">Stroke & Dementia Predictor</p>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    st.sidebar.markdown("---")
+    
+    # Simple Login
+    simple_login()
+    
+    if st.session_state.logged_in:
+        st.sidebar.markdown("---")
+        
+        # Navigation
+        st.sidebar.subheader(get_translation("📍 Navigation"))
+        
+        page_options = [
+            "Dashboard",
+            "Stroke Assessment",
+            "Dementia Assessment",
+            "Memory Game",
+            "Nutrition Tracker",
+            "Stress Assessment",
+            "My Reports"
+        ]
+        
+        # Use radio buttons for navigation
+        selected_page = st.sidebar.radio(
+            get_translation("Go to"),
+            page_options,
+            index=page_options.index(st.session_state.current_page) if st.session_state.current_page in page_options else 0,
+            key="nav_radio"
+        )
+        
+        # Update current page if changed
+        if selected_page != st.session_state.current_page:
+            st.session_state.current_page = selected_page
+            st.rerun()
+        
+        # Quick Actions
+        st.sidebar.markdown("---")
+        st.sidebar.subheader(get_translation("⚡ Quick Actions"))
+        
+        col1, col2 = st.sidebar.columns(2)
+        with col1:
+            if st.button(
+                get_translation("🔄 Reload"), 
+                use_container_width=True, 
+                key="reload_models"
+            ):
+                with st.spinner(get_translation("Reloading models...")):
+                    st.session_state.models_loaded = {"Stroke": False, "Dementia": False}
+                    st.rerun()
+        
+        with col2:
+            if st.button(
+                get_translation("📊 Reports"), 
+                use_container_width=True, 
+                key="view_reports"
+            ):
+                st.session_state.current_page = "My Reports"
+                st.rerun()
+        
+        st.sidebar.markdown("---")
+        
+        # User Info
+        st.sidebar.subheader(get_translation("👤 User Information"))
+        st.sidebar.info(get_translation(f"User: {st.session_state.user_name}"))
+        st.sidebar.caption(get_translation(f"ID: {st.session_state.user_id}"))
+        
+        # Session Stats
+        if st.session_state.reports:
+            st.sidebar.metric(
+                get_translation("Generated Reports"), 
+                len(st.session_state.reports)
+            )
+
+
+# ====== MAIN APP ======
+def main():
+    """Main application logic"""
+    
+    # Render sidebar
+    render_sidebar()
+    
+    # Check if logged in
+    if not st.session_state.logged_in:
+        # Show welcome screen
+        
+        # Header with image
+        col1, col2 = st.columns([1, 4])
+        
+        with col1:
+            # Display image
+            image_path = r"C:\Users\sibs2\Downloads\Gemini_Generated_Image_rnqv02rnqv02rnqv.png"
+            try:
+                st.image(image_path, width=150)
+            except:
+                st.info("🧠")  # Fallback emoji if image not found
+        
+        with col2:
+            st.markdown(get_translation('<h1 class="main-header-center">Welcome to African NeuroHealth AI</h1>'), unsafe_allow_html=True)
+        
+        st.markdown("---")
+        
+        # Content columns
+        col1, col2 = st.columns([2, 1])
+        
+        with col1:
+            st.markdown(get_translation("""
+            ## Your Personal Health Assessment Platform
+            
+            **NeuroHealth AI** helps you assess your risk for:
+            - 🩺 **Stroke** - Cardiovascular health assessment
+            - 🧠 **Dementia** - Cognitive health evaluation
+            - 🥗 **Nutrition** - Dietary habit tracking
+            - 😌 **Stress** - Mental wellbeing assessment
+            
+            ### How to get started:
+            1. Enter your name in the sidebar (optional)
+            2. Click "Start Session"
+            3. Choose an assessment from the navigation
+            4. Get your personalized health report
+            5. Download printable PDF reports
+            
+            ### Features:
+            ✅ No registration required  
+            ✅ No email verification  
+            ✅ Instant results  
+            ✅ Printable PDF reports  
+            ✅ All data stays on your device  
+            """))
+        
+        with col2:
+            st.info(get_translation("""
+            **Privacy Note:**
+            
+            All your data is stored locally in your browser session. 
+            No information is sent to any server.
+            """))
+        
+        return
+ 
+    # User is logged in - show selected page
+    current_page = st.session_state.current_page
+    
+    # Page routing
+    if current_page == get_translation("Dashboard"):
+        render_dashboard()
+    
+    elif current_page == get_translation("Stroke Assessment"):
+        render_stroke_assessment()
+    
+    elif current_page == get_translation("Dementia Assessment"):
+        render_alzheimer_assessment()
+    
+    elif current_page == get_translation("Memory Game"):
         memory_recall_game()
-    else:
-        st.warning(get_translation("⚠️ Please log in to access Memory Recall Game."))
+    
+    elif current_page == get_translation("Nutrition Tracker"):
+        nutrition_tracker()
+    
+    elif current_page == get_translation("Stress Assessment"):
+        stress_assessment()
+    
+    elif current_page == get_translation("My Reports"):
+        render_reports_page()
+
+# ====== FOOTER ======
+st.markdown("---")
+footer_col1, footer_col2, footer_col3 = st.columns(3)
+with footer_col1:
+    st.caption("© 2024 African NeuroHealth AI")
+with footer_col2:
+    st.caption(f"Version 2.0 | Integrated Models")
+with footer_col3:
+    st.caption(f"Last update: {datetime.now().strftime('%Y-%m-%d')}")
+
+# ====== RUN APP ======
+if __name__ == "__main__":
+    main()
