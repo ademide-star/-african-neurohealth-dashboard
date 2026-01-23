@@ -2240,6 +2240,24 @@ def render_alzheimer_assessment():
                     }
         else:
             st.info(get_translation("👈 Fill the form and click 'Submit Dementia Assessment' to see results"))
+
+import streamlit as st
+import time
+
+
+def animated_metric(label, target_value, delta, duration=0.6, steps=20):
+    placeholder = st.empty()
+    step_value = max(1, target_value // steps)
+
+    for i in range(steps + 1):
+        current = min(i * step_value, target_value)
+        placeholder.metric(
+            label=label,
+            value=f"{current:,}",
+            delta=delta
+        )
+        time.sleep(duration / steps)
+
 def get_dashboard_stats():
     """Return dashboard statistics"""
     return {
@@ -3010,6 +3028,7 @@ with footer_col3:
 # ====== RUN APP ======
 if __name__ == "__main__":
     main()
+
 
 
 
