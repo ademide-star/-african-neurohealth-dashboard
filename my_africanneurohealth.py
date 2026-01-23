@@ -99,7 +99,19 @@ from translations import get_translation, set_language_selector
 
 import streamlit as st
 from translations import get_translation, set_language_selector
+import streamlit as st
+import time
 
+@st.cache_data(ttl=60)
+def get_dashboard_stats():
+    """
+    Fetch dashboard statistics from model / DB
+    """
+    return {
+        "stroke": {"value": 1247},
+        "dementia": {"value": 892},
+        "memory": {"value": 543}
+    }
 # --- 1. SET UP LANGUAGE (Only call this ONCE) ---
 lang = set_language_selector(widget_key="app_language_selector")
 
@@ -2228,11 +2240,20 @@ def render_alzheimer_assessment():
                     }
         else:
             st.info(get_translation("👈 Fill the form and click 'Submit Dementia Assessment' to see results"))
-
+def get_dashboard_stats():
+    """Return dashboard statistics"""
+    return {
+        "stroke": {"value": 1247, "delta": "+23"},
+        "dementia": {"value": 892, "delta": "+15"},
+        "memory": {"value": 543, "delta": "+12"}
+    }
+stats = get_dashboard_stats()
+if "previous_stats" not in st.session_state:
+    st.session_state.previous_stats = stats
 # ====== DASHBOARD ======
 def render_dashboard():
     """Main dashboard page"""
-    st.header(get_translation("🧠 African NeuroHealth AI Dashboard"))
+    st.header(get_translation("🧠 African NeuroHealth AI Dashboard- Stroke and Dementia Predictor"))
     
     st.markdown(get_translation("""
     Welcome to the **African NeuroHealth AI Dashboard** - an integrated platform for predicting 
@@ -2256,26 +2277,27 @@ def render_dashboard():
     col1, col2, col3 = st.columns(3)
 
     with col1:
-        st.metric(
-            label=get_translation("Stroke Predictions"),
-            value="1,247",
+        animated_metric(
+            label="🧠 " + get_translation("Stroke Predictions"),
+            target_value=1247,
             delta="+23"
-    )
+        )
 
     with col2:
-        st.metric(
-            label=get_translation("Dementia Predictions"),
-            value="892",
+        animated_metric(
+            label="🧓 " + get_translation("Dementia Predictions"),
+            target_value=892,
             delta="+15"
-    )
-
+        )
+    
     with col3:
-        st.metric(
-            label=get_translation("Memory Game Players"),
-            value="543",
+        animated_metric(
+            label="🎮 " + get_translation("Memory Game Players"),
+            target_value=543,
             delta="+12"
-    )
-
+        )
+    st.session_state.previous_stats = stats
+    
 # Feature Cards
     st.markdown(
         get_translation('<h2 class="sub-header">🎯 Quick Access</h2>'),
@@ -2988,6 +3010,7 @@ with footer_col3:
 # ====== RUN APP ======
 if __name__ == "__main__":
     main()
+
 
 
 
