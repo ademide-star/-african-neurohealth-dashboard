@@ -643,7 +643,7 @@ import random
 
 def memory_recall_game():
     """Memory recall game for cognitive assessment with auto-hide and timer"""
-    st.markdown(get_translation('<h1 class="main-header">🧠 Memory Recall Game</h1>', unsafe_allow_html=True))
+    st.markdown(get_translation('<h1 class="main-header">🧠 Memory Recall Game</h1>'), unsafe_allow_html=True)
     
     # Initialize memory game state
     if 'memory_game' not in st.session_state or st.session_state.memory_game is None:
@@ -674,7 +674,7 @@ def memory_recall_game():
             <h2>🎮 Memory Challenge</h2>
             <p style='font-size: 18px;'>Test your memory and cognitive abilities!</p>
         </div>
-        """, unsafe_allow_html=True))
+        """,) unsafe_allow_html=True)
         
         st.markdown("---")
         
@@ -691,7 +691,7 @@ def memory_recall_game():
                     • Get {4 + game['level'] - 1} correct to advance!
                 </p>
             </div>
-            """, unsafe_allow_html=True))
+            """,) unsafe_allow_html=True)
             
             if st.button(get_translation("🎯 Start Memory Exercise", key="memory_start", use_container_width=True)):
                 num_words = 4 + game["level"]
@@ -3108,6 +3108,7 @@ with footer_col3:
 # ====== RUN APP ======
 if __name__ == "__main__":
     main()
+
 
 
 
