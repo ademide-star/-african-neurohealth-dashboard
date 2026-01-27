@@ -939,7 +939,7 @@ def nutrition_tracker():
         
         with col2:
             supplements = st.text_input(get_translation("Supplements Used (e.g., Vitamin D, Omega-3)"), key="supplements")
-            herbs = st.text_input(get_translation("Natural Herbs Taken (e.g., Ginger, Turmeric)"), key="herbs")
+            natural_herbs = st.text_input(get_translation("Natural Herbs Taken (e.g., Ginger, Turmeric)"), key="herbs")
         
         # Lifestyle selection
         lifestyle_options = [
@@ -3153,6 +3153,7 @@ with footer_col3:
 # ====== RUN APP ======
 if __name__ == "__main__":
     main()
+
 
 
 
