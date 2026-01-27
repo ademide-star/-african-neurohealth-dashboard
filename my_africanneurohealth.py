@@ -929,28 +929,50 @@ def nutrition_tracker():
     """Nutritional lifestyle tracker"""
     st.markdown(get_translation('<h1 class="main-header">🥗 Nutrition Tracker</h1>'), unsafe_allow_html=True)
     
-    with st.expander(get_translation("Track Your Nutrition", expanded=True)):
+    with st.expander(get_translation("Track Your Nutrition"), expanded=True):
         col1, col2 = st.columns(2)
         
         with col1:
-            fruit_intake = st.number_input(get_translation("Fruit Intake (servings per day)", min_value=0, max_value=20, value=2, key="fruit_intake"))
-            vegetable_intake = st.number_input(get_translation("Vegetable Intake (servings per day)", min_value=0, max_value=20, value=3, key="vegetable_intake"))
-            hydration = st.number_input(get_translation("Water Intake (liters per day)", min_value=0.0, max_value=10.0, value=2.0, key="hydration"))
+            fruit_intake = st.number_input(get_translation("Fruit Intake (servings per day)"), min_value=0, max_value=20, value=2, key="fruit_intake")
+            vegetable_intake = st.number_input(get_translation("Vegetable Intake (servings per day)"), min_value=0, max_value=20, value=3, key="vegetable_intake")
+            hydration = st.number_input(get_translation("Water Intake (liters per day)"), min_value=0.0, max_value=10.0, value=2.0, key="hydration")
         
         with col2:
-            supplements = st.text_input(get_translation("Supplements Used (e.g., Vitamin D, Omega-3)", key="supplements"))
-            herbs = st.text_input(get_translation("Natural Herbs Taken (e.g., Ginger, Turmeric)", key="herbs"))
+            supplements = st.text_input(get_translation("Supplements Used (e.g., Vitamin D, Omega-3)"), key="supplements")
+            herbs = st.text_input(get_translation("Natural Herbs Taken (e.g., Ginger, Turmeric)"), key="herbs")
         
         # Lifestyle selection
         lifestyle_options = [
-            "Homemade Food", "Vegetarian", "Vegan", "Mediterranean", "Pescatarian",
-            "Local Street Food", "Junk Food", "Fast Foods", "Keto", "Paleo"
+            get_translation("Homemade Food"), 
+            get_translation("Vegetarian"), 
+            get_translation("Vegan"), 
+            get_translation("Mediterranean"), 
+            get_translation("Pescatarian"),
+            get_translation("Local Street Food"), 
+            get_translation("Junk Food"), 
+            get_translation("Fast Foods"), 
+            get_translation("Keto"), 
+            get_translation("Paleo")
         ]
-        selected_lifestyles = st.multiselect(get_translation("Select Nutritional Lifestyles", lifestyle_options, key="lifestyles"), lifestyle_options)
+        
+        selected_lifestyles = st.multiselect(
+            get_translation("Select Nutritional Lifestyles"), 
+            lifestyle_options, 
+            key="lifestyles"
+        )
         
         # Calculate nutritional score
-        positive_lifestyles = ["Homemade Food", "Vegetarian", "Vegan", "Mediterranean", "Pescatarian"]
-        negative_lifestyles = ["Junk Food", "Fast Foods"]
+        positive_lifestyles = [
+            get_translation("Homemade Food"), 
+            get_translation("Vegetarian"), 
+            get_translation("Vegan"), 
+            get_translation("Mediterranean"), 
+            get_translation("Pescatarian")
+        ]
+        negative_lifestyles = [
+            get_translation("Junk Food"), 
+            get_translation("Fast Foods")
+        ]
         
         positive_score = sum(1 for lifestyle in selected_lifestyles if lifestyle in positive_lifestyles)
         negative_score = sum(1 for lifestyle in selected_lifestyles if lifestyle in negative_lifestyles)
@@ -959,7 +981,7 @@ def nutrition_tracker():
         nutritional_score = max(1, min(5, round(raw_score)))
         
         # Display score
-        st.metric(get_translation("Nutritional Health Score", f"{nutritional_score}/5"))
+        st.metric(get_translation("Nutritional Health Score"), f"{nutritional_score}/5")
         
         # Store in session state and prepare database payload
         nutrition_data = {
@@ -974,49 +996,59 @@ def nutrition_tracker():
         
         st.session_state.nutritional_score = nutritional_score
         st.session_state.nutrition_data = nutrition_data
-
-        response = supabase.table("nutrition_tracker").insert(nutrition_data).execute()
-        if response.data:
-            st.success(get_translation("Nutrition data saved!"))
+        
+        # Check if supabase is defined before using it
+        if 'supabase' in globals() or 'supabase' in st.session_state:
+            supabase_instance = supabase if 'supabase' in globals() else st.session_state.supabase
+            try:
+                response = supabase_instance.table("nutrition_tracker").insert(nutrition_data).execute()
+                if response.data:
+                    st.success(get_translation("Nutrition data saved!"))
+                else:
+                    st.error(get_translation(f"Failed to save nutrition data: {response.error}"))
+                    st.stop()
+            except Exception as e:
+                st.warning(get_translation(f"Could not save to database: {str(e)}"))
         else:
-            st.error(get_translation(f"Failed to save nutrition data: {response.error}"))
+            st.info(get_translation("Nutrition data stored locally. Database connection not available."))
 
-            st.stop()
 # ====== STRESS ASSESSMENT ======
 def stress_assessment():
     """Stress assessment tool"""
-    st.markdown(get_translation('<h1 class="main-header">😌 Stress Assessment</h1>', unsafe_allow_html=True))
+    st.markdown(get_translation('<h1 class="main-header">😌 Stress Assessment</h1>'), unsafe_allow_html=True)
     
-    with st.expander(get_translation("Assess Your Stress Levels", expanded=True)):
+    with st.expander(get_translation("Assess Your Stress Levels"), expanded=True):
         st.write(get_translation("Rate your stress levels for the following factors (0-4):"))
         
         col1, col2 = st.columns(2)
         
         with col1:
-            financial_stress = st.slider(get_translation("Financial pressure/burden", 0, 4, 2, key="financial_stress"))
-            family_stress = st.slider(get_translation("Family/relationship issues", 0, 4, 2, key="family_stress"))
-            work_stress = st.slider(get_translation("Work/employment stress", 0, 4, 2, key="work_stress"))
-            safety_stress = st.slider(get_translation("Community safety concerns", 0, 4, 2, key="safety_stress"))
+            financial_stress = st.slider(get_translation("Financial pressure/burden"), 0, 4, 2, key="financial_stress")
+            family_stress = st.slider(get_translation("Family/relationship issues"), 0, 4, 2, key="family_stress")
+            work_stress = st.slider(get_translation("Work/employment stress"), 0, 4, 2, key="work_stress")
+            safety_stress = st.slider(get_translation("Community safety concerns"), 0, 4, 2, key="safety_stress")
         
         with col2:
-            caregiver_stress = st.slider(get_translation("Caregiver burden", 0, 4, 2, key="caregiver_stress"))
-            migration_stress = st.slider(get_translation("Migration/displacement stress", 0, 4, 2, key="migration_stress"))
-            family_expectations = st.slider(get_translation("Traditional family expectations", 0, 4, 2, key="family_expectations"))
-            spiritual_stress = st.slider(get_translation("Spiritual/religious conflicts", 0, 4, 2, key="spiritual_stress"))
+            caregiver_stress = st.slider(get_translation("Caregiver burden"), 0, 4, 2, key="caregiver_stress")
+            migration_stress = st.slider(get_translation("Migration/displacement stress"), 0, 4, 2, key="migration_stress")
+            family_expectations = st.slider(get_translation("Traditional family expectations"), 0, 4, 2, key="family_expectations")
+            spiritual_stress = st.slider(get_translation("Spiritual/religious conflicts"), 0, 4, 2, key="spiritual_stress")
         
         # Calculate total stress score
-        total_score = (financial_stress + family_stress + work_stress + safety_stress +
-                      caregiver_stress + migration_stress + family_expectations + spiritual_stress)
+        total_score = (
+            financial_stress + family_stress + work_stress + safety_stress +
+            caregiver_stress + migration_stress + family_expectations + spiritual_stress
+        )
         
         # Determine stress level
         if total_score <= 12:
-            level = "Low"
+            level = get_translation("Low")
             color = "green"
         elif total_score <= 20:
-            level = "Moderate"
+            level = get_translation("Moderate")
             color = "orange"
         else:
-            level = "High"
+            level = get_translation("High")
             color = "red"
         
         # Display results
@@ -1025,7 +1057,7 @@ def stress_assessment():
             <h4>🧠 Total Stress Score: <span style='color:{color};'>{total_score}/32</span> → {level} Stress</h4>
             <p><small>Higher scores indicate greater exposure to stressors</small></p>
         </div>
-        """, unsafe_allow_html=True))
+        """), unsafe_allow_html=True)
         
         # Store in session state
         st.session_state.stress_score = total_score
@@ -3121,6 +3153,7 @@ with footer_col3:
 # ====== RUN APP ======
 if __name__ == "__main__":
     main()
+
 
 
 
