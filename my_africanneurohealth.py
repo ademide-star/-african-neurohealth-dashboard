@@ -996,10 +996,6 @@ def nutrition_tracker():
             "user_id": st.session_state.get('user_id')  # Get user_id from session state
         }
         
-        # Add current date if your table requires it
-        if 'date' not in nutrition_data:
-            from datetime import date
-            nutrition_data['date'] = date.today().isoformat()
         
         st.session_state.nutritional_score = nutritional_score
         st.session_state.nutrition_data = nutrition_data
@@ -1081,8 +1077,8 @@ def stress_assessment():
             "family_expectations": family_expectations,
             "spiritual_stress": spiritual_stress,
             "total_score": total_score,
-            "stress_level": level,
-            "date": datetime.date.today().isoformat(),
+            "stress_level": level
+       
         }
         
         # Add user_id if authenticated, otherwise use session_id
@@ -3195,6 +3191,7 @@ with footer_col3:
 # ====== RUN APP ======
 if __name__ == "__main__":
     main()
+
 
 
 
