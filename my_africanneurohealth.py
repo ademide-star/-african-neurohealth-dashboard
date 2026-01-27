@@ -927,7 +927,7 @@ def memory_recall_game():
 # ====== NUTRITION TRACKER ======
 def nutrition_tracker():
     """Nutritional lifestyle tracker"""
-    st.markdown(get_translation('<h1 class="main-header">🥗 Nutrition Tracker</h1>'), unsafe_allow_html=True))
+    st.markdown(get_translation('<h1 class="main-header">🥗 Nutrition Tracker</h1>'), unsafe_allow_html=True)
     
     with st.expander(get_translation("Track Your Nutrition", expanded=True)):
         col1, col2 = st.columns(2)
@@ -3121,6 +3121,7 @@ with footer_col3:
 # ====== RUN APP ======
 if __name__ == "__main__":
     main()
+
 
 
 
