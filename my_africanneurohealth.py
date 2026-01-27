@@ -640,6 +640,18 @@ def load_dementia_model():
 # ====== MEMORY GAME - REFACTORED ======
 import time
 import random
+from datetime import datetime
+import streamlit as st
+
+# Simple translation function (placeholder - modify as needed)
+def get_translation(text, key=None, help=None, placeholder=None, use_container_width=None, clear_on_submit=None, expanded=None):
+    """
+    Simple translation function that returns the input text.
+    In a real implementation, this would translate text based on user language.
+    """
+    # You can add language detection and translation logic here
+    # For now, just return the text as-is
+    return text
 
 def memory_recall_game():
     """Memory recall game for cognitive assessment with auto-hide and timer"""
@@ -667,17 +679,17 @@ def memory_recall_game():
     ]
     
     # ==================== START SCREEN ====================
-    st.markdown(
-        get_translation("""
-        <div style='background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
-                padding: 30px; border-radius: 15px; color: white; text-align: center;'>
-            <h2>🎮 Memory Challenge</h2>
-            <p style='font-size: 18px;'>Test your memory and cognitive abilities!</p>
-        </div>
-        """),
-        unsafe_allow_html=True
-)
-
+    if game["state"] == "start":
+        st.markdown(
+            get_translation("""
+            <div style='background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+                    padding: 30px; border-radius: 15px; color: white; text-align: center;'>
+                <h2>🎮 Memory Challenge</h2>
+                <p style='font-size: 18px;'>Test your memory and cognitive abilities!</p>
+            </div>
+            """),
+            unsafe_allow_html=True
+        )
         
         col1, col2, col3 = st.columns([1, 2, 1])
         with col2:
@@ -692,9 +704,9 @@ def memory_recall_game():
                     • Get {4 + game['level'] - 1} correct to advance!
                 </p>
             </div>
-            """, unsafe_allow_html=True))
+            """), unsafe_allow_html=True)
             
-            if st.button(get_translation("🎯 Start Memory Exercise", key="memory_start", use_container_width=True)):
+            if st.button(get_translation("🎯 Start Memory Exercise"), key="memory_start", use_container_width=True):
                 num_words = 4 + game["level"]
                 words = random.sample(WORD_POOL, num_words)
                 game["words"] = words
@@ -727,11 +739,11 @@ def memory_recall_game():
                 </div>
                 <p style='color: white; font-size: 18px; margin-top: 10px;'>seconds remaining</p>
             </div>
-            """, unsafe_allow_html=True))
+            """), unsafe_allow_html=True)
             
             # Progress bar
-            progress = 1 - (get_translation(time_remaining / 5))
-            st.progress(get_translation(progress))
+            progress = 1 - (time_remaining / 5)
+            st.progress(progress)
             
             # Auto-refresh every 0.1 seconds to update countdown
             time.sleep(0.1)
@@ -749,7 +761,7 @@ def memory_recall_game():
             <h2>🤔 Time to Recall!</h2>
             <p style='font-size: 18px;'>Type the words you remember below</p>
         </div>
-        """, unsafe_allow_html=True))
+        """), unsafe_allow_html=True)
         
         st.markdown("---")
         
@@ -757,18 +769,18 @@ def memory_recall_game():
         st.info(get_translation("💡 **Tip:** Separate words with commas (e.g., apple, tree, sun)"))
         
         # Recall form
-        with st.form(get_translation("recall_form", clear_on_submit=True)):
-            recalled_input = st.text_input(get_translation(
-                "Enter the words you remember:",
-                placeholder="word1, word2, word3...",
+        with st.form(get_translation("recall_form"), clear_on_submit=True):
+            recalled_input = st.text_input(
+                get_translation("Enter the words you remember:"),
+                placeholder=get_translation("word1, word2, word3..."),
                 key="recall_input",
-                help="Separate multiple words with commas"
-            ))
+                help=get_translation("Separate multiple words with commas")
+            )
             
             col1, col2, col3 = st.columns([1, 2, 1])
             with col2:
                 submit = st.form_submit_button(
-                    "✅ Submit Your Answer",
+                    get_translation("✅ Submit Your Answer"),
                     use_container_width=True,
                     type="primary"
                 )
@@ -816,28 +828,28 @@ def memory_recall_game():
                 with st.expander(get_translation("📝 Detailed Breakdown")):
                     st.write(get_translation("**Words you got correct:**"))
                     if correct_words & recalled_set:
-                        st.success(get_translation(", ".join(sorted(correct_words & recalled_set))))
+                        st.success(", ".join(sorted(correct_words & recalled_set)))
                     else:
-                        st.write("None")
+                        st.write(get_translation("None"))
                     
                     st.write(get_translation("**Words you missed:**"))
                     if correct_words - recalled_set:
-                        st.warning(get_translation(", ".join(sorted(correct_words - recalled_set))))
+                        st.warning(", ".join(sorted(correct_words - recalled_set)))
                     else:
-                        st.write("None")
+                        st.write(get_translation("None"))
                     
                     if recalled_set - correct_words:
                         st.write(get_translation("**Incorrect words:**"))
-                        st.error(get_translation(", ".join(sorted(recalled_set - correct_words))))
+                        st.error(", ".join(sorted(recalled_set - correct_words)))
                 
                 # Level progression
                 threshold = len(game['words']) - 1  # Need all but one correct to advance
                 if correct_count >= threshold:
                     st.balloons()
-                    st.success("🎉 **Excellent!** You advance to the next level!")
+                    st.success(get_translation("🎉 **Excellent!** You advance to the next level!"))
                     game["level"] += 1
                 else:
-                    st.info("📚 Keep practicing! You'll stay on this level to improve.")
+                    st.info(get_translation("📚 Keep practicing! You'll stay on this level to improve."))
                 
                 # Save score to history
                 game["score_history"].append({
@@ -852,7 +864,7 @@ def memory_recall_game():
                 st.session_state.memory_score = memory_score
                 
                 # Button to continue
-                if st.button("🔄 Play Again", use_container_width=True, type="primary"):
+                if st.button(get_translation("🔄 Play Again"), use_container_width=True, type="primary"):
                     # Reset game state for next round
                     game["state"] = "start"
                     game["words"] = []
@@ -864,7 +876,7 @@ def memory_recall_game():
     st.markdown("---")
     
     if game["score_history"]:
-        with st.expander(get_translation("📊 Your Score History", expanded=False)):
+        with st.expander(get_translation("📊 Your Score History"), expanded=False):
             # Summary stats
             total_rounds = len(game["score_history"])
             avg_score = sum(s["score"] for s in game["score_history"]) / total_rounds
@@ -872,11 +884,11 @@ def memory_recall_game():
             
             col1, col2, col3 = st.columns(3)
             with col1:
-                st.metric(get_translation("Total Rounds", total_rounds))
+                st.metric(get_translation("Total Rounds"), total_rounds)
             with col2:
-                st.metric(get_translation("Average Score", f"{avg_score:.0%}"))
+                st.metric(get_translation("Average Score"), f"{avg_score:.0%}")
             with col3:
-                st.metric(get_translation("Best Score", f"{best_score:.0%}"))
+                st.metric(get_translation("Best Score"), f"{best_score:.0%}")
             
             st.markdown("---")
             
@@ -886,14 +898,14 @@ def memory_recall_game():
                 round_num = len(game["score_history"]) - i + 1
                 score_emoji = "🌟" if score['score'] >= 0.8 else "⭐" if score['score'] >= 0.5 else "💫"
                 
-                st.markdown(get_translation(f"""
+                st.markdown(f"""
                 <div style='background: #f8f9fa; padding: 15px; border-radius: 8px; 
                             margin-bottom: 10px; border-left: 4px solid #667eea;'>
                     <strong>{score_emoji} Round {round_num}</strong> - Level {score['level']}<br>
                     Score: {score['correct']}/{score['total']} correct ({score['score']:.0%})<br>
                     <small style='color: #666;'>{score.get('timestamp', 'N/A')}</small>
                 </div>
-                """, unsafe_allow_html=True))
+                """, unsafe_allow_html=True)
     else:
         st.info(get_translation("👆 Start playing to see your score history!"))
     
@@ -3109,6 +3121,7 @@ with footer_col3:
 # ====== RUN APP ======
 if __name__ == "__main__":
     main()
+
 
 
 
