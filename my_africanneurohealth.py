@@ -667,15 +667,15 @@ def memory_recall_game():
     ]
     
     # ==================== START SCREEN ====================
-   st.markdown(
-    get_translation("""
-    <div style='background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+    st.markdown(
+        get_translation("""
+        <div style='background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
                 padding: 30px; border-radius: 15px; color: white; text-align: center;'>
-        <h2>🎮 Memory Challenge</h2>
-        <p style='font-size: 18px;'>Test your memory and cognitive abilities!</p>
-    </div>
-    """),
-    unsafe_allow_html=True
+            <h2>🎮 Memory Challenge</h2>
+            <p style='font-size: 18px;'>Test your memory and cognitive abilities!</p>
+        </div>
+        """),
+        unsafe_allow_html=True
 )
 
         
@@ -3109,6 +3109,7 @@ with footer_col3:
 # ====== RUN APP ======
 if __name__ == "__main__":
     main()
+
 
 
 
