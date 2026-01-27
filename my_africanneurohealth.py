@@ -991,7 +991,7 @@ def nutrition_tracker():
             "supplements_used": supplements_used,
             "natural_herbs": natural_herbs,
             "lifestyle_choices": selected_lifestyles,
-            "nutritional_score": nutritional_score
+            "nutritional_score": nutritional_score,
                 # Add required user_id
             "user_id": st.session_state.get('user_id')  # Get user_id from session state
         }
@@ -3195,6 +3195,7 @@ with footer_col3:
 # ====== RUN APP ======
 if __name__ == "__main__":
     main()
+
 
 
 
