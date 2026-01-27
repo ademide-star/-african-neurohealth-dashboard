@@ -992,7 +992,14 @@ def nutrition_tracker():
             "natural_herbs": natural_herbs,
             "lifestyle_choices": selected_lifestyles,
             "nutritional_score": nutritional_score
+                # Add required user_id
+            "user_id": st.session_state.get('user_id')  # Get user_id from session state
         }
+        
+        # Add current date if your table requires it
+        if 'date' not in nutrition_data:
+            from datetime import date
+            nutrition_data['date'] = date.today().isoformat()
         
         st.session_state.nutritional_score = nutritional_score
         st.session_state.nutrition_data = nutrition_data
@@ -1062,7 +1069,42 @@ def stress_assessment():
         # Store in session state
         st.session_state.stress_score = total_score
         st.session_state.stress_level = level
-
+        
+        # Prepare data for database
+        stress_data = {
+            "financial_stress": financial_stress,
+            "family_stress": family_stress,
+            "work_stress": work_stress,
+            "safety_stress": safety_stress,
+            "caregiver_stress": caregiver_stress,
+            "migration_stress": migration_stress,
+            "family_expectations": family_expectations,
+            "spiritual_stress": spiritual_stress,
+            "total_score": total_score,
+            "stress_level": level,
+            "date": datetime.date.today().isoformat(),
+        }
+        
+        # Add user_id if authenticated, otherwise use session_id
+        if 'user_id' in st.session_state:
+            stress_data["user_id"] = st.session_state.user_id
+        else:
+            # Use session ID as fallback
+            if 'session_id' not in st.session_state:
+                st.session_state.session_id = str(uuid.uuid4())
+            stress_data["session_id"] = st.session_state.session_id
+        
+        # Save button
+        if st.button(get_translation("💾 Save Stress Assessment"), key="save_stress"):
+            try:
+                response = supabase.table("stress_assessments").insert(stress_data).execute()
+                if response.data:
+                    st.success(get_translation("✅ Stress assessment saved successfully!"))
+                    # Optionally clear form or show a summary
+                else:
+                    st.error(get_translation(f"❌ Failed to save stress assessment: {response.error}"))
+            except Exception as e:
+                st.error(get_translation(f"❌ Error: {str(e)}"))
 
 def validate_input_data(data):
     # Check for required fields
@@ -3153,6 +3195,7 @@ with footer_col3:
 # ====== RUN APP ======
 if __name__ == "__main__":
     main()
+
 
 
 
