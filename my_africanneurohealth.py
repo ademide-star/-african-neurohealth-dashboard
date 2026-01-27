@@ -674,7 +674,7 @@ def memory_recall_game():
             <h2>🎮 Memory Challenge</h2>
             <p style='font-size: 18px;'>Test your memory and cognitive abilities!</p>
         </div>
-        """,) unsafe_allow_html=True)
+        """, unsafe_allow_html=True))
         
         st.markdown("---")
         
@@ -691,7 +691,7 @@ def memory_recall_game():
                     • Get {4 + game['level'] - 1} correct to advance!
                 </p>
             </div>
-            """,) unsafe_allow_html=True)
+            """, unsafe_allow_html=True))
             
             if st.button(get_translation("🎯 Start Memory Exercise", key="memory_start", use_container_width=True)):
                 num_words = 4 + game["level"]
@@ -3108,6 +3108,7 @@ with footer_col3:
 # ====== RUN APP ======
 if __name__ == "__main__":
     main()
+
 
 
 
