@@ -955,7 +955,7 @@ def nutrition_tracker():
             get_translation("Paleo")
         ]
         
-        selected_lifestyles = st.multiselect(
+        lifestyles_choices = st.multiselect(
             get_translation("Select Nutritional Lifestyles"), 
             lifestyle_options, 
             key="lifestyles"
@@ -990,7 +990,7 @@ def nutrition_tracker():
             "hydration_liters": hydration_liters,
             "supplements_used": supplements_used,
             "natural_herbs": natural_herbs,
-            "lifestyles": selected_lifestyles,
+            "lifestyles": lifestyles_choices,
             "score": nutritional_score
         }
         
@@ -3153,6 +3153,7 @@ with footer_col3:
 # ====== RUN APP ======
 if __name__ == "__main__":
     main()
+
 
 
 
