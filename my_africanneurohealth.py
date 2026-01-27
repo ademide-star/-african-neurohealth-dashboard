@@ -991,7 +991,7 @@ def nutrition_tracker():
             "supplements_used": supplements_used,
             "natural_herbs": natural_herbs,
             "lifestyle_choices": selected_lifestyles,
-            "score": nutritional_score
+            "nutritional_score": nutritional_score
         }
         
         st.session_state.nutritional_score = nutritional_score
@@ -3153,6 +3153,7 @@ with footer_col3:
 # ====== RUN APP ======
 if __name__ == "__main__":
     main()
+
 
 
 
