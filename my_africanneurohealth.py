@@ -935,7 +935,7 @@ def nutrition_tracker():
         with col1:
             fruit_intake = st.number_input(get_translation("Fruit Intake (servings per day)"), min_value=0, max_value=20, value=2, key="fruit_intake")
             vegetable_intake = st.number_input(get_translation("Vegetable Intake (servings per day)"), min_value=0, max_value=20, value=3, key="vegetable_intake")
-            hydration_litres = st.number_input(get_translation("Water Intake (liters per day)"), min_value=0.0, max_value=10.0, value=2.0, key="hydration")
+            hydration_liters = st.number_input(get_translation("Water Intake (liters per day)"), min_value=0.0, max_value=10.0, value=2.0, key="hydration")
         
         with col2:
             supplements_used = st.text_input(get_translation("Supplements Used (e.g., Vitamin D, Omega-3)"), key="supplements")
@@ -987,7 +987,7 @@ def nutrition_tracker():
         nutrition_data = {
             "fruit_intake": fruit_intake,
             "vegetable_intake": vegetable_intake,
-            "hydration_litres": hydration_litres,
+            "hydration_liters": hydration_liters,
             "supplements_used": supplements_used,
             "natural_herbs": natural_herbs,
             "lifestyles": selected_lifestyles,
@@ -3153,6 +3153,7 @@ with footer_col3:
 # ====== RUN APP ======
 if __name__ == "__main__":
     main()
+
 
 
 
