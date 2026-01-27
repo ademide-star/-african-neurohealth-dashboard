@@ -990,7 +990,7 @@ def nutrition_tracker():
             "hydration_liters": hydration_liters,
             "supplements_used": supplements_used,
             "natural_herbs": natural_herbs,
-            "lifestyles_choices": selected_lifestyles,
+            "lifestyle_choices": selected_lifestyles,
             "score": nutritional_score
         }
         
@@ -3153,6 +3153,7 @@ with footer_col3:
 # ====== RUN APP ======
 if __name__ == "__main__":
     main()
+
 
 
 
