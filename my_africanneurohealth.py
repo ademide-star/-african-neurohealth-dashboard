@@ -942,7 +942,7 @@ def nutrition_tracker():
             natural_herbs = st.text_input(get_translation("Natural Herbs Taken (e.g., Ginger, Turmeric)"), key="herbs")
         
         # Lifestyle selection
-        lifestyle_options = [
+        lifestyle_choices = [
             get_translation("Homemade Food"), 
             get_translation("Vegetarian"), 
             get_translation("Vegan"), 
@@ -955,7 +955,7 @@ def nutrition_tracker():
             get_translation("Paleo")
         ]
         
-        lifestyles_choices = st.multiselect(
+        selected_lifestyles = st.multiselect(
             get_translation("Select Nutritional Lifestyles"), 
             lifestyle_options, 
             key="lifestyles"
@@ -990,7 +990,7 @@ def nutrition_tracker():
             "hydration_liters": hydration_liters,
             "supplements_used": supplements_used,
             "natural_herbs": natural_herbs,
-            "lifestyles": lifestyles_choices,
+            "lifestyles_choices": selected_lifestyles,
             "score": nutritional_score
         }
         
@@ -3153,6 +3153,7 @@ with footer_col3:
 # ====== RUN APP ======
 if __name__ == "__main__":
     main()
+
 
 
 
