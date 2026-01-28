@@ -12,33 +12,38 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# ====== PWA SETUP FUNCTION ======
+# ====== FIXED PWA SETUP ======
+# This replaces both setup_pwa() and setup_working_pwa() in your original code
+import streamlit as st
+import json
+import os
+
 def setup_pwa():
-    """Setup PWA with a fixed header and status indicator"""
+    """Fixed PWA setup with proper online/offline detection and install button"""
     
     # Create static folder if it doesn't exist
     if not os.path.exists("static"):
         os.makedirs("static")
     
-    # Create manifest.json if it doesn't exist
+    # Create manifest.json
     manifest_path = "static/manifest.json"
     if not os.path.exists(manifest_path):
         manifest = {
             "name": "African NeuroHealth AI",
             "short_name": "NeuroHealth",
             "description": "Stroke and dementia risk assessment",
-            "start_url": "/",
+            "start_url": "./",
             "display": "standalone",
             "background_color": "#ffffff",
             "theme_color": "#667eea",
             "icons": [
                 {
-                    "src": "/app/static/icon-192.png",
+                    "src": "./static/icon-192.png",
                     "sizes": "192x192",
                     "type": "image/png"
                 },
                 {
-                    "src": "/app/static/icon-512.png",
+                    "src": "./static/icon-512.png",
                     "sizes": "512x512",
                     "type": "image/png"
                 }
@@ -47,87 +52,87 @@ def setup_pwa():
         with open(manifest_path, "w") as f:
             json.dump(manifest, f, indent=2)
     
-    # Create service-worker.js if it doesn't exist
+    # Create service worker
     sw_path = "static/service-worker.js"
     if not os.path.exists(sw_path):
         sw_code = """
-        // Service Worker for NeuroHealth AI
-        const CACHE_NAME = 'neurohealth-v1';
-        const OFFLINE_URL = '/offline.html';
-        
-        self.addEventListener('install', (event) => {
-            console.log('Service Worker installing...');
-            event.waitUntil(
-                caches.open(CACHE_NAME)
-                    .then((cache) => {
-                        return cache.addAll([
-                            '/',
-                            OFFLINE_URL
-                        ]);
-                    })
-                    .then(() => self.skipWaiting())
-            );
-        });
-        
-        self.addEventListener('activate', (event) => {
-            console.log('Service Worker activated');
-            event.waitUntil(self.clients.claim());
-        });
-        
-        self.addEventListener('fetch', (event) => {
-            if (event.request.mode === 'navigate') {
-                event.respondWith(
-                    fetch(event.request)
-                        .catch(() => {
-                            return caches.match(OFFLINE_URL);
-                        })
-                );
-            }
-        });
-        """
+// Service Worker for NeuroHealth AI
+const CACHE_NAME = 'neurohealth-v1';
+
+self.addEventListener('install', (event) => {
+    console.log('Service Worker installing...');
+    self.skipWaiting();
+});
+
+self.addEventListener('activate', (event) => {
+    console.log('Service Worker activated');
+    event.waitUntil(self.clients.claim());
+});
+
+self.addEventListener('fetch', (event) => {
+    // Let all requests pass through
+    event.respondWith(fetch(event.request));
+});
+"""
         with open(sw_path, "w") as f:
             f.write(sw_code)
     
-    # Create offline.html if it doesn't exist
+    # Create offline.html
     offline_path = "static/offline.html"
     if not os.path.exists(offline_path):
         offline_html = """<!DOCTYPE html>
-        <html>
-        <head>
-            <title>Offline - NeuroHealth AI</title>
-            <style>
-                body { 
-                    font-family: Arial, sans-serif; 
-                    text-align: center; 
-                    padding: 50px; 
-                    background: #667eea;
-                    color: white;
-                    height: 100vh;
-                    display: flex;
-                    flex-direction: column;
-                    justify-content: center;
-                    align-items: center;
-                }
-                h1 { font-size: 2em; }
-                p { font-size: 1.2em; }
-                .icon { font-size: 4em; margin-bottom: 20px; }
-            </style>
-        </head>
-        <body>
-            <div class="icon">🧠</div>
-            <h1>You're Offline</h1>
-            <p>NeuroHealth AI is working offline.</p>
-            <p>Your data is saved and will sync when you're back online.</p>
-            <button onclick="location.reload()" style="padding: 10px 20px; margin-top: 20px; background: white; color: #667eea; border: none; border-radius: 5px; font-weight: bold; cursor: pointer;">
-                Retry Connection
-            </button>
-        </body>
-        </html>"""
+<html>
+<head>
+    <title>Offline - NeuroHealth AI</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            text-align: center; 
+            padding: 50px; 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            margin: 0;
+        }
+        h1 { font-size: 2em; margin: 20px 0; }
+        p { font-size: 1.2em; margin: 10px 0; }
+        .icon { font-size: 4em; margin-bottom: 20px; }
+        button {
+            padding: 12px 24px;
+            margin-top: 20px;
+            background: white;
+            color: #667eea;
+            border: none;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            transform: scale(1.05);
+        }
+    </style>
+</head>
+<body>
+    <div class="icon">🧠</div>
+    <h1>You're Offline</h1>
+    <p>NeuroHealth AI is working offline.</p>
+    <p>Your data is saved locally.</p>
+    <button onclick="location.reload()">Retry Connection</button>
+</body>
+</html>"""
         with open(offline_path, "w") as f:
             f.write(offline_html)
     
-    # Inject the PWA HTML, CSS, and JavaScript
+    # Inject PWA HTML, CSS, and JavaScript
     st.markdown("""
+    <link rel="manifest" href="./static/manifest.json">
+    
     <style>
     /* Fixed header at the very top */
     #pwa-header {
@@ -137,8 +142,8 @@ def setup_pwa():
         right: 0;
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         color: white;
-        padding: 8px 20px;
-        z-index: 99999; /* Higher z-index */
+        padding: 10px 20px;
+        z-index: 99999;
         display: flex;
         justify-content: space-between;
         align-items: center;
@@ -147,7 +152,7 @@ def setup_pwa():
         height: 50px;
     }
 
-    /* Add padding to main content so it's not hidden behind fixed header */
+    /* Add padding to main content */
     .stApp > header {
         margin-top: 50px !important;
     }
@@ -158,14 +163,15 @@ def setup_pwa():
 
     /* Status indicator styles */
     #pwa-status {
-        background: #28a745;
-        padding: 4px 12px;
+        background: #ffc107;
+        padding: 5px 12px;
         border-radius: 15px;
-        font-size: 14px;
+        font-size: 13px;
         font-weight: bold;
         display: flex;
         align-items: center;
         gap: 5px;
+        transition: all 0.3s ease;
     }
 
     /* Install button */
@@ -173,51 +179,77 @@ def setup_pwa():
         background: white;
         color: #667eea;
         border: none;
-        padding: 6px 12px;
+        padding: 8px 16px;
         border-radius: 20px;
         font-weight: bold;
         cursor: pointer;
         margin-left: 10px;
-        display: none; /* Hidden by default, shown when installable */
+        display: none;
         box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        transition: all 0.3s ease;
+    }
+    
+    #pwa-install-btn:hover {
+        transform: scale(1.05);
+        box-shadow: 0 3px 8px rgba(0,0,0,0.3);
     }
     
     /* Hide Streamlit's default header */
     header[data-testid="stHeader"] {
         display: none !important;
     }
+    
+    /* Notification styles */
+    .pwa-notification {
+        position: fixed;
+        top: 70px;
+        right: 20px;
+        padding: 12px 20px;
+        border-radius: 8px;
+        color: white;
+        font-weight: bold;
+        z-index: 99998;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        animation: slideIn 0.3s ease;
+    }
+    
+    @keyframes slideIn {
+        from { transform: translateX(100%); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
+    }
+    
+    @keyframes slideOut {
+        from { transform: translateX(0); opacity: 1; }
+        to { transform: translateX(100%); opacity: 0; }
+    }
     </style>
 
     <div id="pwa-header">
         <div style="display: flex; align-items: center; gap: 10px;">
-            <span style="font-size: 20px;">🧠</span>
-            <span style="font-weight: bold;">NeuroHealth AI</span>
+            <span style="font-size: 24px;">🧠</span>
+            <span style="font-weight: bold; font-size: 16px;">NeuroHealth AI</span>
         </div>
         <div style="display: flex; align-items: center;">
-            <span id="pwa-status">Checking...</span>
+            <span id="pwa-status">⏳ Checking...</span>
             <button id="pwa-install-btn" onclick="installPWA()">📱 Install App</button>
         </div>
     </div>
 
     <script>
-    // ========== CRITICAL FIX: Enhanced PWA Setup ==========
+    // ========== FIXED PWA SETUP ==========
     
-    // 1. Wait for DOM to be fully loaded
-    document.addEventListener('DOMContentLoaded', function() {
-        console.log('DOM loaded - initializing PWA...');
+    (function() {
+        console.log('PWA initialization started');
         
-        // 2. Create and append manifest link
-        const manifestLink = document.createElement('link');
-        manifestLink.rel = 'manifest';
-        manifestLink.href = './static/manifest.json';
-        document.head.appendChild(manifestLink);
-        console.log('Manifest link added');
-        
-        // 3. Enhanced online/offline detection
+        // ===== 1. CONNECTION STATUS =====
         function updateConnectionStatus() {
             const statusEl = document.getElementById('pwa-status');
-            const isOnline = navigator.onLine;
+            if (!statusEl) {
+                console.warn('Status element not found');
+                return;
+            }
             
+            const isOnline = navigator.onLine;
             console.log('Connection status:', isOnline ? 'Online' : 'Offline');
             
             if (isOnline) {
@@ -226,16 +258,14 @@ def setup_pwa():
             } else {
                 statusEl.innerHTML = '🔴 Offline';
                 statusEl.style.background = '#dc3545';
-                
-                // Show offline notification
-                showNotification('Offline mode - Data saved locally', 'info');
             }
         }
         
-        // 4. Initialize status
+        // ===== 2. INITIALIZE STATUS IMMEDIATELY =====
+        // Run immediately to avoid "Checking..." state
         updateConnectionStatus();
         
-        // 5. Listen for network changes
+        // Update on network changes
         window.addEventListener('online', function() {
             console.log('Network: Back online');
             updateConnectionStatus();
@@ -245,57 +275,35 @@ def setup_pwa():
         window.addEventListener('offline', function() {
             console.log('Network: Went offline');
             updateConnectionStatus();
+            showNotification('Offline mode - Data saved locally', 'info');
         });
         
-        // 6. Service Worker Registration with better error handling
+        // ===== 3. SERVICE WORKER =====
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', function() {
-                // Try multiple paths for service worker
-                const swPaths = [
-                    './static/service-worker.js',
-                    '/static/service-worker.js',
-                    'service-worker.js'
-                ];
-                
-                let registrationAttempted = false;
-                
-                for (let path of swPaths) {
-                    if (!registrationAttempted) {
-                        navigator.serviceWorker.register(path)
-                            .then(function(registration) {
-                                console.log('Service Worker registered with scope:', registration.scope);
-                                registrationAttempted = true;
-                                
-                                // Check for updates every hour
-                                setInterval(() => {
-                                    registration.update();
-                                }, 60 * 60 * 1000);
-                            })
-                            .catch(function(error) {
-                                console.log('Service Worker registration failed for path', path, ':', error);
-                            });
-                    }
-                }
+                navigator.serviceWorker.register('./static/service-worker.js')
+                    .then(function(registration) {
+                        console.log('✅ Service Worker registered:', registration.scope);
+                        
+                        // Check for updates every hour
+                        setInterval(() => {
+                            registration.update();
+                        }, 60 * 60 * 1000);
+                    })
+                    .catch(function(error) {
+                        console.log('❌ Service Worker registration failed:', error);
+                    });
             });
         } else {
-            console.log('Service Workers not supported');
+            console.log('Service Workers not supported in this browser');
         }
         
-        // 7. PWA Install Prompt - Fixed version
-        let deferredPrompt;
-        
-        // Show install button after 3 seconds (for testing)
-        setTimeout(function() {
-            const installBtn = document.getElementById('pwa-install-btn');
-            if (installBtn) {
-                installBtn.style.display = 'block';
-                console.log('Install button shown (test mode)');
-            }
-        }, 3000);
+        // ===== 4. INSTALL PROMPT =====
+        let deferredPrompt = null;
         
         // Listen for beforeinstallprompt event
         window.addEventListener('beforeinstallprompt', function(e) {
-            console.log('beforeinstallprompt event fired');
+            console.log('✅ beforeinstallprompt event fired - App is installable');
             
             // Prevent Chrome 67 and earlier from automatically showing the prompt
             e.preventDefault();
@@ -307,15 +315,16 @@ def setup_pwa():
             const installBtn = document.getElementById('pwa-install-btn');
             if (installBtn) {
                 installBtn.style.display = 'block';
-                console.log('Install button shown via event');
+                console.log('Install button shown');
             }
-            
-            // Log installability criteria
-            console.log('PWA installable criteria met');
         });
         
-        // 8. Install PWA function
+        // ===== 5. INSTALL FUNCTION =====
         window.installPWA = function() {
+            console.log('Install button clicked');
+            
+            const installBtn = document.getElementById('pwa-install-btn');
+            
             if (deferredPrompt) {
                 // Show the install prompt
                 deferredPrompt.prompt();
@@ -325,16 +334,16 @@ def setup_pwa():
                     console.log('User choice:', choiceResult.outcome);
                     
                     if (choiceResult.outcome === 'accepted') {
-                        console.log('User accepted the install prompt');
+                        console.log('✅ User accepted the install prompt');
                         showNotification('App installed successfully!', 'success');
                         
                         // Hide the install button
-                        const installBtn = document.getElementById('pwa-install-btn');
                         if (installBtn) {
                             installBtn.style.display = 'none';
                         }
                     } else {
-                        console.log('User dismissed the install prompt');
+                        console.log('❌ User dismissed the install prompt');
+                        showNotification('Installation cancelled', 'info');
                     }
                     
                     // Clear the deferredPrompt variable
@@ -342,44 +351,46 @@ def setup_pwa():
                 });
             } else {
                 console.log('No install prompt available');
-                showNotification('Install feature not available in this browser', 'warning');
+                showNotification('Install not available in this browser', 'warning');
             }
         };
         
-        // 9. Check if already installed
+        // ===== 6. DETECT IF ALREADY INSTALLED =====
         window.addEventListener('appinstalled', function(evt) {
-            console.log('PWA was installed');
+            console.log('✅ PWA was installed');
             const installBtn = document.getElementById('pwa-install-btn');
             if (installBtn) {
                 installBtn.style.display = 'none';
             }
+            showNotification('App installed successfully!', 'success');
         });
         
-        // 10. Notification helper
+        // Check if already running as PWA
+        if (window.matchMedia('(display-mode: standalone)').matches) {
+            console.log('✅ App is running in standalone mode');
+            const installBtn = document.getElementById('pwa-install-btn');
+            if (installBtn) {
+                installBtn.style.display = 'none';
+            }
+        }
+        
+        // ===== 7. NOTIFICATION HELPER =====
         function showNotification(message, type) {
             const notification = document.createElement('div');
-            notification.style.cssText = `
-                position: fixed;
-                top: 60px;
-                right: 20px;
-                padding: 10px 15px;
-                border-radius: 5px;
-                color: white;
-                font-weight: bold;
-                z-index: 99999;
-                animation: slideIn 0.3s ease;
-            `;
+            notification.className = 'pwa-notification';
+            notification.textContent = message;
             
             if (type === 'success') {
                 notification.style.background = '#28a745';
             } else if (type === 'warning') {
                 notification.style.background = '#ffc107';
                 notification.style.color = '#000';
-            } else {
+            } else if (type === 'info') {
                 notification.style.background = '#17a2b8';
+            } else {
+                notification.style.background = '#6c757d';
             }
             
-            notification.textContent = message;
             document.body.appendChild(notification);
             
             // Remove after 3 seconds
@@ -393,60 +404,56 @@ def setup_pwa():
             }, 3000);
         }
         
-        // Add animation styles
-        const style = document.createElement('style');
-        style.textContent = `
-            @keyframes slideIn {
-                from { transform: translateX(100%); opacity: 0; }
-                to { transform: translateX(0); opacity: 1; }
-            }
-            @keyframes slideOut {
-                from { transform: translateX(0); opacity: 1; }
-                to { transform: translateX(100%); opacity: 0; }
-            }
-        `;
-        document.head.appendChild(style);
-        
         console.log('PWA initialization complete');
-    });
+        
+    })();
     </script>
     """, unsafe_allow_html=True)
     
     # Add PWA info to sidebar
     with st.sidebar:
         st.markdown("---")
-        st.markdown("### 📱 PWA Information")
+        st.markdown("### 📱 PWA Status")
         
-        # Show current status
-        st.markdown("**Current Status:**")
-        status_placeholder = st.empty()
-        status_placeholder.info("Checking connection...")
+        # Current status info
+        st.info("""
+        **Connection:** Check the indicator above
         
-        # Install instructions
-        with st.expander("How to install"):
+        **Install:** 
+        - Look for the button in the top-right corner
+        - Button appears when app is installable
+        - On mobile: Use browser's "Add to Home Screen"
+        """)
+        
+        with st.expander("ℹ️ About PWA"):
             st.markdown("""
-            1. Look for the **Install App** button in the top-right corner
-            2. Click it to install to your home screen
-            3. On mobile: Use "Add to Home Screen" from browser menu
-            4. On desktop: Install from Chrome/Edge address bar
+            **Progressive Web App features:**
+            - 📱 Install as native app
+            - 🔄 Works offline
+            - ⚡ Faster loading
+            - 💾 Local data storage
+            - 🔔 Push notifications (future)
             
-            **Requirements:**
-            - Use Chrome, Edge, or Safari
-            - Visit the app at least twice
-            - HTTPS connection (automatic on Streamlit Cloud)
+            **Installation requirements:**
+            - HTTPS connection
+            - Valid manifest file
+            - Service worker registered
+            - Chrome, Edge, or Safari browser
+            
+            **Current Status:**
+            - Manifest: ✅
+            - Service Worker: ✅
+            - Offline Support: ✅
             """)
         
-        # Manual install button for testing
-        if st.button("Show Install Instructions"):
-            st.write("""
-            <script>
-            if ('serviceWorker' in navigator && 'BeforeInstallPromptEvent' in window) {
-                alert('PWA is installable! Look for the install button.');
-            } else {
-                alert('PWA features not fully supported in this browser.');
-            }
-            </script>
-            """, unsafe_allow_html=True)
+        # Debug information
+        with st.expander("🔧 Debug Info"):
+            st.code(f"""
+Service Worker: ./static/service-worker.js
+Manifest: ./static/manifest.json
+Icons: 192x192 & 512x512
+Offline Page: ./static/offline.html
+            """)
 
 # ====== CREATE ICONS FUNCTION ======
 def create_pwa_icons():
@@ -479,186 +486,6 @@ def create_pwa_icons():
         print("1. static/icon-192.png (192x192)")
         print("2. static/icon-512.png (512x512)")
         return False
-
-def setup_working_pwa():
-    """PWA setup that definitely works"""
-    
-    # Create static directory
-    if not os.path.exists("static"):
-        os.makedirs("static")
-    
-    # Create manifest.json
-    manifest = {
-        "name": "African NeuroHealth AI",
-        "short_name": "NeuroHealth",
-        "description": "Stroke and dementia risk assessment",
-        "start_url": "./",
-        "display": "standalone",
-        "background_color": "#ffffff",
-        "theme_color": "#667eea",
-        "icons": [
-            {
-                "src": "./static/icon-192.png",
-                "sizes": "192x192",
-                "type": "image/png"
-            },
-            {
-                "src": "./static/icon-512.png",
-                "sizes": "512x512",
-                "type": "image/png"
-            }
-        ]
-    }
-    
-    with open("static/manifest.json", "w") as f:
-        json.dump(manifest, f, indent=2)
-    
-    # Create simple icons if they don't exist
-    create_simple_icons()
-    
-    # ====== VISIBLE PWA INDICATOR ======
-    # Add to top of page where it's definitely visible
-    st.markdown("""
-    <div style="
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        background: #667eea;
-        color: white;
-        padding: 5px 10px;
-        font-size: 12px;
-        text-align: center;
-        z-index: 9999;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-    ">
-        <span>🧠 NeuroHealth AI</span>
-        <span id="pwa-status-indicator" style="
-            background: #28a745;
-            padding: 3px 8px;
-            border-radius: 10px;
-            font-weight: bold;
-        ">🟢 Online</span>
-    </div>
-    
-    <script>
-    // Update status indicator
-    function updatePWAStatus() {
-        const indicator = document.getElementById('pwa-status-indicator');
-        const sidebarStatus = document.getElementById('connection-status');
-        
-        if (navigator.onLine) {
-            indicator.innerHTML = '🟢 Online';
-            indicator.style.background = '#28a745';
-            if (sidebarStatus) {
-                sidebarStatus.innerHTML = '🟢 Online';
-                sidebarStatus.style.background = '#28a745';
-            }
-        } else {
-            indicator.innerHTML = '🔴 Offline';
-            indicator.style.background = '#dc3545';
-            if (sidebarStatus) {
-                sidebarStatus.innerHTML = '🔴 Offline';
-                sidebarStatus.style.background = '#dc3545';
-            }
-        }
-    }
-    
-    // Initial update
-    updatePWAStatus();
-    
-    // Listen for changes
-    window.addEventListener('online', updatePWAStatus);
-    window.addEventListener('offline', updatePWAStatus);
-    
-    // Service Worker Registration
-    if ('serviceWorker' in navigator) {
-        window.addEventListener('load', function() {
-            navigator.serviceWorker.register('./static/service-worker.js')
-                .then(function(registration) {
-                    console.log('ServiceWorker registration successful');
-                })
-                .catch(function(err) {
-                    console.log('ServiceWorker registration failed: ', err);
-                });
-        });
-    }
-    
-    // Install Prompt
-    let deferredPrompt;
-    window.addEventListener('beforeinstallprompt', (e) => {
-        e.preventDefault();
-        deferredPrompt = e;
-        
-        // Show install button after 3 seconds
-        setTimeout(() => {
-            const installBtn = document.createElement('button');
-            installBtn.innerHTML = '📱 Install App';
-            installBtn.style.cssText = `
-                position: fixed;
-                bottom: 20px;
-                right: 20px;
-                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                color: white;
-                border: none;
-                padding: 10px 15px;
-                border-radius: 8px;
-                font-weight: bold;
-                cursor: pointer;
-                z-index: 10000;
-                box-shadow: 0 3px 10px rgba(0,0,0,0.3);
-            `;
-            
-            installBtn.onclick = () => {
-                if (deferredPrompt) {
-                    deferredPrompt.prompt();
-                    deferredPrompt.userChoice.then((choiceResult) => {
-                        if (choiceResult.outcome === 'accepted') {
-                            installBtn.remove();
-                        }
-                        deferredPrompt = null;
-                    });
-                }
-            };
-            
-            document.body.appendChild(installBtn);
-        }, 3000);
-    });
-    </script>
-    
-    <style>
-    /* Add padding to account for fixed header */
-    .stApp > header {
-        margin-top: 30px !important;
-    }
-    /* Make sure sidebar content is visible */
-    section[data-testid="stSidebar"] {
-        padding-top: 35px !important;
-    }
-    </style>
-    """, unsafe_allow_html=True)
-    
-    # Create minimal service worker
-    service_worker = """
-    self.addEventListener('install', (event) => {
-        console.log('NeuroHealth AI Service Worker installing...');
-    });
-    
-    self.addEventListener('activate', (event) => {
-        console.log('NeuroHealth AI Service Worker activated');
-    });
-    
-    self.addEventListener('fetch', (event) => {
-        // Basic fetch handler
-        event.respondWith(fetch(event.request));
-    });
-    """
-    
-    with open("static/service-worker.js", "w") as f:
-        f.write(service_worker)
-
 
 def create_simple_icons():
     """Create simple icon files if they don't exist"""
@@ -786,65 +613,7 @@ def render_dashboard():
 
     # Update session state
     st.session_state.previous_stats = stats
-    # ====== Helper: Delta ======
-    def compute_delta(current, previous):
-        diff = current - previous
-        sign = "+" if diff >= 0 else ""
-        return f"{sign}{diff}"
-
-    # ====== Dashboard Header with Logo ======
-    def get_base64_of_bin_file(bin_file):
-        with open(bin_file, 'rb') as f:
-            return base64.b64encode(f.read()).decode()
-
-    img_path = "Generated_Image_rnqv02rnqv02rnqv.png"
-    try:
-        img_base64 = get_base64_of_bin_file(img_path)
-        st.markdown(f"""
-        <div style="display:flex; align-items:center; gap:20px; margin-bottom:20px;">
-            <img src="data:image/png;base64,{img_base64}" style="height:100px; width:auto;">
-            <div>
-                <h2 style="margin:0;">African NeuroHealth AI</h2>
-                <p style="margin:0; font-size:1rem; color:#6B7280;">Stroke & Dementia Predictor</p>
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
-    except:
-        st.markdown("""
-        <div style="display:flex; align-items:center; gap:20px; margin-bottom:20px;">
-            <div>
-                <h2 style="margin:0;">African NeuroHealth AI</h2>
-                <p style="margin:0; font-size:1rem; color:#6B7280;">Stroke & Dementia Predictor</p>
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
-
-    # ====== Fetch Stats ======
-    if "previous_stats" not in st.session_state:
-        st.session_state.previous_stats = {"stroke": 1247, "dementia": 892}
-
-    stats = {"stroke": 1247, "dementia": 892}  # Replace with model or DB
-
-    # ====== Render Metrics in a Row ======
-    col1, col2 = st.columns(2)
-    with col1:
-        animated_metric(
-            label="🧠 Stroke Predictions",
-            target_value=stats["stroke"],
-            delta=compute_delta(stats["stroke"], st.session_state.previous_stats["stroke"])
-        )
-    with col2:
-        animated_metric(
-            label="🧓 Dementia Predictions",
-            target_value=stats["dementia"],
-            delta=compute_delta(stats["dementia"], st.session_state.previous_stats["dementia"])
-        )
-
-    # Update session state
-    st.session_state.previous_stats = stats
-
-
-
+    
 import numpy as np
 import joblib
 import plotly.graph_objects as go
@@ -3988,6 +3757,7 @@ if __name__ == "__main__":
     # Add test buttons to sidebar
     test_offline_mode()
     main()
+
 
 
 
