@@ -1,7 +1,398 @@
-# Must be the very first Streamlit command
+# ====== IMPORTS ======
 import streamlit as st
-import pandas as pd
-import requests
+import json
+import os
+from datetime import datetime
+
+# ====== PAGE CONFIG - MUST BE FIRST AND ONLY ONCE ======
+st.set_page_config(
+    page_title="AFRICAN NEUROHEALTH - STROKE & DEMENTIA RISK PREDICTION",
+    page_icon="🧠",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
+
+# ====== PWA SETUP FUNCTION ======
+def setup_pwa():
+    """Setup PWA with a fixed header and status indicator"""
+    
+    # Create static folder if it doesn't exist
+    if not os.path.exists("static"):
+        os.makedirs("static")
+    
+    # Create manifest.json if it doesn't exist
+    manifest_path = "static/manifest.json"
+    if not os.path.exists(manifest_path):
+        manifest = {
+            "name": "African NeuroHealth AI",
+            "short_name": "NeuroHealth",
+            "description": "Stroke and dementia risk assessment",
+            "start_url": ".",
+            "display": "standalone",
+            "background_color": "#ffffff",
+            "theme_color": "#667eea",
+            "icons": [
+                {
+                    "src": "icon-192.png",
+                    "sizes": "192x192",
+                    "type": "image/png"
+                },
+                {
+                    "src": "icon-512.png",
+                    "sizes": "512x512",
+                    "type": "image/png"
+                }
+            ]
+        }
+        with open(manifest_path, "w") as f:
+            json.dump(manifest, f, indent=2)
+    
+    # Create service-worker.js if it doesn't exist
+    sw_path = "static/service-worker.js"
+    if not os.path.exists(sw_path):
+        sw_code = """
+        console.log('Service Worker: Hello from NeuroHealth AI');
+        
+        self.addEventListener('install', (event) => {
+            console.log('Service Worker installing...');
+            self.skipWaiting();
+        });
+        
+        self.addEventListener('activate', (event) => {
+            console.log('Service Worker activated');
+        });
+        """
+        with open(sw_path, "w") as f:
+            f.write(sw_code)
+    
+    # Inject the PWA HTML, CSS, and JavaScript
+    st.markdown("""
+    <style>
+    /* Fixed header at the very top */
+    #pwa-header {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 8px 20px;
+        z-index: 9999;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-family: Arial, sans-serif;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    }
+
+    /* Add padding to main content so it's not hidden behind fixed header */
+    .stApp > header {
+        margin-top: 50px;
+    }
+
+    /* Status indicator styles */
+    #pwa-status {
+        background: #28a745;
+        padding: 4px 12px;
+        border-radius: 15px;
+        font-size: 14px;
+        font-weight: bold;
+    }
+
+    /* Install button */
+    #pwa-install-btn {
+        background: white;
+        color: #667eea;
+        border: none;
+        padding: 6px 12px;
+        border-radius: 20px;
+        font-weight: bold;
+        cursor: pointer;
+        margin-left: 10px;
+        display: none; /* Hidden by default, shown when installable */
+    }
+    </style>
+
+    <div id="pwa-header">
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <span style="font-size: 20px;">🧠</span>
+            <span style="font-weight: bold;">NeuroHealth AI</span>
+        </div>
+        <div style="display: flex; align-items: center;">
+            <span id="pwa-status">🟢 Online</span>
+            <button id="pwa-install-btn" onclick="installPWA()">📱 Install</button>
+        </div>
+    </div>
+
+    <script>
+    // 1. Online/Offline Status
+    function updateStatus() {
+        const statusEl = document.getElementById('pwa-status');
+        const isOnline = navigator.onLine;
+        
+        if (isOnline) {
+            statusEl.innerHTML = '🟢 Online';
+            statusEl.style.background = '#28a745';
+        } else {
+            statusEl.innerHTML = '🔴 Offline';
+            statusEl.style.background = '#dc3545';
+        }
+    }
+
+    // Initial update
+    updateStatus();
+
+    // Listen for changes
+    window.addEventListener('online', updateStatus);
+    window.addEventListener('offline', updateStatus);
+
+    // 2. PWA Install
+    let deferredPrompt;
+
+    window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        deferredPrompt = e;
+        console.log('PWA install prompt available');
+        
+        // Show install button
+        document.getElementById('pwa-install-btn').style.display = 'block';
+    });
+
+    function installPWA() {
+        if (deferredPrompt) {
+            deferredPrompt.prompt();
+            deferredPrompt.userChoice.then((choiceResult) => {
+                if (choiceResult.outcome === 'accepted') {
+                    console.log('User installed the PWA');
+                    document.getElementById('pwa-install-btn').style.display = 'none';
+                }
+                deferredPrompt = null;
+            });
+        }
+    }
+
+    // 3. Service Worker
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('./static/service-worker.js')
+                .then(reg => console.log('Service Worker registered:', reg.scope))
+                .catch(err => console.log('Service Worker failed:', err));
+        });
+    }
+
+    // 4. Add manifest dynamically
+    const link = document.createElement('link');
+    link.rel = 'manifest';
+    link.href = './static/manifest.json';
+    document.head.appendChild(link);
+
+    console.log('PWA setup complete - you should see the blue header at the top!');
+    </script>
+    """, unsafe_allow_html=True)
+
+def setup_working_pwa():
+    """PWA setup that definitely works"""
+    
+    # Create static directory
+    if not os.path.exists("static"):
+        os.makedirs("static")
+    
+    # Create manifest.json
+    manifest = {
+        "name": "African NeuroHealth AI",
+        "short_name": "NeuroHealth",
+        "description": "Stroke and dementia risk assessment",
+        "start_url": "./",
+        "display": "standalone",
+        "background_color": "#ffffff",
+        "theme_color": "#667eea",
+        "icons": [
+            {
+                "src": "./static/icon-192.png",
+                "sizes": "192x192",
+                "type": "image/png"
+            },
+            {
+                "src": "./static/icon-512.png",
+                "sizes": "512x512",
+                "type": "image/png"
+            }
+        ]
+    }
+    
+    with open("static/manifest.json", "w") as f:
+        json.dump(manifest, f, indent=2)
+    
+    # Create simple icons if they don't exist
+    create_simple_icons()
+    
+    # ====== VISIBLE PWA INDICATOR ======
+    # Add to top of page where it's definitely visible
+    st.markdown("""
+    <div style="
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        background: #667eea;
+        color: white;
+        padding: 5px 10px;
+        font-size: 12px;
+        text-align: center;
+        z-index: 9999;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    ">
+        <span>🧠 NeuroHealth AI</span>
+        <span id="pwa-status-indicator" style="
+            background: #28a745;
+            padding: 3px 8px;
+            border-radius: 10px;
+            font-weight: bold;
+        ">🟢 Online</span>
+    </div>
+    
+    <script>
+    // Update status indicator
+    function updatePWAStatus() {
+        const indicator = document.getElementById('pwa-status-indicator');
+        const sidebarStatus = document.getElementById('connection-status');
+        
+        if (navigator.onLine) {
+            indicator.innerHTML = '🟢 Online';
+            indicator.style.background = '#28a745';
+            if (sidebarStatus) {
+                sidebarStatus.innerHTML = '🟢 Online';
+                sidebarStatus.style.background = '#28a745';
+            }
+        } else {
+            indicator.innerHTML = '🔴 Offline';
+            indicator.style.background = '#dc3545';
+            if (sidebarStatus) {
+                sidebarStatus.innerHTML = '🔴 Offline';
+                sidebarStatus.style.background = '#dc3545';
+            }
+        }
+    }
+    
+    // Initial update
+    updatePWAStatus();
+    
+    // Listen for changes
+    window.addEventListener('online', updatePWAStatus);
+    window.addEventListener('offline', updatePWAStatus);
+    
+    // Service Worker Registration
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', function() {
+            navigator.serviceWorker.register('./static/service-worker.js')
+                .then(function(registration) {
+                    console.log('ServiceWorker registration successful');
+                })
+                .catch(function(err) {
+                    console.log('ServiceWorker registration failed: ', err);
+                });
+        });
+    }
+    
+    // Install Prompt
+    let deferredPrompt;
+    window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        deferredPrompt = e;
+        
+        // Show install button after 3 seconds
+        setTimeout(() => {
+            const installBtn = document.createElement('button');
+            installBtn.innerHTML = '📱 Install App';
+            installBtn.style.cssText = `
+                position: fixed;
+                bottom: 20px;
+                right: 20px;
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                color: white;
+                border: none;
+                padding: 10px 15px;
+                border-radius: 8px;
+                font-weight: bold;
+                cursor: pointer;
+                z-index: 10000;
+                box-shadow: 0 3px 10px rgba(0,0,0,0.3);
+            `;
+            
+            installBtn.onclick = () => {
+                if (deferredPrompt) {
+                    deferredPrompt.prompt();
+                    deferredPrompt.userChoice.then((choiceResult) => {
+                        if (choiceResult.outcome === 'accepted') {
+                            installBtn.remove();
+                        }
+                        deferredPrompt = null;
+                    });
+                }
+            };
+            
+            document.body.appendChild(installBtn);
+        }, 3000);
+    });
+    </script>
+    
+    <style>
+    /* Add padding to account for fixed header */
+    .stApp > header {
+        margin-top: 30px !important;
+    }
+    /* Make sure sidebar content is visible */
+    section[data-testid="stSidebar"] {
+        padding-top: 35px !important;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+    
+    # Create minimal service worker
+    service_worker = """
+    self.addEventListener('install', (event) => {
+        console.log('NeuroHealth AI Service Worker installing...');
+    });
+    
+    self.addEventListener('activate', (event) => {
+        console.log('NeuroHealth AI Service Worker activated');
+    });
+    
+    self.addEventListener('fetch', (event) => {
+        // Basic fetch handler
+        event.respondWith(fetch(event.request));
+    });
+    """
+    
+    with open("static/service-worker.js", "w") as f:
+        f.write(service_worker)
+
+
+def create_simple_icons():
+    """Create simple icon files if they don't exist"""
+    try:
+        from PIL import Image, ImageDraw
+        import os
+        
+        if not os.path.exists("static/icon-192.png"):
+            # Create a simple blue circle with brain emoji
+            img = Image.new('RGBA', (192, 192), (102, 126, 234, 255))  # #667eea
+            draw = ImageDraw.Draw(img)
+            
+            # Try to add text/emoji (simple approach)
+            # Save as PNG
+            img.save("static/icon-192.png")
+            print("✅ Created icon-192.png")
+            
+            # Create larger version
+            img_large = img.resize((512, 512))
+            img_large.save("static/icon-512.png")
+            print("✅ Created icon-512.png")
+    except Exception as e:
+        print(f"⚠️ Could not create icons: {e}")
+        print("Please add icon files manually to static/ folder")
 
 def render_dashboard():
     """Main dashboard page"""
@@ -60,7 +451,7 @@ def render_dashboard():
         with open(bin_file, 'rb') as f:
             return base64.b64encode(f.read()).decode()
 
-    img_path = r"C:\Users\sibs2\Downloads\Gemini_Generated_Image_rnqv02rnqv02rnqv.png"
+    img_path = "Generated_Image_rnqv02rnqv02rnqv.png"
     try:
         img_base64 = get_base64_of_bin_file(img_path)
         st.markdown(f"""
@@ -105,6 +496,8 @@ def render_dashboard():
 
     # Update session state
     st.session_state.previous_stats = stats
+
+
 
 import numpy as np
 import joblib
@@ -3088,9 +3481,18 @@ def render_sidebar():
             )
 
 
-# ====== MAIN APP ======
+# ====== MAIN APP FUNCTION ======
 def main():
-    """Main application logic"""
+    """Main function to run the Streamlit app"""
+    
+    # Setup PWA
+    setup_pwa()
+    
+    # Initialize session state if not exists
+    if 'logged_in' not in st.session_state:
+        st.session_state.logged_in = False
+    if 'current_page' not in st.session_state:
+        st.session_state.current_page = "Dashboard"
     
     # Render sidebar
     render_sidebar()
@@ -3104,14 +3506,14 @@ def main():
         
         with col1:
             # Display image
-            image_path = "Gemini_Generated_Image_rnqv02rnqv02rnqv.png"
+            image_path = "Generated_Image_rnqv02rnqv02rnqv.png"
             try:
                 st.image(image_path, width=125)
             except:
                 st.info("🧠")  # Fallback emoji if image not found
         
         with col2:
-            st.markdown(get_translation('<h2 class="main-header-center">African NeuroHealth AI Dashboard</h2>'), unsafe_allow_html=True)
+            st.markdown('<h2 class="main-header-center"> African NeuroHealth AI Dashboard</h2>', unsafe_allow_html=True)
         
         st.markdown("---")
         
@@ -3119,7 +3521,7 @@ def main():
         col1, col2 = st.columns([2, 1])
         
         with col1:
-            st.markdown(get_translation("""
+            st.markdown("""
             ## Your Personal Health Assessment Platform
             
             **NeuroHealth AI** helps you assess your risk for:
@@ -3141,15 +3543,15 @@ def main():
             ✅ Instant results  
             ✅ Printable PDF reports  
             ✅ All data stays on your device  
-            """))
+            """)
         
         with col2:
-            st.info(get_translation("""
+            st.info("""
             **Privacy Note:**
             
             All your data is stored locally in your browser session. 
             No information is sent to any server.
-            """))
+            """)
         
         return
  
@@ -3157,42 +3559,40 @@ def main():
     current_page = st.session_state.current_page
     
     # Page routing
-    if current_page == get_translation("Dashboard"):
+    if current_page == "Dashboard":
         render_dashboard()
     
-    elif current_page == get_translation("Stroke Assessment"):
+    elif current_page == "Stroke Assessment":
         render_stroke_assessment()
     
-    elif current_page == get_translation("Dementia Assessment"):
+    elif current_page == "Dementia Assessment":
         render_alzheimer_assessment()
     
-    elif current_page == get_translation("Memory Game"):
+    elif current_page == "Memory Game":
         memory_recall_game()
     
-    elif current_page == get_translation("Nutrition Tracker"):
+    elif current_page == "Nutrition Tracker":
         nutrition_tracker()
     
-    elif current_page == get_translation("Stress Assessment"):
+    elif current_page == "Stress Assessment":
         stress_assessment()
     
-    elif current_page == get_translation("My Reports"):
+    elif current_page == "My Reports":
         render_reports_page()
-
-# ====== FOOTER ======
-st.markdown("---")
-footer_col1, footer_col2, footer_col3 = st.columns(3)
-with footer_col1:
-    st.caption("© 2024 African NeuroHealth AI")
-with footer_col2:
-    st.caption(f"Version 2.0 | Integrated Models")
-with footer_col3:
-    st.caption(f"Last update: {datetime.now().strftime('%Y-%m-%d')}")
+    
+    # ====== FOOTER ======
+    st.markdown("---")
+    footer_col1, footer_col2, footer_col3 = st.columns(3)
+    with footer_col1:
+        st.caption("© 2024 African NeuroHealth AI")
+    with footer_col2:
+        st.caption("Version 2.0 | Integrated Models")
+    with footer_col3:
+        st.caption(f"Last update: {datetime.now().strftime('%Y-%m-%d')}")
 
 # ====== RUN APP ======
 if __name__ == "__main__":
     main()
-
-
 
 
 
