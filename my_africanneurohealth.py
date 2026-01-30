@@ -4001,7 +4001,9 @@ def show_footer():
 
 # ====== RUN APP ======
 if __name__ == "__main__":
+    main()
    
+
 
 
 
