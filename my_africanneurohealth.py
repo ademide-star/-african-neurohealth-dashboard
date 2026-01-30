@@ -18,123 +18,28 @@ import streamlit as st
 import json
 import os
 
+# ====== IMPROVED PWA SETUP ======
 def setup_pwa():
-    """Fixed PWA setup with proper online/offline detection and install button"""
+    """Improved PWA setup with better offline detection and install prompts"""
     
-    # Create static folder if it doesn't exist
-    if not os.path.exists("static"):
-        os.makedirs("static")
+    # Create static folder and files
+    os.makedirs("static", exist_ok=True)
+    create_pwa_files()
     
-    # Create manifest.json
-    manifest_path = "static/manifest.json"
-    if not os.path.exists(manifest_path):
-        manifest = {
-            "name": "African NeuroHealth AI",
-            "short_name": "NeuroHealth",
-            "description": "Stroke and dementia risk assessment",
-            "start_url": "./",
-            "display": "standalone",
-            "background_color": "#ffffff",
-            "theme_color": "#667eea",
-            "icons": [
-                {
-                    "src": "./static/icon-192.png",
-                    "sizes": "192x192",
-                    "type": "image/png"
-                },
-                {
-                    "src": "./static/icon-512.png",
-                    "sizes": "512x512",
-                    "type": "image/png"
-                }
-            ]
-        }
-        with open(manifest_path, "w") as f:
-            json.dump(manifest, f, indent=2)
-    
-    # Create service worker
-    sw_path = "static/service-worker.js"
-    if not os.path.exists(sw_path):
-        sw_code = """
-// Service Worker for NeuroHealth AI
-const CACHE_NAME = 'neurohealth-v1';
-
-self.addEventListener('install', (event) => {
-    console.log('Service Worker installing...');
-    self.skipWaiting();
-});
-
-self.addEventListener('activate', (event) => {
-    console.log('Service Worker activated');
-    event.waitUntil(self.clients.claim());
-});
-
-self.addEventListener('fetch', (event) => {
-    // Let all requests pass through
-    event.respondWith(fetch(event.request));
-});
-"""
-        with open(sw_path, "w") as f:
-            f.write(sw_code)
-    
-    # Create offline.html
-    offline_path = "static/offline.html"
-    if not os.path.exists(offline_path):
-        offline_html = """<!DOCTYPE html>
-<html>
-<head>
-    <title>Offline - NeuroHealth AI</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <style>
-        body { 
-            font-family: Arial, sans-serif; 
-            text-align: center; 
-            padding: 50px; 
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            height: 100vh;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            margin: 0;
-        }
-        h1 { font-size: 2em; margin: 20px 0; }
-        p { font-size: 1.2em; margin: 10px 0; }
-        .icon { font-size: 4em; margin-bottom: 20px; }
-        button {
-            padding: 12px 24px;
-            margin-top: 20px;
-            background: white;
-            color: #667eea;
-            border: none;
-            border-radius: 8px;
-            font-weight: bold;
-            cursor: pointer;
-            font-size: 16px;
-        }
-        button:hover {
-            transform: scale(1.05);
-        }
-    </style>
-</head>
-<body>
-    <div class="icon">🧠</div>
-    <h1>You're Offline</h1>
-    <p>NeuroHealth AI is working offline.</p>
-    <p>Your data is saved locally.</p>
-    <button onclick="location.reload()">Retry Connection</button>
-</body>
-</html>"""
-        with open(offline_path, "w") as f:
-            f.write(offline_html)
-    
-    # Inject PWA HTML, CSS, and JavaScript
+    # Add meta tags to head
     st.markdown("""
-    <link rel="manifest" href="./static/manifest.json">
+    <meta name="theme-color" content="#667eea">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <link rel="manifest" href="/static/manifest.json" crossorigin="use-credentials">
+    """, unsafe_allow_html=True)
     
+    # Inject CSS
+    st.markdown("""
     <style>
-    /* Fixed header at the very top */
+    /* PWA Header */
     #pwa-header {
         position: fixed;
         top: 0;
@@ -143,39 +48,38 @@ self.addEventListener('fetch', (event) => {
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         color: white;
         padding: 10px 20px;
-        z-index: 99999;
+        z-index: 999999;
         display: flex;
         justify-content: space-between;
         align-items: center;
-        font-family: Arial, sans-serif;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.2);
         height: 50px;
-    }
-
-    /* Add padding to main content */
-    .stApp > header {
-        margin-top: 50px !important;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.2);
     }
     
-    section[data-testid="stSidebar"] {
-        padding-top: 50px !important;
+    /* Fix for Streamlit content */
+    .main .block-container {
+        padding-top: 70px !important;
     }
-
-    /* Status indicator styles */
-    #pwa-status {
-        background: #ffc107;
+    
+    .status-badge {
         padding: 5px 12px;
         border-radius: 15px;
-        font-size: 13px;
         font-weight: bold;
-        display: flex;
+        font-size: 13px;
+        display: inline-flex;
         align-items: center;
         gap: 5px;
-        transition: all 0.3s ease;
     }
-
-    /* Install button */
-    #pwa-install-btn {
+    
+    .online {
+        background: #28a745;
+    }
+    
+    .offline {
+        background: #dc3545;
+    }
+    
+    #install-btn {
         background: white;
         color: #667eea;
         border: none;
@@ -184,18 +88,29 @@ self.addEventListener('fetch', (event) => {
         font-weight: bold;
         cursor: pointer;
         margin-left: 10px;
-        display: none;
+        display: flex;
+        align-items: center;
+        gap: 5px;
         box-shadow: 0 2px 5px rgba(0,0,0,0.2);
         transition: all 0.3s ease;
+        font-size: 14px;
     }
     
-    #pwa-install-btn:hover {
+    #install-btn:hover {
         transform: scale(1.05);
-        box-shadow: 0 3px 8px rgba(0,0,0,0.3);
+        background: #f8f9fa;
     }
     
-    /* Hide Streamlit's default header */
+    #install-btn.hidden {
+        display: none !important;
+    }
+    
+    /* Hide Streamlit header */
     header[data-testid="stHeader"] {
+        display: none !important;
+    }
+    
+    div[data-testid="stDecoration"] {
         display: none !important;
     }
     
@@ -204,13 +119,15 @@ self.addEventListener('fetch', (event) => {
         position: fixed;
         top: 70px;
         right: 20px;
-        padding: 12px 20px;
-        border-radius: 8px;
+        background: #28a745;
         color: white;
-        font-weight: bold;
-        z-index: 99998;
+        padding: 12px 24px;
+        border-radius: 8px;
+        z-index: 9999999;
         box-shadow: 0 4px 12px rgba(0,0,0,0.3);
         animation: slideIn 0.3s ease;
+        font-family: Arial, sans-serif;
+        max-width: 300px;
     }
     
     @keyframes slideIn {
@@ -222,239 +139,632 @@ self.addEventListener('fetch', (event) => {
         from { transform: translateX(0); opacity: 1; }
         to { transform: translateX(100%); opacity: 0; }
     }
+    
+    /* Debug info */
+    .debug-info {
+        position: fixed;
+        bottom: 10px;
+        right: 10px;
+        background: rgba(0,0,0,0.7);
+        color: white;
+        padding: 10px;
+        border-radius: 5px;
+        font-size: 12px;
+        z-index: 9999;
+        display: none;
+    }
     </style>
-
+    """, unsafe_allow_html=True)
+    
+    # Add the PWA header
+    st.markdown("""
     <div id="pwa-header">
         <div style="display: flex; align-items: center; gap: 10px;">
             <span style="font-size: 24px;">🧠</span>
             <span style="font-weight: bold; font-size: 16px;">NeuroHealth AI</span>
         </div>
-        <div style="display: flex; align-items: center;">
-            <span id="pwa-status">⏳ Checking...</span>
-            <button id="pwa-install-btn" onclick="installPWA()">📱 Install App</button>
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <span id="status-indicator" class="status-badge online">
+                <span id="status-icon">🟢</span>
+                <span id="status-text">Online</span>
+            </span>
+            <button id="install-btn" class="hidden">
+                <span>📱</span>
+                <span>Install App</span>
+            </button>
+            <span id="install-status" style="font-size: 12px; color: #ddd;"></span>
         </div>
     </div>
-
-    <script>
-    // ========== FIXED PWA SETUP ==========
     
-    (function() {
-        console.log('PWA initialization started');
+    <div id="debug-info" class="debug-info"></div>
+    """, unsafe_allow_html=True)
+    
+    # Inject JavaScript with improved PWA detection
+    st.markdown("""
+    <script>
+    console.log("🧠 NeuroHealth AI PWA Initializing...");
+    
+    // ====== CONFIGURATION ======
+    const DEBUG_MODE = true;
+    
+    // ====== STATE ======
+    let deferredPrompt = null;
+    let isAppInstalled = false;
+    let serviceWorkerRegistered = false;
+    
+    // ====== DOM ELEMENTS ======
+    const statusIndicator = document.getElementById('status-indicator');
+    const statusIcon = document.getElementById('status-icon');
+    const statusText = document.getElementById('status-text');
+    const installBtn = document.getElementById('install-btn');
+    const installStatus = document.getElementById('install-status');
+    const debugInfo = document.getElementById('debug-info');
+    
+    // ====== DEBUG UTILITIES ======
+    function log(message, type = 'info') {
+        if (!DEBUG_MODE) return;
         
-        // ===== 1. CONNECTION STATUS =====
-        function updateConnectionStatus() {
-            const statusEl = document.getElementById('pwa-status');
-            if (!statusEl) {
-                console.warn('Status element not found');
-                return;
-            }
+        const colors = {
+            info: '#17a2b8',
+            success: '#28a745',
+            warning: '#ffc107',
+            error: '#dc3545'
+        };
+        
+        console.log(`%c🧠 ${message}`, `color: ${colors[type] || colors.info}; font-weight: bold;`);
+        
+        if (debugInfo) {
+            const logEntry = document.createElement('div');
+            logEntry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            logEntry.style.color = colors[type] || colors.info;
+            debugInfo.appendChild(logEntry);
             
-            const isOnline = navigator.onLine;
-            console.log('Connection status:', isOnline ? 'Online' : 'Offline');
-            
-            if (isOnline) {
-                statusEl.innerHTML = '🟢 Online';
-                statusEl.style.background = '#28a745';
-            } else {
-                statusEl.innerHTML = '🔴 Offline';
-                statusEl.style.background = '#dc3545';
+            // Keep only last 5 entries
+            while (debugInfo.children.length > 5) {
+                debugInfo.removeChild(debugInfo.firstChild);
             }
         }
+    }
+    
+    // ====== OFFLINE DETECTION ======
+    function updateConnectionStatus() {
+        const isOnline = navigator.onLine;
         
-        // ===== 2. INITIALIZE STATUS IMMEDIATELY =====
-        // Run immediately to avoid "Checking..." state
-        updateConnectionStatus();
-        
-        // Update on network changes
-        window.addEventListener('online', function() {
-            console.log('Network: Back online');
-            updateConnectionStatus();
-            showNotification('Back online - Syncing data', 'success');
-        });
-        
-        window.addEventListener('offline', function() {
-            console.log('Network: Went offline');
-            updateConnectionStatus();
-            showNotification('Offline mode - Data saved locally', 'info');
-        });
-        
-        // ===== 3. SERVICE WORKER =====
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', function() {
-                navigator.serviceWorker.register('./static/service-worker.js')
-                    .then(function(registration) {
-                        console.log('✅ Service Worker registered:', registration.scope);
-                        
-                        // Check for updates every hour
-                        setInterval(() => {
-                            registration.update();
-                        }, 60 * 60 * 1000);
-                    })
-                    .catch(function(error) {
-                        console.log('❌ Service Worker registration failed:', error);
-                    });
-            });
+        if (isOnline) {
+            statusIcon.textContent = '🟢';
+            statusText.textContent = 'Online';
+            statusIndicator.className = 'status-badge online';
+            log('Network: Online', 'success');
         } else {
-            console.log('Service Workers not supported in this browser');
+            statusIcon.textContent = '🔴';
+            statusText.textContent = 'Offline';
+            statusIndicator.className = 'status-badge offline';
+            log('Network: Offline - Limited functionality', 'warning');
+            showNotification('You are offline. Some features may not work.', 'warning');
         }
         
-        // ===== 4. INSTALL PROMPT =====
-        let deferredPrompt = null;
+        // Show/hide install button based on network
+        if (!isOnline && installBtn) {
+            installBtn.classList.add('hidden');
+        }
+    }
+    
+    // ====== PWA INSTALLATION ======
+    function checkInstallationStatus() {
+        // Check multiple ways the app might be installed
+        const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
+        const isFullscreen = window.matchMedia('(display-mode: fullscreen)').matches;
+        const isMinimalUI = window.matchMedia('(display-mode: minimal-ui)').matches;
+        const isIOSStandalone = ('standalone' in window.navigator) && window.navigator.standalone;
         
-        // Listen for beforeinstallprompt event
-        window.addEventListener('beforeinstallprompt', function(e) {
-            console.log('✅ beforeinstallprompt event fired - App is installable');
+        isAppInstalled = isStandalone || isFullscreen || isMinimalUI || isIOSStandalone;
+        
+        if (isAppInstalled) {
+            log('App already installed as PWA', 'success');
+            if (installBtn) installBtn.classList.add('hidden');
+            if (installStatus) {
+                installStatus.textContent = '✓ Installed';
+                installStatus.style.color = '#28a745';
+            }
+            return true;
+        }
+        return false;
+    }
+    
+    function setupInstallPrompt() {
+        window.addEventListener('beforeinstallprompt', (e) => {
+            log('PWA install prompt available', 'success');
             
-            // Prevent Chrome 67 and earlier from automatically showing the prompt
+            // Prevent the mini-infobar from appearing on mobile
             e.preventDefault();
             
             // Stash the event so it can be triggered later
             deferredPrompt = e;
             
-            // Show the install button
-            const installBtn = document.getElementById('pwa-install-btn');
-            if (installBtn) {
-                installBtn.style.display = 'block';
-                console.log('Install button shown');
+            // Show install button
+            if (installBtn && !isAppInstalled) {
+                installBtn.classList.remove('hidden');
+                log('Install button shown', 'success');
+            }
+            
+            // Update install status
+            if (installStatus) {
+                installStatus.textContent = '↓ Install available';
+                installStatus.style.color = '#ffc107';
             }
         });
+    }
+    
+    async function installApp() {
+        log('Install button clicked');
         
-        // ===== 5. INSTALL FUNCTION =====
-        window.installPWA = function() {
-            console.log('Install button clicked');
+        if (!deferredPrompt) {
+            log('No install prompt available', 'error');
+            showNotification('Installation not available in this browser', 'error');
+            return;
+        }
+        
+        if (!navigator.onLine) {
+            log('Cannot install while offline', 'error');
+            showNotification('Need internet connection to install', 'error');
+            return;
+        }
+        
+        try {
+            // Show the install prompt
+            deferredPrompt.prompt();
             
-            const installBtn = document.getElementById('pwa-install-btn');
+            // Wait for the user to respond
+            const choiceResult = await deferredPrompt.userChoice;
             
-            if (deferredPrompt) {
-                // Show the install prompt
-                deferredPrompt.prompt();
-                
-                // Wait for the user to respond to the prompt
-                deferredPrompt.userChoice.then(function(choiceResult) {
-                    console.log('User choice:', choiceResult.outcome);
-                    
-                    if (choiceResult.outcome === 'accepted') {
-                        console.log('✅ User accepted the install prompt');
-                        showNotification('App installed successfully!', 'success');
-                        
-                        // Hide the install button
-                        if (installBtn) {
-                            installBtn.style.display = 'none';
-                        }
-                    } else {
-                        console.log('❌ User dismissed the install prompt');
-                        showNotification('Installation cancelled', 'info');
-                    }
-                    
-                    // Clear the deferredPrompt variable
-                    deferredPrompt = null;
-                });
+            if (choiceResult.outcome === 'accepted') {
+                log('User accepted PWA installation', 'success');
+                if (installBtn) installBtn.classList.add('hidden');
+                if (installStatus) {
+                    installStatus.textContent = '✓ Installing...';
+                    installStatus.style.color = '#28a745';
+                }
+                showNotification('App installation started!', 'success');
             } else {
-                console.log('No install prompt available');
-                showNotification('Install not available in this browser', 'warning');
+                log('User declined PWA installation', 'warning');
+                showNotification('Installation cancelled', 'info');
             }
+            
+            // Clear the deferredPrompt
+            deferredPrompt = null;
+            
+        } catch (error) {
+            log(`Install error: ${error.message}`, 'error');
+            showNotification(`Install failed: ${error.message}`, 'error');
+        }
+    }
+    
+    // ====== SERVICE WORKER ======
+    async function registerServiceWorker() {
+        if (!('serviceWorker' in navigator)) {
+            log('Service Worker not supported', 'warning');
+            return false;
+        }
+        
+        try {
+            const registration = await navigator.serviceWorker.register('/static/service-worker.js');
+            serviceWorkerRegistered = true;
+            
+            log(`Service Worker registered: ${registration.scope}`, 'success');
+            
+            // Listen for updates
+            registration.addEventListener('updatefound', () => {
+                log('New Service Worker update found', 'info');
+            });
+            
+            return true;
+        } catch (error) {
+            log(`Service Worker registration failed: ${error.message}`, 'error');
+            return false;
+        }
+    }
+    
+    // ====== NOTIFICATIONS ======
+    function showNotification(message, type = 'info') {
+        const notification = document.createElement('div');
+        notification.className = 'pwa-notification';
+        notification.textContent = message;
+        
+        // Style based on type
+        const styles = {
+            success: { background: '#28a745', color: 'white' },
+            warning: { background: '#ffc107', color: '#000' },
+            error: { background: '#dc3545', color: 'white' },
+            info: { background: '#17a2b8', color: 'white' }
         };
         
-        // ===== 6. DETECT IF ALREADY INSTALLED =====
-        window.addEventListener('appinstalled', function(evt) {
-            console.log('✅ PWA was installed');
-            const installBtn = document.getElementById('pwa-install-btn');
-            if (installBtn) {
-                installBtn.style.display = 'none';
-            }
-            showNotification('App installed successfully!', 'success');
-        });
+        Object.assign(notification.style, styles[type] || styles.info);
         
-        // Check if already running as PWA
-        if (window.matchMedia('(display-mode: standalone)').matches) {
-            console.log('✅ App is running in standalone mode');
-            const installBtn = document.getElementById('pwa-install-btn');
-            if (installBtn) {
-                installBtn.style.display = 'none';
-            }
+        // Add to page
+        document.body.appendChild(notification);
+        
+        // Remove after 4 seconds
+        setTimeout(() => {
+            notification.style.animation = 'slideOut 0.3s ease';
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.parentNode.removeChild(notification);
+                }
+            }, 300);
+        }, 4000);
+    }
+    
+    // ====== APP INSTALLED EVENT ======
+    window.addEventListener('appinstalled', () => {
+        log('PWA successfully installed!', 'success');
+        isAppInstalled = true;
+        
+        if (installBtn) installBtn.classList.add('hidden');
+        if (installStatus) {
+            installStatus.textContent = '✓ Installed!';
+            installStatus.style.color = '#28a745';
         }
         
-        // ===== 7. NOTIFICATION HELPER =====
-        function showNotification(message, type) {
-            const notification = document.createElement('div');
-            notification.className = 'pwa-notification';
-            notification.textContent = message;
-            
-            if (type === 'success') {
-                notification.style.background = '#28a745';
-            } else if (type === 'warning') {
-                notification.style.background = '#ffc107';
-                notification.style.color = '#000';
-            } else if (type === 'info') {
-                notification.style.background = '#17a2b8';
-            } else {
-                notification.style.background = '#6c757d';
-            }
-            
-            document.body.appendChild(notification);
-            
-            // Remove after 3 seconds
-            setTimeout(function() {
-                notification.style.animation = 'slideOut 0.3s ease';
-                setTimeout(function() {
-                    if (notification.parentNode) {
-                        notification.parentNode.removeChild(notification);
-                    }
-                }, 300);
-            }, 3000);
+        showNotification('App installed successfully!', 'success');
+    });
+    
+    // ====== INITIALIZATION ======
+    async function initializePWA() {
+        log('Initializing PWA...');
+        
+        // Show debug panel if in debug mode
+        if (DEBUG_MODE && debugInfo) {
+            debugInfo.style.display = 'block';
         }
         
-        console.log('PWA initialization complete');
+        // 1. Set initial connection status
+        updateConnectionStatus();
         
-    })();
+        // 2. Listen for network changes
+        window.addEventListener('online', updateConnectionStatus);
+        window.addEventListener('offline', updateConnectionStatus);
+        
+        // 3. Check if already installed
+        checkInstallationStatus();
+        
+        // 4. Setup install prompt listener
+        setupInstallPrompt();
+        
+        // 5. Register service worker
+        await registerServiceWorker();
+        
+        // 6. Add click handler to install button
+        if (installBtn) {
+            installBtn.addEventListener('click', installApp);
+        }
+        
+        // 7. Log environment info
+        log(`Platform: ${navigator.platform}`);
+        log(`User Agent: ${navigator.userAgent}`);
+        log(`Standalone: ${window.matchMedia('(display-mode: standalone)').matches}`);
+        log(`Online: ${navigator.onLine}`);
+        
+        log('PWA initialization complete ✓', 'success');
+        
+        // Show welcome notification
+        setTimeout(() => {
+            showNotification('NeuroHealth AI is ready! Install for offline use.', 'info');
+        }, 1000);
+    }
+    
+    // ====== START EVERYTHING ======
+    // Wait for DOM to be fully loaded
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initializePWA);
+    } else {
+        initializePWA();
+    }
     </script>
     """, unsafe_allow_html=True)
     
-    # Add PWA info to sidebar
-    with st.sidebar:
-        st.markdown("---")
-        st.markdown("### 📱 PWA Status")
-        
-        # Current status info
-        st.info("""
-        **Connection:** Check the indicator above
-        
-        **Install:** 
-        - Look for the button in the top-right corner
-        - Button appears when app is installable
-        - On mobile: Use browser's "Add to Home Screen"
-        """)
-        
-        with st.expander("ℹ️ About PWA"):
-            st.markdown("""
-            **Progressive Web App features:**
-            - 📱 Install as native app
-            - 🔄 Works offline
-            - ⚡ Faster loading
-            - 💾 Local data storage
-            - 🔔 Push notifications (future)
-            
-            **Installation requirements:**
-            - HTTPS connection
-            - Valid manifest file
-            - Service worker registered
-            - Chrome, Edge, or Safari browser
-            
-            **Current Status:**
-            - Manifest: ✅
-            - Service Worker: ✅
-            - Offline Support: ✅
-            """)
-        
-        # Debug information
-        with st.expander("🔧 Debug Info"):
-            st.code(f"""
-Service Worker: ./static/service-worker.js
-Manifest: ./static/manifest.json
-Icons: 192x192 & 512x512
-Offline Page: ./static/offline.html
-            """)
+    # Force a rerun after a short delay to ensure PWA is initialized
+    if 'pwa_initialized' not in st.session_state:
+        st.session_state.pwa_initialized = True
+        st.rerun()
 
+# Rest of your PWA functions remain the same...
+def create_pwa_files():
+    """Create all PWA files with proper caching"""
+    
+    # Create manifest.json
+    manifest = {
+        "name": "NeuroHealth AI",
+        "short_name": "NeuroHealth",
+        "description": "Stroke and dementia risk assessment tool",
+        "start_url": "/",
+        "display": "standalone",
+        "background_color": "#ffffff",
+        "theme_color": "#667eea",
+        "scope": "/",
+        "orientation": "portrait-primary",
+        "icons": [
+            {
+                "src": "/static/icon-192.png",
+                "sizes": "192x192",
+                "type": "image/png",
+                "purpose": "any maskable"
+            },
+            {
+                "src": "/static/icon-512.png",
+                "sizes": "512x512",
+                "type": "image/png",
+                "purpose": "any maskable"
+            }
+        ],
+        "categories": ["health", "medical"],
+        "prefer_related_applications": False
+    }
+    
+    # Save manifest
+    with open("static/manifest.json", "w", encoding="utf-8") as f:
+        json.dump(manifest, f, indent=2, ensure_ascii=False)
+    
+    # Create service worker
+    sw_code = """// NeuroHealth AI Service Worker
+const CACHE_NAME = 'neurohealth-v3.0';
+const OFFLINE_URL = '/static/offline.html';
+const STATIC_CACHE_FILES = [
+  '/',
+  '/static/offline.html',
+  '/static/manifest.json',
+  '/static/icon-192.png',
+  '/static/icon-512.png'
+];
+
+// Install event
+self.addEventListener('install', event => {
+    console.log('🧠 Service Worker installing...');
+    
+    event.waitUntil(
+        caches.open(CACHE_NAME)
+            .then(cache => {
+                console.log('Caching static assets');
+                return cache.addAll(STATIC_CACHE_FILES);
+            })
+            .then(() => {
+                console.log('Service Worker installed');
+                return self.skipWaiting();
+            })
+    );
+});
+
+// Activate event
+self.addEventListener('activate', event => {
+    console.log('🧠 Service Worker activating...');
+    
+    event.waitUntil(
+        caches.keys().then(cacheNames => {
+            return Promise.all(
+                cacheNames.map(cacheName => {
+                    if (cacheName !== CACHE_NAME) {
+                        console.log('Deleting old cache:', cacheName);
+                        return caches.delete(cacheName);
+                    }
+                })
+            );
+        }).then(() => {
+            console.log('Claiming clients');
+            return self.clients.claim();
+        })
+    );
+});
+
+// Fetch event - Network first, then cache
+self.addEventListener('fetch', event => {
+    // Skip non-GET requests
+    if (event.request.method !== 'GET') return;
+    
+    // For HTML navigation requests
+    if (event.request.mode === 'navigate') {
+        event.respondWith(
+            fetch(event.request)
+                .catch(() => {
+                    return caches.match(OFFLINE_URL);
+                })
+        );
+        return;
+    }
+    
+    // For other requests
+    event.respondWith(
+        fetch(event.request)
+            .then(response => {
+                // Cache successful responses
+                if (response.ok) {
+                    const responseClone = response.clone();
+                    caches.open(CACHE_NAME).then(cache => {
+                        cache.put(event.request, responseClone);
+                    });
+                }
+                return response;
+            })
+            .catch(() => {
+                // Fall back to cache
+                return caches.match(event.request)
+                    .then(cachedResponse => {
+                        if (cachedResponse) {
+                            return cachedResponse;
+                        }
+                        // If it's an HTML request and not in cache, show offline page
+                        if (event.request.headers.get('accept').includes('text/html')) {
+                            return caches.match(OFFLINE_URL);
+                        }
+                    });
+            })
+    );
+});
+"""
+    
+    with open("static/service-worker.js", "w", encoding="utf-8") as f:
+        f.write(sw_code)
+    
+    # Create offline page
+    offline_html = """<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NeuroHealth AI - Offline</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-align: center;
+            padding: 20px;
+        }
+        .container {
+            max-width: 500px;
+            background: rgba(255,255,255,0.1);
+            padding: 40px;
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+            animation: fadeIn 0.5s ease;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+        }
+        p {
+            font-size: 1.2em;
+            line-height: 1.6;
+            margin-bottom: 25px;
+            opacity: 0.9;
+        }
+        .features {
+            background: rgba(255,255,255,0.1);
+            padding: 20px;
+            border-radius: 10px;
+            margin: 25px 0;
+            text-align: left;
+        }
+        .features ul {
+            list-style: none;
+            padding-left: 0;
+        }
+        .features li {
+            margin: 10px 0;
+            padding-left: 25px;
+            position: relative;
+        }
+        .features li:before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            color: #28a745;
+            font-weight: bold;
+        }
+        button {
+            background: white;
+            color: #667eea;
+            border: none;
+            padding: 14px 35px;
+            border-radius: 30px;
+            font-size: 1.1em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 10px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        .retry-button {
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: 2px solid white;
+            margin-left: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧠 You're Offline</h1>
+        <p>NeuroHealth AI needs an internet connection to provide real-time assessments.</p>
+        
+        <div class="features">
+            <p><strong>When you're back online:</strong></p>
+            <ul>
+                <li>Complete stroke risk assessments</li>
+                <li>Track dementia symptoms</li>
+                <li>Save and sync your health data</li>
+                <li>Get personalized recommendations</li>
+            </ul>
+        </div>
+        
+        <div>
+            <button onclick="location.reload()">
+                <span>↻</span>
+                <span>Retry Connection</span>
+            </button>
+            <button class="retry-button" onclick="if(navigator.onLine){location.reload();}else{alert('Still offline. Please check your connection.');}">
+                Check Connection
+            </button>
+        </div>
+        
+        <p style="margin-top: 30px; font-size: 0.9em; opacity: 0.7;">
+            Your data is saved locally and will sync automatically when you reconnect.
+        </p>
+    </div>
+    
+    <script>
+        // Auto-retry every 30 seconds if still offline
+        setInterval(() => {
+            if (navigator.onLine) {
+                location.reload();
+            }
+        }, 30000);
+    </script>
+</body>
+</html>"""
+    
+    with open("static/offline.html", "w", encoding="utf-8") as f:
+        f.write(offline_html)
+# Add this after your PWA setup in your main app
+st.markdown("""
+<style>
+/* PWA Notification Styles */
+.pwa-notification {
+    font-family: Arial, sans-serif;
+}
+
+/* Ensure Streamlit content doesn't overlap */
+.stApp {
+    padding-top: 10px !important;
+}
+
+/* Hide Streamlit's default header */
+header[data-testid="stHeader"] {
+    display: none !important;
+}
+
+div[data-testid="stDecoration"] {
+    display: none !important;
+}
+</style>
+""", unsafe_allow_html=True)
 # ====== CREATE ICONS FUNCTION ======
 def create_pwa_icons():
     """Create PWA icons if they don't exist"""
@@ -3713,50 +4023,13 @@ def show_footer():
     with footer_col3:
         st.caption(f"Last update: {datetime.now().strftime('%Y-%m-%d')}")
 
-# ====== FOR TESTING OFFLINE FUNCTIONALITY ======
-def test_offline_mode():
-    """Test offline mode locally"""
-    st.sidebar.markdown("---")
-    st.sidebar.markdown("### 🔧 PWA Testing")
-    
-    if st.sidebar.button("Test Offline Detection"):
-        st.write("""
-        <script>
-        // Simulate offline mode
-        const status = document.getElementById('pwa-status');
-        if (status) {
-            status.innerHTML = '🔴 Offline (Test)';
-            status.style.background = '#dc3545';
-            alert('Offline mode simulated! Check the status indicator.');
-        }
-        </script>
-        """, unsafe_allow_html=True)
-    
-    if st.sidebar.button("Check PWA Support"):
-        st.write("""
-        <script>
-        const supports = {
-            serviceWorker: 'serviceWorker' in navigator,
-            installPrompt: 'BeforeInstallPromptEvent' in window,
-            manifest: 'manifest' in document.createElement('link'),
-            online: 'onLine' in navigator
-        };
-        
-        let message = 'PWA Support Check:\\n';
-        for (const [key, value] of Object.entries(supports)) {
-            message += `${key}: ${value ? '✅' : '❌'}\\n`;
-        }
-        
-        alert(message);
-        console.log('PWA Support:', supports);
-        </script>
-        """, unsafe_allow_html=True)
 
 # ====== RUN APP ======
 if __name__ == "__main__":
     # Add test buttons to sidebar
     test_offline_mode()
     main()
+
 
 
 
