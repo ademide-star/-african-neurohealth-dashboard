@@ -797,29 +797,6 @@ def create_pwa_icons():
         print("2. static/icon-512.png (512x512)")
         return False
 
-def create_simple_icons():
-    """Create simple icon files if they don't exist"""
-    try:
-        from PIL import Image, ImageDraw
-        import os
-        
-        if not os.path.exists("static/icon-192.png"):
-            # Create a simple blue circle with brain emoji
-            img = Image.new('RGBA', (192, 192), (102, 126, 234, 255))  # #667eea
-            draw = ImageDraw.Draw(img)
-            
-            # Try to add text/emoji (simple approach)
-            # Save as PNG
-            img.save("static/icon-192.png")
-            print("✅ Created icon-192.png")
-            
-            # Create larger version
-            img_large = img.resize((512, 512))
-            img_large.save("static/icon-512.png")
-            print("✅ Created icon-512.png")
-    except Exception as e:
-        print(f"⚠️ Could not create icons: {e}")
-        print("Please add icon files manually to static/ folder")
 
 def render_dashboard():
     """Main dashboard page"""
@@ -3811,7 +3788,7 @@ def render_sidebar():
 
     # 2. Get the base64 string (use 'r' before the path to avoid escape character errors)
     # Just use the filename. Don't use the C:\ path or the URL.
-    img_path = "Gemini_Generated_Image_rnqv02rnqv02rnqv.png"
+    img_path ="Gemini_Generated_Image_rnqv02rnqv02rnqv.png"
     try:
         img_base64 = get_base64_of_bin_file(img_path)
     # ... rest of your code
@@ -4029,6 +4006,7 @@ if __name__ == "__main__":
     # Add test buttons to sidebar
     test_offline_mode()
     main()
+
 
 
 
