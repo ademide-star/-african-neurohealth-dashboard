@@ -299,7 +299,6 @@ def simple_login():
             st.session_state.logged_in = False
             st.session_state.user_name = ""
             st.session_state.current_page = "Dashboard"
-            init_session_state()
             st.rerun()
 
 
@@ -3183,18 +3182,17 @@ def show_footer():
     st.markdown("---")
     footer_col1, footer_col2, footer_col3 = st.columns(3)
     with footer_col1:
-        st.caption("© 2024 African NeuroHealth AI")
+        st.caption("© 2024 African NeuroHealth AI Dashboard")
     with footer_col2:
-        st.caption("Version 2.0 | PWA Enabled")
+        st.caption("Version 2.0")
     with footer_col3:
         st.caption(f"Last update: {datetime.now().strftime('%Y-%m-%d')}")
-
-init_session_state()
 
 # ====== RUN APP ======
 if __name__ == "__main__":
     main()
    
+
 
 
 
