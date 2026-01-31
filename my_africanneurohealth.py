@@ -113,51 +113,6 @@ def compute_delta(current, previous):
 
     return diff, label
 
-# ====== SESSION STATE ======
-if "previous_stats" not in st.session_state:
-    st.session_state.previous_stats = {
-        "stroke": 1247,
-        "dementia": 892,
-        "nutrition": 543,
-        "stress": 421
-    }
-
-# Current stats (replace with model / DB)
-stats = {
-    "stroke": 1253,
-    "dementia": 880,
-    "nutrition": 543,
-    "stress": 470
-}
-
-# ====== METRIC CARDS ======
-cols = st.columns(len(stats))
-
-for col, (key, value) in zip(cols, stats.items()):
-    prev = st.session_state.previous_stats.get(key)
-    diff, label = compute_delta(value, prev)
-
-    # Color logic
-    if diff > 0:
-        delta_color = "normal"      # green
-    elif diff < 0:
-        delta_color = "inverse"     # red
-    else:
-        delta_color = "off"         # gray
-
-    col.metric(
-        label=key.title(),
-        value=value,
-        delta=label,
-        delta_color=delta_color
-    )
-
-# ====== AUTO-UPDATE PREVIOUS STATS ======
-st.session_state.previous_stats = {
-    k: int(v) for k, v in stats.items()
-}
-
-
 # ====== Dashboard Header with Logo ======
 def get_base64_of_bin_file(bin_file):
     with open(bin_file, 'rb') as f:
@@ -3304,6 +3259,7 @@ def show_footer():
 if __name__ == "__main__":
     main()
    
+
 
 
 
