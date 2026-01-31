@@ -87,58 +87,155 @@ def init_session_state():
 # Initialize session state
 init_session_state()
 
+def get_base64_of_bin_file(bin_file):
+    """Safe image to base64 converter"""
+    try:
+        with open(bin_file, 'rb') as f:
+            data = f.read()
+        return base64.b64encode(data).decode()
+    except Exception:
+        return None
+def render_sidebar():
+    """Render the sidebar content"""
+    
+    # 1. Logo Logic
+    img_path = "Gemini_Generated_Image_rnqv02rnqv02rnqv.png"
+    img_base64 = get_base64_of_bin_file(img_path)
+    
+    if img_base64:
+        st.sidebar.markdown(f"""
+        <div style="text-align: center;">
+            <img src="data:image/png;base64,{img_base64}" width="100" height="100" style="border-radius: 50%;">
+            <h2 style="margin-bottom: 0;">African NeuroHealth AI</h2>
+            <p style="color: #6B7280; font-size: 0.9rem;">Stroke & Dementia Predictor</p>
+        </div>
+        """, unsafe_allow_html=True)
+    else:
+        # Fallback if image missing
+        st.sidebar.markdown("""
+        <div style="text-align: center;">
+            <h2 style="margin-bottom: 0;">African NeuroHealth AI</h2>
+            <p style="color: #6B7280; font-size: 0.9rem;">Stroke & Dementia Predictor</p>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    st.sidebar.markdown("---")
+    
+    # 2. Login Logic
+    simple_login()
+    
+    # 3. Navigation (Only if logged in)
+    if st.session_state.logged_in:
+        st.sidebar.markdown("---")
+        st.sidebar.subheader(get_translation("📍 Navigation"))
+        
+        page_options = [
+            "Dashboard", "Stroke Assessment", "Dementia Assessment", 
+            "Memory Game", "Nutrition Tracker", "Stress Assessment", "My Reports"
+        ]
+        
+        # Determine index safely
+        try:
+            curr_index = page_options.index(st.session_state.current_page)
+        except ValueError:
+            curr_index = 0
+            
+        selected_page = st.sidebar.radio(
+            get_translation("Go to"),
+            page_options,
+            index=curr_index,
+            key="nav_radio"
+        )
+        
+        if selected_page != st.session_state.current_page:
+            st.session_state.current_page = selected_page
+            st.rerun()
+            
+        # Quick Actions
+        st.sidebar.markdown("---")
+        st.sidebar.subheader(get_translation("⚡ Quick Actions"))
+        
+        c1, c2 = st.sidebar.columns(2)
+        if c1.button("🔄 Reload", use_container_width=True):
+            st.session_state.models_loaded = {"Stroke": False, "Dementia": False}
+            st.rerun()
+            
+        if c2.button("📊 Reports", use_container_width=True):
+            st.session_state.current_page = "My Reports"
+            st.rerun()
+            
+        st.sidebar.markdown("---")
+        st.sidebar.info(f"User: {st.session_state.user_name}")
+        
+        if st.sidebar.button("Log Out", use_container_width=True):
+            st.session_state.logged_in = False
+            st.rerun()
+
+# ====== 7. COMPONENT: DASHBOARD (Your Code) ======
 def render_dashboard():
     """Main dashboard page"""
-    import base64
-    import streamlit as st
-    import time
-
-    # ====== HIDE STREAMLIT DEFAULT UI ======
+    
+    # Hide Default UI
     st.markdown("""
     <style>
         #MainMenu {visibility: hidden;}
         footer {visibility: hidden;}
         header {visibility: hidden;}
-    </style>
-    """, unsafe_allow_html=True)
-
-    # ====== CUSTOM CSS ======
-    st.markdown("""
-    <style>
         .metric-card {
             background-color: #F8FAFC; 
             padding: 15px; 
             border-radius: 10px; 
             border-left: 4px solid #3B82F6;
             text-align: center;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
         }
-        .metric-label { font-weight: 600; font-size: 1rem; margin-bottom: 5px; }
-        .metric-value { font-size: 1.5rem; font-weight: bold; }
+        .metric-label { font-weight: 600; font-size: 1rem; margin-bottom: 5px; color: #4B5563; }
+        .metric-value { font-size: 1.8rem; font-weight: bold; color: #111827; }
         .metric-delta { font-size: 1rem; color: #16A34A; }
     </style>
     """, unsafe_allow_html=True)
 
-    # ====== Helper: Animated Metric ======
-    def animated_metric(label, target_value, delta, duration=0.5, steps=20):
+    def animated_metric(label, target_value, delta, steps=10):
+        """Simulates a counting animation"""
         placeholder = st.empty()
-        step_value = max(1, target_value // steps)
+        step_val = max(1, target_value // steps)
+        
         for i in range(steps + 1):
-            current = min(i * step_value, target_value)
+            curr = min(i * step_val, target_value)
             placeholder.markdown(f"""
             <div class="metric-card">
                 <div class="metric-label">{label}</div>
-                <div class="metric-value">{current:,}</div>
+                <div class="metric-value">{curr:,}</div>
                 <div class="metric-delta">{delta}</div>
             </div>
             """, unsafe_allow_html=True)
-            time.sleep(duration / steps)
+            time.sleep(0.01) # Small delay for animation effect
 
-    # ====== Helper: Delta ======
-    def compute_delta(current, previous):
-        diff = current - previous
-        sign = "+" if diff >= 0 else ""
-        return f"{sign}{diff}"
+    def compute_delta(curr, prev):
+        diff = curr - prev
+        symbol = "+" if diff >= 0 else ""
+        return f"{symbol}{diff}"
 
+    st.title(f"Welcome, {st.session_state.user_name}")
+    st.markdown("### 📊 Live Health Analytics")
+    
+    # Stats Logic
+    current_stats = {"stroke": 1247, "dementia": 892}
+    prev_stats = st.session_state.previous_stats
+
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        delta = compute_delta(current_stats["stroke"], prev_stats["stroke"])
+        animated_metric("🧠 Stroke Predictions", current_stats["stroke"], delta)
+        
+    with col2:
+        delta = compute_delta(current_stats["dementia"], prev_stats["dementia"])
+        animated_metric("🧓 Dementia Predictions", current_stats["dementia"], delta)
+
+    # Update state for next time
+    st.session_state.previous_stats = current_stats
+    
     # ====== Dashboard Header with Logo ======
     def get_base64_of_bin_file(bin_file):
         with open(bin_file, 'rb') as f:
@@ -2739,10 +2836,8 @@ def generate_stroke_pdf(patient_name, patient_data, risk_score, risk_level, risk
     "Please share this report with a qualified healthcare provider for formal evaluation and personalized care planning.",
     "en"
 )
-
-    
+ 
     return bytes(pdf.output())
-
 
 def generate_alzheimer_pdf(patient_name, patient_data, risk_score, risk_level, risk_factors_list):
     """Generate PDF report for Alzheimer's/Dementia assessment"""
@@ -3000,7 +3095,6 @@ def render_sidebar():
     img_path ="Gemini_Generated_Image_rnqv02rnqv02rnqv.png"
     try:
         img_base64 = get_base64_of_bin_file(img_path)
-    # ... rest of your code
     except FileNotFoundError:
         st.error("Logo file not found in the repository folder.")
         # 3. Use the base64 string in your HTML
@@ -3096,17 +3190,21 @@ def render_sidebar():
 def main():
     """Main function to run the Streamlit app"""
     
-    # 1. Render sidebar (Handles Login logic internally now)
+      # Render sidebar (your existing function)
     render_sidebar()
     
-    # 2. Check if logged in
+    # Check if logged in
     if not st.session_state.logged_in:
-        # Show welcome screen and STOP execution here
+        # Show welcome screen
         show_welcome_screen()
-        return 
+        return
     
-    # 3. User is logged in - show selected page
-    route_pages(st.session_state.current_page)  
+    # User is logged in - show selected page
+    current_page = st.session_state.current_page
+    
+    # Page routing (your existing routing code)
+    route_pages(current_page)
+    
     # Footer
     show_footer()
 
@@ -3172,7 +3270,7 @@ def show_footer():
     with footer_col1:
         st.caption("© 2024 African NeuroHealth AI")
     with footer_col2:
-        st.caption("Version 2.0 | PWA Enabled")
+        st.caption("Version 2.0")
     with footer_col3:
         st.caption(f"Last update: {datetime.now().strftime('%Y-%m-%d')}")
 
@@ -3180,6 +3278,7 @@ def show_footer():
 if __name__ == "__main__":
     main()
    
+
 
 
 
