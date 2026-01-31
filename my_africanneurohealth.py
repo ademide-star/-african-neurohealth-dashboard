@@ -303,16 +303,6 @@ def simple_login():
             st.rerun()
 
 
-# -------------------
-# Utility Functions
-# -------------------
-def save_to_supabase(table_name, record):
-    try:
-        resp = supabase.table(table_name).insert(record).execute()
-        return resp.data is not None, resp.error
-    except Exception as e:
-        return False, str(e)
-
 countries_with_provinces = {
     "Nigeria": [
         "Abia", "Adamawa", "Akwa Ibom", "Anambra", "Bauchi", "Bayelsa", "Benue", "Borno", "Cross River", "Delta",
@@ -450,6 +440,17 @@ payload = {
     "ethnicity": encoded_ethnicity,
     # include other fields...
 }
+# -------------------
+# Utility Functions
+# -------------------
+def save_to_supabase(table_name, record):
+    try:
+        resp = supabase.table(table_name).insert(record).execute()
+        return resp.data is not None, resp.error
+    except Exception as e:
+        return False, str(e)
+        
+
 # This section will be handled by the specific assessment forms
 # Remove this placeholder code as PDF generation occurs within
 # render_stroke_assessment() and render_alzheimer_assessment() functions
@@ -3199,6 +3200,7 @@ init_session_state()
 if __name__ == "__main__":
     main()
    
+
 
 
 
