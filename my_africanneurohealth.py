@@ -3186,12 +3186,11 @@ def show_footer():
     with footer_col3:
         st.caption(f"Last update: {datetime.now().strftime('%Y-%m-%d')}")
 
-init_session_state()
-
 # ====== RUN APP ======
 if __name__ == "__main__":
     main()
    
+
 
 
 
