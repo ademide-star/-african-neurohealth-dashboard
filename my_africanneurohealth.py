@@ -1,4 +1,3 @@
-# ====== IMPORTS ======
 import streamlit as st
 import json
 import os
@@ -299,7 +298,6 @@ def simple_login():
             st.session_state.logged_in = False
             st.session_state.user_name = ""
             st.session_state.current_page = "Dashboard"
-            init_session_state()
             st.rerun()
 
 
@@ -3200,6 +3198,7 @@ init_session_state()
 if __name__ == "__main__":
     main()
    
+
 
 
 
