@@ -319,8 +319,12 @@ def simple_login():
             st.session_state.current_page = "Dashboard"
             st.rerun()
 
-
-countries_with_provinces = {
+# 1. MOVED: Location and Ethnicity logic into a function
+def render_location_filters():
+    """Renders location widgets safely inside the sidebar context"""
+    st.sidebar.markdown("---")
+    st.sidebar.header(get_translation("🌍 Location Information"))
+    countries_with_provinces = {
     "Nigeria": [
         "Abia", "Adamawa", "Akwa Ibom", "Anambra", "Bauchi", "Bayelsa", "Benue", "Borno", "Cross River", "Delta",
         "Ebonyi", "Edo", "Ekiti", "Enugu", "FCT", "Gombe", "Imo", "Jigawa", "Kaduna", "Kano", "Katsina", "Kebbi",
@@ -2952,6 +2956,8 @@ def render_reports_page():
 # ====== MAIN APP FUNCTION ======
 def main():
     """Main function to run the Streamlit app"""
+    # A. Init state first
+    init_session_state()
     
     # 1. Render sidebar (Handles Login logic internally now)
     render_sidebar()
@@ -3036,6 +3042,7 @@ def show_footer():
 # ====== RUN APP ======
 if __name__ == "__main__":
     main()
+
 
 
 
