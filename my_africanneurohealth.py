@@ -21,7 +21,7 @@ st.markdown("""
     """, unsafe_allow_html=True)
 
     # ====== CUSTOM CSS ======
-    st.markdown("""
+st.markdown("""
     <style>
         .metric-card {
             background-color: #F8FAFC; 
@@ -37,76 +37,76 @@ st.markdown("""
     """, unsafe_allow_html=True)
 
     # ====== Helper: Animated Metric ======
-    def animated_metric(label, target_value, delta, duration=0.5, steps=20):
-        placeholder = st.empty()
-        step_value = max(1, target_value // steps)
-        for i in range(steps + 1):
-            current = min(i * step_value, target_value)
-            placeholder.markdown(f"""
-            <div class="metric-card">
-                <div class="metric-label">{label}</div>
-                <div class="metric-value">{current:,}</div>
-                <div class="metric-delta">{delta}</div>
-            </div>
-            """, unsafe_allow_html=True)
-            time.sleep(duration / steps)
+def animated_metric(label, target_value, delta, duration=0.5, steps=20):
+    placeholder = st.empty()
+    step_value = max(1, target_value // steps)
+    for i in range(steps + 1):
+        current = min(i * step_value, target_value)
+        placeholder.markdown(f"""
+        <div class="metric-card">
+            <div class="metric-label">{label}</div>
+            <div class="metric-value">{current:,}</div>
+            <div class="metric-delta">{delta}</div>
+        </div>
+        """, unsafe_allow_html=True)
+        time.sleep(duration / steps)
 
     # ====== Helper: Delta ======
-    def compute_delta(current, previous):
-        diff = current - previous
-        sign = "+" if diff >= 0 else ""
-        return f"{sign}{diff}"
+def compute_delta(current, previous):
+    diff = current - previous
+    sign = "+" if diff >= 0 else ""
+    return f"{sign}{diff}"
 
     # ====== Dashboard Header with Logo ======
-    def get_base64_of_bin_file(bin_file):
-        with open(bin_file, 'rb') as f:
-            return base64.b64encode(f.read()).decode()
+def get_base64_of_bin_file(bin_file):
+    with open(bin_file, 'rb') as f:
+        return base64.b64encode(f.read()).decode()
 
-    img_path ="Generated_Image_rnqv02rnqv02rnqv.png"
-    try:
-        img_base64 = get_base64_of_bin_file(img_path)
-        st.markdown(f"""
-        <div style="display:flex; align-items:center; gap:20px; margin-bottom:20px;">
-            <img src="data:image/png;base64,{img_base64}" style="height:100px; width:auto;">
-            <div>
-                <h2 style="margin:0;">African NeuroHealth AI</h2>
-                <p style="margin:0; font-size:1rem; color:#6B7280;">Stroke & Dementia Predictor</p>
-            </div>
+img_path ="Generated_Image_rnqv02rnqv02rnqv.png"
+try:
+    img_base64 = get_base64_of_bin_file(img_path)
+    st.markdown(f"""
+    <div style="display:flex; align-items:center; gap:20px; margin-bottom:20px;">
+        <img src="data:image/png;base64,{img_base64}" style="height:100px; width:auto;">
+        <div>
+            <h2 style="margin:0;">African NeuroHealth AI</h2>
+            <p style="margin:0; font-size:1rem; color:#6B7280;">Stroke & Dementia Predictor</p>
         </div>
-        """, unsafe_allow_html=True)
-    except:
-        st.markdown("""
-        <div style="display:flex; align-items:center; gap:20px; margin-bottom:20px;">
-            <div>
-                <h2 style="margin:0;">African NeuroHealth AI</h2>
-                <p style="margin:0; font-size:1rem; color:#6B7280;">Stroke & Dementia Predictor</p>
-            </div>
+    </div>
+    """, unsafe_allow_html=True)
+except:
+    st.markdown("""
+    <div style="display:flex; align-items:center; gap:20px; margin-bottom:20px;">
+        <div>
+            <h2 style="margin:0;">African NeuroHealth AI</h2>
+            <p style="margin:0; font-size:1rem; color:#6B7280;">Stroke & Dementia Predictor</p>
         </div>
-        """, unsafe_allow_html=True)
+    </div>
+    """, unsafe_allow_html=True)
 
     # ====== Fetch Stats ======
-    if "previous_stats" not in st.session_state:
-        st.session_state.previous_stats = {"stroke": 1247, "dementia": 892}
+if "previous_stats" not in st.session_state:
+    st.session_state.previous_stats = {"stroke": 1247, "dementia": 892}
 
-    stats = {"stroke": 1247, "dementia": 892}  # Replace with model or DB
+stats = {"stroke": 1247, "dementia": 892}  # Replace with model or DB
 
     # ====== Render Metrics in a Row ======
-    col1, col2 = st.columns(2)
-    with col1:
-        animated_metric(
-            label="🧠 Stroke Predictions",
-            target_value=stats["stroke"],
-            delta=compute_delta(stats["stroke"], st.session_state.previous_stats["stroke"])
-        )
-    with col2:
-        animated_metric(
-            label="🧓 Dementia Predictions",
-            target_value=stats["dementia"],
-            delta=compute_delta(stats["dementia"], st.session_state.previous_stats["dementia"])
-        )
+col1, col2 = st.columns(2)
+with col1:
+    animated_metric(
+        label="🧠 Stroke Predictions",
+        target_value=stats["stroke"],
+        delta=compute_delta(stats["stroke"], st.session_state.previous_stats["stroke"])
+    )
+with col2:
+    animated_metric(
+        label="🧓 Dementia Predictions",
+        target_value=stats["dementia"],
+        delta=compute_delta(stats["dementia"], st.session_state.previous_stats["dementia"])
+    )
 
     # Update session state
-    st.session_state.previous_stats = stats
+st.session_state.previous_stats = stats
     
 import numpy as np
 import joblib
@@ -3187,6 +3187,7 @@ def show_footer():
 if __name__ == "__main__":
     main()
    
+
 
 
 
