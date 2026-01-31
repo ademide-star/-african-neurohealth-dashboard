@@ -10,6 +10,36 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded"
 )
+# ====== INITIALIZE SESSION STATE ======
+# Initialize all session state variables
+def init_session_state():
+    if 'logged_in' not in st.session_state:
+        st.session_state.logged_in = False
+    if 'user_name' not in st.session_state:
+        st.session_state.user_name = ""
+    if 'user_id' not in st.session_state:
+        st.session_state.user_id = str(uuid.uuid4())[:8]
+    if 'current_page' not in st.session_state:
+        st.session_state.current_page = "Dashboard"
+    if 'patient_data' not in st.session_state:
+        st.session_state.patient_data = {}
+    if 'predictions' not in st.session_state:
+        st.session_state.predictions = {"Stroke": None, "Dementia": None}
+    if 'reports' not in st.session_state:
+        st.session_state.reports = {}
+    if 'models_loaded' not in st.session_state:
+        st.session_state.models_loaded = {"Stroke": False, "Dementia": False}
+    if 'memory_game' not in st.session_state:
+        st.session_state.memory_game = None
+    if 'nutritional_score' not in st.session_state:
+        st.session_state.nutritional_score = 3
+    if 'stress_score' not in st.session_state:
+        st.session_state.stress_score = 0
+    if 'memory_score' not in st.session_state:
+        st.session_state.memory_score = None
+
+# Initialize session state
+init_session_state()
 def render_dashboard():
     """Main dashboard page"""
     import base64
@@ -211,36 +241,6 @@ def get_user_location():
         print(f"Error fetching location: {e}")
         return "Unknown", "Unknown", "Unknown"
 
-# ====== INITIALIZE SESSION STATE ======
-# Initialize all session state variables
-def init_session_state():
-    if 'logged_in' not in st.session_state:
-        st.session_state.logged_in = False
-    if 'user_name' not in st.session_state:
-        st.session_state.user_name = ""
-    if 'user_id' not in st.session_state:
-        st.session_state.user_id = str(uuid.uuid4())[:8]
-    if 'current_page' not in st.session_state:
-        st.session_state.current_page = "Dashboard"
-    if 'patient_data' not in st.session_state:
-        st.session_state.patient_data = {}
-    if 'predictions' not in st.session_state:
-        st.session_state.predictions = {"Stroke": None, "Dementia": None}
-    if 'reports' not in st.session_state:
-        st.session_state.reports = {}
-    if 'models_loaded' not in st.session_state:
-        st.session_state.models_loaded = {"Stroke": False, "Dementia": False}
-    if 'memory_game' not in st.session_state:
-        st.session_state.memory_game = None
-    if 'nutritional_score' not in st.session_state:
-        st.session_state.nutritional_score = 3
-    if 'stress_score' not in st.session_state:
-        st.session_state.stress_score = 0
-    if 'memory_score' not in st.session_state:
-        st.session_state.memory_score = None
-
-# Initialize session state
-init_session_state()
 
 # ====== SIMPLE LOGIN SYSTEM - FIXED ======
 def simple_login():
@@ -3198,6 +3198,7 @@ init_session_state()
 if __name__ == "__main__":
     main()
    
+
 
 
 
