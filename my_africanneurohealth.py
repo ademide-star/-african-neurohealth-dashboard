@@ -3,6 +3,34 @@ import streamlit as st
 import json
 import os
 from datetime import datetime
+import numpy as np
+import joblib
+import plotly.graph_objects as go
+import plotly.express as px
+import time
+import random
+import uuid
+from pathlib import Path
+from fpdf import FPDF
+import base64
+from io import BytesIO
+from dotenv import load_dotenv
+import requests
+from dataclasses import dataclass
+from typing import Dict, List, Tuple, Optional
+import cloudpickle
+import math
+import shap
+import sqlite3
+from arabic_reshaper import reshape
+from bidi.algorithm import get_display
+import logging
+from postgrest import APIError
+import pickle
+import traceback
+from sklearn.pipeline import Pipeline
+from supabase import create_client, Client
+from translations import get_translation, set_language_selector
 
 # ====== PAGE CONFIG - MUST BE FIRST AND ONLY ONCE ======
 st.set_page_config(
@@ -11,7 +39,8 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded"
 )
-    # ====== HIDE STREAMLIT DEFAULT UI ======
+
+# ====== HIDE STREAMLIT DEFAULT UI ======
 st.markdown("""
     <style>
         #MainMenu {visibility: hidden;}
@@ -20,7 +49,7 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-    # ====== CUSTOM CSS ======
+# ====== CUSTOM CSS ======
 st.markdown("""
     <style>
         .metric-card {
@@ -36,7 +65,7 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-    # ====== Helper: Animated Metric ======
+# ====== Helper: Animated Metric ======
 def animated_metric(label, target_value, delta, duration=0.5, steps=20):
     placeholder = st.empty()
     step_value = max(1, target_value // steps)
@@ -51,163 +80,16 @@ def animated_metric(label, target_value, delta, duration=0.5, steps=20):
         """, unsafe_allow_html=True)
         time.sleep(duration / steps)
 
-    # ====== Helper: Delta ======
+# ====== Helper: Delta ======
 def compute_delta(current, previous):
     diff = current - previous
     sign = "+" if diff >= 0 else ""
     return f"{sign}{diff}"
 
-    # ====== Dashboard Header with Logo ======
+# ====== Dashboard Header with Logo ======
 def get_base64_of_bin_file(bin_file):
     with open(bin_file, 'rb') as f:
         return base64.b64encode(f.read()).decode()
-
-img_path ="Generated_Image_rnqv02rnqv02rnqv.png"
-try:
-    img_base64 = get_base64_of_bin_file(img_path)
-    st.markdown(f"""
-    <div style="display:flex; align-items:center; gap:20px; margin-bottom:20px;">
-        <img src="data:image/png;base64,{img_base64}" style="height:100px; width:auto;">
-        <div>
-            <h2 style="margin:0;">African NeuroHealth AI</h2>
-            <p style="margin:0; font-size:1rem; color:#6B7280;">Stroke & Dementia Predictor</p>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
-except:
-    st.markdown("""
-    <div style="display:flex; align-items:center; gap:20px; margin-bottom:20px;">
-        <div>
-            <h2 style="margin:0;">African NeuroHealth AI</h2>
-            <p style="margin:0; font-size:1rem; color:#6B7280;">Stroke & Dementia Predictor</p>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
-
-    # ====== Fetch Stats ======
-if "previous_stats" not in st.session_state:
-    st.session_state.previous_stats = {"stroke": 1247, "dementia": 892}
-
-stats = {"stroke": 1247, "dementia": 892}  # Replace with model or DB
-
-    # ====== Render Metrics in a Row ======
-col1, col2 = st.columns(2)
-with col1:
-    animated_metric(
-        label="🧠 Stroke Predictions",
-        target_value=stats["stroke"],
-        delta=compute_delta(stats["stroke"], st.session_state.previous_stats["stroke"])
-    )
-with col2:
-    animated_metric(
-        label="🧓 Dementia Predictions",
-        target_value=stats["dementia"],
-        delta=compute_delta(stats["dementia"], st.session_state.previous_stats["dementia"])
-    )
-
-    # Update session state
-st.session_state.previous_stats = stats
-    
-import numpy as np
-import joblib
-import plotly.graph_objects as go
-import plotly.express as px
-from datetime import datetime
-import os
-import time
-import random
-import uuid
-from pathlib import Path
-from fpdf import FPDF
-import base64
-from io import BytesIO
-import time
-from dotenv import load_dotenv
-import requests
-from dataclasses import dataclass
-from typing import Dict, List, Tuple, Optional
-from pathlib import Path
-import cloudpickle
-import math
-from uuid import UUID
-import json
-import jsonschema
-import shap
-import sqlite3
-from fpdf import FPDF
-from arabic_reshaper import reshape
-from bidi.algorithm import get_display
-import logging
-from postgrest import APIError
-import pickle
-from datetime import datetime
-import traceback
-from sklearn.pipeline import Pipeline
-from supabase import create_client, Client
-from translations import get_translation, set_language_selector
-
-import streamlit as st
-from translations import get_translation, set_language_selector
-import streamlit as st
-import time
-
-@st.cache_data(ttl=60)
-def get_dashboard_stats():
-    """
-    Fetch dashboard statistics from model / DB
-    """
-    return {
-        "stroke": {"value": 1247},
-        "dementia": {"value": 892},
-        "memory": {"value": 543}
-    }
-# --- 1. SET UP LANGUAGE (Only call this ONCE) ---
-lang = set_language_selector(widget_key="app_language_selector")
-
-# --- 2. GET TRANSLATED TEXT ---
-title = get_translation("title")
-subtitle = get_translation("subtitle")
-
-# --- 3. RENDER UI WITH RTL SUPPORT ---
-if lang == "ar":
-    # Right-to-Left alignment for Arabic
-    st.sidebar.markdown(f"""
-        <div style="text-align: right; direction: rtl;">
-            <h2 style="margin-bottom:0;">{title}</h2>
-            <p style="color: #6B7280;">{subtitle}</p>
-        </div>
-    """, unsafe_allow_html=True)
-else:
-    # Standard Left-to-Right for other languages
-    st.sidebar.markdown(f"""
-        <div style="text-align: center;">
-            <h2 style="margin-bottom:0;">{title}</h2>
-            <p style="color: #6B7280;">{subtitle}</p>
-        </div>
-    """, unsafe_allow_html=True)
-
-# --- Set up logging ---
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
-
-# --- Load Environment Variables ---
-SUPABASE_URL = st.secrets["SUPABASE_URL"]
-SUPABASE_KEY = st.secrets["SUPABASE_KEY"]
-supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
-logging.basicConfig(level=logging.DEBUG)
-
-# --- Get User Location ---
-def get_user_location():
-    try: 
-        response = requests.get("https://ipinfo.io/json")
-        data = response.json()
-        return data.get("city", "Unknown"), data.get("region", "Unknown"), data.get("country", "Unknown")
-    except Exception as e:
-        print(f"Error fetching location: {e}")
-        return "Unknown", "Unknown", "Unknown"
-        
-import streamlit as st
-import uuid
 
 # ====== INITIALIZE SESSION STATE ======
 def init_session_state():
@@ -234,7 +116,108 @@ def init_session_state():
 # Initialize session state
 init_session_state()
 
+@st.cache_data(ttl=60)
+def get_dashboard_stats():
+    """
+    Fetch dashboard statistics from model / DB
+    """
+    return {
+        "stroke": {"value": 1247},
+        "dementia": {"value": 892},
+        "memory": {"value": 543}
+    }
 
+# --- Set up logging ---
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+# --- Load Environment Variables ---
+SUPABASE_URL = st.secrets["SUPABASE_URL"]
+SUPABASE_KEY = st.secrets["SUPABASE_KEY"]
+supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+logging.basicConfig(level=logging.DEBUG)
+
+# --- Get User Location ---
+def get_user_location():
+    try: 
+        response = requests.get("https://ipinfo.io/json")
+        data = response.json()
+        return data.get("city", "Unknown"), data.get("region", "Unknown"), data.get("country", "Unknown")
+    except Exception as e:
+        print(f"Error fetching location: {e}")
+        return "Unknown", "Unknown", "Unknown"
+
+# --- 1. SET UP LANGUAGE (Only call this ONCE) ---
+lang = set_language_selector(widget_key="app_language_selector")
+
+# --- 2. GET TRANSLATED TEXT ---
+title = get_translation("title")
+subtitle = get_translation("subtitle")
+
+# --- 3. RENDER UI WITH RTL SUPPORT ---
+if lang == "ar":
+    # Right-to-Left alignment for Arabic
+    st.sidebar.markdown(f"""
+        <div style="text-align: right; direction: rtl;">
+            <h2 style="margin-bottom:0;">{title}</h2>
+            <p style="color: #6B7280;">{subtitle}</p>
+        </div>
+    """, unsafe_allow_html=True)
+else:
+    # Standard Left-to-Right for other languages
+    st.sidebar.markdown(f"""
+        <div style="text-align: center;">
+            <h2 style="margin-bottom:0;">{title}</h2>
+            <p style="color: #6B7280;">{subtitle}</p>
+        </div>
+    """, unsafe_allow_html=True)
+
+# ====== MAIN APP CODE ======
+img_path = "Generated_Image_rnqv02rnqv02rnqv.png"
+try:
+    img_base64 = get_base64_of_bin_file(img_path)
+    st.markdown(f"""
+    <div style="display:flex; align-items:center; gap:20px; margin-bottom:20px;">
+        <img src="data:image/png;base64,{img_base64}" style="height:100px; width:auto;">
+        <div>
+            <h2 style="margin:0;">African NeuroHealth AI</h2>
+            <p style="margin:0; font-size:1rem; color:#6B7280;">Stroke & Dementia Predictor</p>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+except:
+    st.markdown("""
+    <div style="display:flex; align-items:center; gap:20px; margin-bottom:20px;">
+        <div>
+            <h2 style="margin:0;">African NeuroHealth AI</h2>
+            <p style="margin:0; font-size:1rem; color:#6B7280;">Stroke & Dementia Predictor</p>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+# ====== Fetch Stats ======
+if "previous_stats" not in st.session_state:
+    st.session_state.previous_stats = {"stroke": 1247, "dementia": 892}
+
+stats = {"stroke": 1247, "dementia": 892}  # Replace with model or DB
+
+# ====== Render Metrics in a Row ======
+col1, col2 = st.columns(2)
+with col1:
+    animated_metric(
+        label="🧠 Stroke Predictions",
+        target_value=stats["stroke"],
+        delta=compute_delta(stats["stroke"], st.session_state.previous_stats["stroke"])
+    )
+with col2:
+    animated_metric(
+        label="🧓 Dementia Predictions",
+        target_value=stats["dementia"],
+        delta=compute_delta(stats["dementia"], st.session_state.previous_stats["dementia"])
+    )
+
+# Update session state
+st.session_state.previous_stats = stats
 # ====== SIMPLE LOGIN SYSTEM - FIXED ======
 def simple_login():
     """Simple login without registration or verification"""
@@ -3187,6 +3170,7 @@ def show_footer():
 if __name__ == "__main__":
     main()
    
+
 
 
 
