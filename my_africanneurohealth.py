@@ -49,7 +49,7 @@ supabase = init_supabase()
 
 # ====== 3. HELPER FUNCTIONS ======
 # (Placeholder for missing translation imports/functions)
-def get_translation(text, default=None):
+
     # --- 1. SET UP LANGUAGE (Only call this ONCE) ---
 lang = set_language_selector(widget_key="app_language_selector")
 
@@ -3353,6 +3353,7 @@ def show_footer():
 if __name__ == "__main__":
     main()
    
+
 
 
 
