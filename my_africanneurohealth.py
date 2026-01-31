@@ -1,4 +1,4 @@
-# 1. Standard Imports (NO streamlit commands here)
+# 1. Standard Imports
 import streamlit as st
 import uuid
 import random
@@ -8,39 +8,20 @@ import numpy as np
 import joblib
 import plotly.graph_objects as go
 import plotly.express as px
-from datetime import datetime
 import os
 import time
-import random
-import uuid
 from pathlib import Path
 from fpdf import FPDF
 import base64
 from io import BytesIO
-import time
-from dotenv import load_dotenv
 import requests
 from dataclasses import dataclass
 from typing import Dict, List, Tuple, Optional
-from pathlib import Path
 import cloudpickle
 import math
-from uuid import UUID
 import json
-import jsonschema
 import shap
-import sqlite3
-from fpdf import FPDF
-from arabic_reshaper import reshape
-from bidi.algorithm import get_display
-import logging
-from postgrest import APIError
-import pickle
-from datetime import datetime
-import traceback
-from sklearn.pipeline import Pipeline
 from supabase import create_client, Client
-from translations import get_translation, set_language_selector
 
 # ====== PAGE CONFIG - MUST BE FIRST AND ONLY ONCE ======
 st.set_page_config(
@@ -49,15 +30,65 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded"
 )
-# ====== 2. LOGGING & CLIENTS ======
-# --- Load Environment Variables ---
-SUPABASE_URL = st.secrets["SUPABASE_URL"]
-SUPABASE_KEY = st.secrets["SUPABASE_KEY"]
-supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
-logging.basicConfig(level=logging.DEBUG)
 
-# ====== INITIALIZE SESSION STATE ======
-# Initialize all session state variables
+# ====== 2. LOGGING & CLIENTS ======
+logging.basicConfig(level=logging.DEBUG)
+# --- Load Environment Variables ---
+@st.cache_resource
+def init_supabase():
+    try:
+        SUPABASE_URL = st.secrets["SUPABASE_URL"]
+        SUPABASE_KEY = st.secrets["SUPABASE_KEY"]
+        supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY) 
+        return create_client(url, key)
+    except Exception as e:
+        logging.error(f"Supabase init error: {e}")
+        return None
+
+supabase = init_supabase()
+
+# ====== 3. HELPER FUNCTIONS ======
+# (Placeholder for missing translation imports/functions)
+def get_translation(text, default=None):
+    # --- 1. SET UP LANGUAGE (Only call this ONCE) ---
+lang = set_language_selector(widget_key="app_language_selector")
+
+# --- 2. GET TRANSLATED TEXT ---
+title = get_translation("title")
+subtitle = get_translation("subtitle")
+
+# --- 3. RENDER UI WITH RTL SUPPORT ---
+if lang == "ar":
+    # Right-to-Left alignment for Arabic
+    st.sidebar.markdown(f"""
+        <div style="text-align: right; direction: rtl;">
+            <h2 style="margin-bottom:0;">{title}</h2>
+            <p style="color: #6B7280;">{subtitle}</p>
+        </div>
+    """, unsafe_allow_html=True)
+else:
+    # Standard Left-to-Right for other languages
+    st.sidebar.markdown(f"""
+        <div style="text-align: center;">
+            <h2 style="margin-bottom:0;">{title}</h2>
+            <p style="color: #6B7280;">{subtitle}</p>
+        </div>
+    """, unsafe_allow_html=True)
+
+    return text if default is None else default
+
+def get_base64_of_bin_file(bin_file):
+    """Safe image to base64 converter"""
+    try:
+        if os.path.exists(bin_file):
+            with open(bin_file, 'rb') as f:
+                data = f.read()
+            return base64.b64encode(data).decode()
+    except Exception:
+        return None
+    return None
+
+# ====== 4. SESSION STATE ======
 def init_session_state():
     if 'logged_in' not in st.session_state:
         st.session_state.logged_in = False
@@ -69,32 +100,104 @@ def init_session_state():
         st.session_state.current_page = "Dashboard"
     if 'patient_data' not in st.session_state:
         st.session_state.patient_data = {}
+    if 'previous_stats' not in st.session_state:
+         st.session_state.previous_stats = {"stroke": 1247, "dementia": 892}
     if 'predictions' not in st.session_state:
         st.session_state.predictions = {"Stroke": None, "Dementia": None}
     if 'reports' not in st.session_state:
         st.session_state.reports = {}
     if 'models_loaded' not in st.session_state:
         st.session_state.models_loaded = {"Stroke": False, "Dementia": False}
-    if 'memory_game' not in st.session_state:
-        st.session_state.memory_game = None
-    if 'nutritional_score' not in st.session_state:
-        st.session_state.nutritional_score = 3
-    if 'stress_score' not in st.session_state:
-        st.session_state.stress_score = 0
-    if 'memory_score' not in st.session_state:
-        st.session_state.memory_score = None
 
-# Initialize session state
-init_session_state()
+# ====== 5. COMPONENT: DASHBOARD ======
+def render_dashboard():
+    """Main dashboard page"""
+    
+    # CSS Styling
+    st.markdown("""
+    <style>
+        .metric-card {
+            background-color: #F8FAFC; 
+            padding: 15px; 
+            border-radius: 10px; 
+            border-left: 4px solid #3B82F6;
+            text-align: center;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .metric-label { font-weight: 600; font-size: 1rem; margin-bottom: 5px; color: #4B5563; }
+        .metric-value { font-size: 1.8rem; font-weight: bold; color: #111827; }
+        .metric-delta { font-size: 1rem; color: #16A34A; }
+    </style>
+    """, unsafe_allow_html=True)
 
-def get_base64_of_bin_file(bin_file):
-    """Safe image to base64 converter"""
-    try:
-        with open(bin_file, 'rb') as f:
-            data = f.read()
-        return base64.b64encode(data).decode()
-    except Exception:
-        return None
+    def compute_delta(curr, prev):
+        diff = curr - prev
+        symbol = "+" if diff >= 0 else ""
+        return f"{symbol}{diff}"
+
+    st.title(f"Welcome, {st.session_state.user_name}")
+    st.markdown("### 📊 Live Health Analytics")
+    
+    # Stats Logic
+    current_stats = {"stroke": 1247, "dementia": 892}
+    
+    # Render Metrics
+    col1, col2 = st.columns(2)
+    with col1:
+        st.markdown(f"""
+        <div class="metric-card">
+            <div class="metric-label">🧠 Stroke Predictions</div>
+            <div class="metric-value">{current_stats['stroke']:,}</div>
+            <div class="metric-delta">{compute_delta(current_stats["stroke"], st.session_state.previous_stats["stroke"])}</div>
+        </div>
+        """, unsafe_allow_html=True)
+        
+    with col2:
+        st.markdown(f"""
+        <div class="metric-card">
+            <div class="metric-label">🧓 Dementia Predictions</div>
+            <div class="metric-value">{current_stats['dementia']:,}</div>
+            <div class="metric-delta">{compute_delta(current_stats["dementia"], st.session_state.previous_stats["dementia"])}</div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    # Update state for next time
+    st.session_state.previous_stats = current_stats
+
+# ====== 6. COMPONENT: SIDEBAR ======
+def simple_login():
+    """Simple login without registration or verification"""
+    st.sidebar.header(get_translation("🔐 Quick Login"))
+    
+    if not st.session_state.get('logged_in', False):
+        default_name = f"Guest_{random.randint(100, 999)}"
+        user_name = st.sidebar.text_input(
+            get_translation("Enter your name (optional)"), 
+            value=default_name, 
+            key="login_name"
+        )
+        
+        col1, col2 = st.sidebar.columns(2)
+        with col1:
+            if st.button("Start Session", use_container_width=True):
+                st.session_state.user_name = user_name if user_name else default_name
+                st.session_state.logged_in = True
+                st.session_state.current_page = "Dashboard"
+                st.rerun()
+        
+        with col2:
+            if st.button("Quick Start", use_container_width=True):
+                st.session_state.user_name = default_name
+                st.session_state.logged_in = True
+                st.session_state.current_page = "Dashboard"
+                st.rerun()
+    else:
+        st.sidebar.success(f"Welcome, {st.session_state.user_name}!")
+        if st.sidebar.button("End Session", use_container_width=True):
+            for key in list(st.session_state.keys()):
+                del st.session_state[key]
+            st.rerun()
+
 def render_sidebar():
     """Render the sidebar content"""
     
@@ -107,15 +210,12 @@ def render_sidebar():
         <div style="text-align: center;">
             <img src="data:image/png;base64,{img_base64}" width="100" height="100" style="border-radius: 50%;">
             <h2 style="margin-bottom: 0;">African NeuroHealth AI</h2>
-            <p style="color: #6B7280; font-size: 0.9rem;">Stroke & Dementia Predictor</p>
         </div>
         """, unsafe_allow_html=True)
     else:
-        # Fallback if image missing
         st.sidebar.markdown("""
         <div style="text-align: center;">
             <h2 style="margin-bottom: 0;">African NeuroHealth AI</h2>
-            <p style="color: #6B7280; font-size: 0.9rem;">Stroke & Dementia Predictor</p>
         </div>
         """, unsafe_allow_html=True)
     
@@ -125,23 +225,22 @@ def render_sidebar():
     simple_login()
     
     # 3. Navigation (Only if logged in)
-    if st.session_state.logged_in:
+    if st.session_state.get('logged_in'):
         st.sidebar.markdown("---")
-        st.sidebar.subheader(get_translation("📍 Navigation"))
+        st.sidebar.subheader("📍 Navigation")
         
         page_options = [
             "Dashboard", "Stroke Assessment", "Dementia Assessment", 
             "Memory Game", "Nutrition Tracker", "Stress Assessment", "My Reports"
         ]
         
-        # Determine index safely
         try:
             curr_index = page_options.index(st.session_state.current_page)
         except ValueError:
             curr_index = 0
             
         selected_page = st.sidebar.radio(
-            get_translation("Go to"),
+            "Go to",
             page_options,
             index=curr_index,
             key="nav_radio"
@@ -297,30 +396,6 @@ def get_dashboard_stats():
         "dementia": {"value": 892},
         "memory": {"value": 543}
     }
-# --- 1. SET UP LANGUAGE (Only call this ONCE) ---
-lang = set_language_selector(widget_key="app_language_selector")
-
-# --- 2. GET TRANSLATED TEXT ---
-title = get_translation("title")
-subtitle = get_translation("subtitle")
-
-# --- 3. RENDER UI WITH RTL SUPPORT ---
-if lang == "ar":
-    # Right-to-Left alignment for Arabic
-    st.sidebar.markdown(f"""
-        <div style="text-align: right; direction: rtl;">
-            <h2 style="margin-bottom:0;">{title}</h2>
-            <p style="color: #6B7280;">{subtitle}</p>
-        </div>
-    """, unsafe_allow_html=True)
-else:
-    # Standard Left-to-Right for other languages
-    st.sidebar.markdown(f"""
-        <div style="text-align: center;">
-            <h2 style="margin-bottom:0;">{title}</h2>
-            <p style="color: #6B7280;">{subtitle}</p>
-        </div>
-    """, unsafe_allow_html=True)
 
 # --- Get User Location ---
 def get_user_location():
@@ -3278,6 +3353,7 @@ def show_footer():
 if __name__ == "__main__":
     main()
    
+
 
 
 
