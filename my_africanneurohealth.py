@@ -43,6 +43,13 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded"
 )
+# ====== 2. LOGGING & CLIENTS ======
+# --- Load Environment Variables ---
+SUPABASE_URL = st.secrets["SUPABASE_URL"]
+SUPABASE_KEY = st.secrets["SUPABASE_KEY"]
+supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+logging.basicConfig(level=logging.DEBUG)
+
 # ====== INITIALIZE SESSION STATE ======
 # Initialize all session state variables
 def init_session_state():
@@ -211,16 +218,6 @@ else:
             <p style="color: #6B7280;">{subtitle}</p>
         </div>
     """, unsafe_allow_html=True)
-
-# --- Set up logging ---
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
-
-# --- Load Environment Variables ---
-SUPABASE_URL = st.secrets["SUPABASE_URL"]
-SUPABASE_KEY = st.secrets["SUPABASE_KEY"]
-supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
-logging.basicConfig(level=logging.DEBUG)
 
 # --- Get User Location ---
 def get_user_location():
@@ -3189,6 +3186,7 @@ init_session_state()
 if __name__ == "__main__":
     main()
    
+
 
 
 
