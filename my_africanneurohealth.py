@@ -1,7 +1,40 @@
-import streamlit as st
-import json
-import os
+import numpy as np
+import joblib
+import plotly.graph_objects as go
+import plotly.express as px
 from datetime import datetime
+import os
+import time
+import random
+import uuid
+from pathlib import Path
+from fpdf import FPDF
+import base64
+from io import BytesIO
+import time
+from dotenv import load_dotenv
+import requests
+from dataclasses import dataclass
+from typing import Dict, List, Tuple, Optional
+from pathlib import Path
+import cloudpickle
+import math
+from uuid import UUID
+import json
+import jsonschema
+import shap
+import sqlite3
+from fpdf import FPDF
+from arabic_reshaper import reshape
+from bidi.algorithm import get_display
+import logging
+from postgrest import APIError
+import pickle
+from datetime import datetime
+import traceback
+from sklearn.pipeline import Pipeline
+from supabase import create_client, Client
+from translations import get_translation, set_language_selector
 
 # ====== PAGE CONFIG - MUST BE FIRST AND ONLY ONCE ======
 st.set_page_config(
@@ -144,49 +177,6 @@ def render_dashboard():
     # Update session state
     st.session_state.previous_stats = stats
     
-import numpy as np
-import joblib
-import plotly.graph_objects as go
-import plotly.express as px
-from datetime import datetime
-import os
-import time
-import random
-import uuid
-from pathlib import Path
-from fpdf import FPDF
-import base64
-from io import BytesIO
-import time
-from dotenv import load_dotenv
-import requests
-from dataclasses import dataclass
-from typing import Dict, List, Tuple, Optional
-from pathlib import Path
-import cloudpickle
-import math
-from uuid import UUID
-import json
-import jsonschema
-import shap
-import sqlite3
-from fpdf import FPDF
-from arabic_reshaper import reshape
-from bidi.algorithm import get_display
-import logging
-from postgrest import APIError
-import pickle
-from datetime import datetime
-import traceback
-from sklearn.pipeline import Pipeline
-from supabase import create_client, Client
-from translations import get_translation, set_language_selector
-
-import streamlit as st
-from translations import get_translation, set_language_selector
-import streamlit as st
-import time
-
 @st.cache_data(ttl=60)
 def get_dashboard_stats():
     """
@@ -3199,6 +3189,7 @@ init_session_state()
 if __name__ == "__main__":
     main()
    
+
 
 
 
