@@ -2923,111 +2923,6 @@ def render_reports_page():
                 
                 st.markdown("</div>", unsafe_allow_html=True)
 
-# ====== SIDEBAR ======
-def render_sidebar():
-    """Render the sidebar content"""
-    # 1. Function to convert image to base64
-    def get_base64_of_bin_file(bin_file):
-        with open(bin_file, 'rb') as f:
-            data = f.read()
-        return base64.b64encode(data).decode()
-
-    # 2. Get the base64 string (use 'r' before the path to avoid escape character errors)
-    # Just use the filename. Don't use the C:\ path or the URL.
-    img_path ="Gemini_Generated_Image_rnqv02rnqv02rnqv.png"
-    try:
-        img_base64 = get_base64_of_bin_file(img_path)
-    # ... rest of your code
-    except FileNotFoundError:
-        st.error("Logo file not found in the repository folder.")
-        # 3. Use the base64 string in your HTML
-        st.sidebar.markdown(f"""
-        <div style="text-align: center;">
-            <img src="data:image/png;base64,{img_base64}" width="100" height="100" style="border-radius: 50%;">
-            <h2 style="margin-bottom: 0;">African NeuroHealth AI</h2>
-            <p style="color: #6B7280; font-size: 0.9rem;">Stroke & Dementia Predictor</p>
-        </div>
-        """, unsafe_allow_html=True)
-    except Exception as e:
-        st.sidebar.markdown("""
-        <div style="text-align: center;">
-            <h2 style="margin-bottom: 0;">African NeuroHealth AI</h2>
-            <p style="color: #6B7280; font-size: 0.9rem;">Stroke & Dementia Predictor</p>
-        </div>
-        """, unsafe_allow_html=True)
-    
-    st.sidebar.markdown("---")
-    
-    # Simple Login
-    simple_login()
-    
-    if st.session_state.logged_in:
-        st.sidebar.markdown("---")
-        
-        # Navigation
-        st.sidebar.subheader(get_translation("📍 Navigation"))
-        
-        page_options = [
-            "Dashboard",
-            "Stroke Assessment",
-            "Dementia Assessment",
-            "Memory Game",
-            "Nutrition Tracker",
-            "Stress Assessment",
-            "My Reports"
-        ]
-        
-        # Use radio buttons for navigation
-        selected_page = st.sidebar.radio(
-            get_translation("Go to"),
-            page_options,
-            index=page_options.index(st.session_state.current_page) if st.session_state.current_page in page_options else 0,
-            key="nav_radio"
-        )
-        
-        # Update current page if changed
-        if selected_page != st.session_state.current_page:
-            st.session_state.current_page = selected_page
-            st.rerun()
-        
-        # Quick Actions
-        st.sidebar.markdown("---")
-        st.sidebar.subheader(get_translation("⚡ Quick Actions"))
-        
-        col1, col2 = st.sidebar.columns(2)
-        with col1:
-            if st.button(
-                get_translation("🔄 Reload"), 
-                use_container_width=True, 
-                key="reload_models"
-            ):
-                with st.spinner(get_translation("Reloading models...")):
-                    st.session_state.models_loaded = {"Stroke": False, "Dementia": False}
-                    st.rerun()
-        
-        with col2:
-            if st.button(
-                get_translation("📊 Reports"), 
-                use_container_width=True, 
-                key="view_reports"
-            ):
-                st.session_state.current_page = "My Reports"
-                st.rerun()
-        
-        st.sidebar.markdown("---")
-        
-        # User Info
-        st.sidebar.subheader(get_translation("👤 User Information"))
-        st.sidebar.info(get_translation(f"User: {st.session_state.user_name}"))
-        st.sidebar.caption(get_translation(f"ID: {st.session_state.user_id}"))
-        
-        # Session Stats
-        if st.session_state.reports:
-            st.sidebar.metric(
-                get_translation("Generated Reports"), 
-                len(st.session_state.reports)
-            )
-
 
 # ====== MAIN APP FUNCTION ======
 def main():
@@ -3116,4 +3011,5 @@ def show_footer():
 # ====== RUN APP ======
 if __name__ == "__main__":
     main()
+
 
