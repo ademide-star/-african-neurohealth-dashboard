@@ -2371,71 +2371,8 @@ def render_alzheimer_assessment():
         else:
             st.info(get_translation("👈 Fill the form and click 'Submit Dementia Assessment' to see results"))
 
-import streamlit as st
-import time
-
-
-def animated_metric(label, target_value, delta, duration=0.6, steps=20):
-    placeholder = st.empty()
-    step_value = max(1, target_value // steps)
-
-    for i in range(steps + 1):
-        current = min(i * step_value, target_value)
-        placeholder.metric(
-            label=label,
-            value=f"{current:,}",
-            delta=delta
-        )
-        time.sleep(duration / steps)
-
-def get_dashboard_stats():
-    """Return dashboard statistics"""
-    return {
-        "stroke": {"value": 1247, "delta": "+23"},
-        "dementia": {"value": 892, "delta": "+15"},
-        "memory": {"value": 543, "delta": "+12"}
-    }
-stats = get_dashboard_stats()
-if "previous_stats" not in st.session_state:
-    st.session_state.previous_stats = stats
-# ====== DASHBOARD ======
-def render_dashboard():
-    """Main dashboard page"""
-    import base64
-    import streamlit as st
-
-    # Helper function: convert image to base64
-    def get_base64_of_bin_file(bin_file):
-        with open(bin_file, 'rb') as f:
-            data = f.read()
-        return base64.b64encode(data).decode()
-
-    # Image path
-    img_path ="Gemini_Generated_Image_rnqv02rnqv02rnqv.png"
-
-    try:
-        img_base64 = get_base64_of_bin_file(img_path)
-        st.markdown(f"""
-        <div style="display: flex; align-items: center; gap: 20px;">
-            <img src="data:image/png;base64,{img_base64}" 
-                 style="height: 100px; width: auto;">
-            <div>
-                <h1 style="margin: 0;">African NeuroHealth AI Dashboard</h1>
-                <p style="color: #6B7280; font-size: 1rem; margin: 0;">Stroke & Dementia Predictor</p>
-            </div>
-        """, unsafe_allow_html=True)
-    except Exception as e:
-        # Fallback if image fails
-        st.markdown("""
-        <div style="display: flex; align-items: center; gap: 20px;">
-            <div>
-                <h1 style="margin: 0;">African NeuroHealth AI Dashboard</h1>
-                <p style="color: #6B7280; font-size: 1rem; margin: 0;">Stroke & Dementia Predictor</p>
-            </div>
-        """, unsafe_allow_html=True)
 
     st.markdown("---")
-    
     st.markdown(get_translation("""
     Welcome to the **African NeuroHealth AI Dashboard** - an integrated platform for predicting 
     **stroke** and **dementia** risks using advanced machine learning models.This platform is a culturally attuned, context-aware diagnostic tool tailored for assessing neuro-health risks in African populations. 
@@ -3179,3 +3116,4 @@ def show_footer():
 # ====== RUN APP ======
 if __name__ == "__main__":
     main()
+
