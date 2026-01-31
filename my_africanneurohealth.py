@@ -3148,9 +3148,9 @@ def show_welcome_screen():
         st.markdown("""
         ## Your Personal Health Assessment Platform
         
-        **Now with PWA Support:**
+        **Now with Improvements:**
         - 📱 Install as a native app
-        - 🔄 Works offline
+        - 🔄 Works on any gadget
         - ⚡ Faster loading
         - 💾 Automatic data sync
         
@@ -3202,6 +3202,7 @@ def show_footer():
 if __name__ == "__main__":
     main()
    
+
 
 
 
