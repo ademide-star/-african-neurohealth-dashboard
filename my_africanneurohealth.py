@@ -3,34 +3,6 @@ import streamlit as st
 import json
 import os
 from datetime import datetime
-import numpy as np
-import joblib
-import plotly.graph_objects as go
-import plotly.express as px
-import time
-import random
-import uuid
-from pathlib import Path
-from fpdf import FPDF
-import base64
-from io import BytesIO
-from dotenv import load_dotenv
-import requests
-from dataclasses import dataclass
-from typing import Dict, List, Tuple, Optional
-import cloudpickle
-import math
-import shap
-import sqlite3
-from arabic_reshaper import reshape
-from bidi.algorithm import get_display
-import logging
-from postgrest import APIError
-import pickle
-import traceback
-from sklearn.pipeline import Pipeline
-from supabase import create_client, Client
-from translations import get_translation, set_language_selector
 
 # ====== PAGE CONFIG - MUST BE FIRST AND ONLY ONCE ======
 st.set_page_config(
@@ -39,9 +11,14 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded"
 )
+def render_dashboard():
+    """Main dashboard page"""
+    import base64
+    import streamlit as st
+    import time
 
-# ====== HIDE STREAMLIT DEFAULT UI ======
-st.markdown("""
+    # ====== HIDE STREAMLIT DEFAULT UI ======
+    st.markdown("""
     <style>
         #MainMenu {visibility: hidden;}
         footer {visibility: hidden;}
@@ -49,8 +26,8 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# ====== CUSTOM CSS ======
-st.markdown("""
+    # ====== CUSTOM CSS ======
+    st.markdown("""
     <style>
         .metric-card {
             background-color: #F8FAFC; 
@@ -65,104 +42,120 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# ====== Helper: Animated Metric ======
-def animated_metric(label, target_value, delta, duration=0.5, steps=20):
-    placeholder = st.empty()
-    step_value = max(1, target_value // steps)
-    for i in range(steps + 1):
-        current = min(i * step_value, target_value)
-        placeholder.markdown(f"""
-        <div class="metric-card">
-            <div class="metric-label">{label}</div>
-            <div class="metric-value">{current:,}</div>
-            <div class="metric-delta">{delta}</div>
+    # ====== Helper: Animated Metric ======
+    def animated_metric(label, target_value, delta, duration=0.5, steps=20):
+        placeholder = st.empty()
+        step_value = max(1, target_value // steps)
+        for i in range(steps + 1):
+            current = min(i * step_value, target_value)
+            placeholder.markdown(f"""
+            <div class="metric-card">
+                <div class="metric-label">{label}</div>
+                <div class="metric-value">{current:,}</div>
+                <div class="metric-delta">{delta}</div>
+            </div>
+            """, unsafe_allow_html=True)
+            time.sleep(duration / steps)
+
+    # ====== Helper: Delta ======
+    def compute_delta(current, previous):
+        diff = current - previous
+        sign = "+" if diff >= 0 else ""
+        return f"{sign}{diff}"
+
+    # ====== Dashboard Header with Logo ======
+    def get_base64_of_bin_file(bin_file):
+        with open(bin_file, 'rb') as f:
+            return base64.b64encode(f.read()).decode()
+
+    img_path ="Generated_Image_rnqv02rnqv02rnqv.png"
+    try:
+        img_base64 = get_base64_of_bin_file(img_path)
+        st.markdown(f"""
+        <div style="display:flex; align-items:center; gap:20px; margin-bottom:20px;">
+            <img src="data:image/png;base64,{img_base64}" style="height:100px; width:auto;">
+            <div>
+                <h2 style="margin:0;">African NeuroHealth AI</h2>
+                <p style="margin:0; font-size:1rem; color:#6B7280;">Stroke & Dementia Predictor</p>
+            </div>
         </div>
         """, unsafe_allow_html=True)
-        time.sleep(duration / steps)
-
-# ====== STATISTICS METRICS ======
-st.markdown("## 📈 Platform Statistics")
-
-def compute_delta(current, previous):
-    """
-    Safe delta computation for Streamlit metrics
-    """
-
-    # Handle missing or invalid previous values
-    if previous is None:
-        return 0, "🆕 New"
-
-    # If previous is a dict, try to extract a value
-    if isinstance(previous, dict):
-        previous = previous.get("value", None)
-
-    # Final safety check
-    if not isinstance(previous, (int, float)):
-        return 0, "—"
-
-    current_val = int(current)
-    previous_val = int(previous)
-    diff = current_val - previous_val
-
-    if diff > 0:
-        label = f"+{diff} ↑"
-    elif diff < 0:
-        label = f"{diff} ↓"
-    else:
-        label = "0 →"
-
-    return diff, label
-
-# ====== Dashboard Header with Logo ======
-def get_base64_of_bin_file(bin_file):
-    with open(bin_file, 'rb') as f:
-        return base64.b64encode(f.read()).decode()
-
-img_path ="Generated_Image_rnqv02rnqv02rnqv.png"
-try:
-    img_base64 = get_base64_of_bin_file(img_path)
-    st.markdown(f"""
-    <div style="display:flex; align-items:center; gap:20px; margin-bottom:20px;">
-        <img src="data:image/png;base64,{img_base64}" style="height:100px; width:auto;">
-        <div>
-            <h2 style="margin:0;">African NeuroHealth AI</h2>
-            <p style="margin:0; font-size:1rem; color:#6B7280;">Stroke & Dementia Predictor</p>
+    except:
+        st.markdown("""
+        <div style="display:flex; align-items:center; gap:20px; margin-bottom:20px;">
+            <div>
+                <h2 style="margin:0;">African NeuroHealth AI</h2>
+                <p style="margin:0; font-size:1rem; color:#6B7280;">Stroke & Dementia Predictor</p>
+            </div>
         </div>
-    </div>
-    """, unsafe_allow_html=True)
-except:
-    st.markdown("""
-    <div style="display:flex; align-items:center; gap:20px; margin-bottom:20px;">
-        <div>
-            <h2 style="margin:0;">African NeuroHealth AI</h2>
-            <p style="margin:0; font-size:1rem; color:#6B7280;">Stroke & Dementia Predictor</p>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
+        """, unsafe_allow_html=True)
 
-# ====== Fetch Stats ======
-if "previous_stats" not in st.session_state:
-    st.session_state.previous_stats = {"stroke": 1247, "dementia": 892}
+    # ====== Fetch Stats ======
+    if "previous_stats" not in st.session_state:
+        st.session_state.previous_stats = {"stroke": 1247, "dementia": 892}
 
-stats = {"stroke": 1247, "dementia": 892}  # Replace with model or DB
+    stats = {"stroke": 1247, "dementia": 892}  # Replace with model or DB
 
-# ====== Render Metrics in a Row ======
-col1, col2 = st.columns(2)
-with col1:
-    animated_metric(
-        label="🧠 Stroke Predictions",
-        target_value=stats["stroke"],
-        delta=compute_delta(stats["stroke"], st.session_state.previous_stats["stroke"])
-    )
-with col2:
-    animated_metric(
-        label="🧓 Dementia Predictions",
-        target_value=stats["dementia"],
-        delta=compute_delta(stats["dementia"], st.session_state.previous_stats["dementia"])
-    )
+    # ====== Render Metrics in a Row ======
+    col1, col2 = st.columns(2)
+    with col1:
+        animated_metric(
+            label="🧠 Stroke Predictions",
+            target_value=stats["stroke"],
+            delta=compute_delta(stats["stroke"], st.session_state.previous_stats["stroke"])
+        )
+    with col2:
+        animated_metric(
+            label="🧓 Dementia Predictions",
+            target_value=stats["dementia"],
+            delta=compute_delta(stats["dementia"], st.session_state.previous_stats["dementia"])
+        )
 
-# Update session state
-st.session_state.previous_stats = stats
+    # Update session state
+    st.session_state.previous_stats = stats
+    
+import numpy as np
+import joblib
+import plotly.graph_objects as go
+import plotly.express as px
+from datetime import datetime
+import os
+import time
+import random
+import uuid
+from pathlib import Path
+from fpdf import FPDF
+import base64
+from io import BytesIO
+import time
+from dotenv import load_dotenv
+import requests
+from dataclasses import dataclass
+from typing import Dict, List, Tuple, Optional
+from pathlib import Path
+import cloudpickle
+import math
+from uuid import UUID
+import json
+import jsonschema
+import shap
+import sqlite3
+from fpdf import FPDF
+from arabic_reshaper import reshape
+from bidi.algorithm import get_display
+import logging
+from postgrest import APIError
+import pickle
+from datetime import datetime
+import traceback
+from sklearn.pipeline import Pipeline
+from supabase import create_client, Client
+from translations import get_translation, set_language_selector
+
+import streamlit as st
+from translations import get_translation, set_language_selector
+import streamlit as st
+import time
 
 @st.cache_data(ttl=60)
 def get_dashboard_stats():
@@ -174,7 +167,6 @@ def get_dashboard_stats():
         "dementia": {"value": 892},
         "memory": {"value": 543}
     }
-
 # --- 1. SET UP LANGUAGE (Only call this ONCE) ---
 lang = set_language_selector(widget_key="app_language_selector")
 
@@ -251,62 +243,6 @@ def init_session_state():
 # Initialize session state
 init_session_state()
 
-@st.cache_data(ttl=60)
-def get_dashboard_stats():
-    """
-    Fetch dashboard statistics from model / DB
-    """
-    return {
-        "stroke": {"value": 1247},
-        "dementia": {"value": 892},
-        "memory": {"value": 543}
-    }
-# ====== MAIN APP CODE ======
-img_path = "Generated_Image_rnqv02rnqv02rnqv.png"
-try:
-    img_base64 = get_base64_of_bin_file(img_path)
-    st.markdown(f"""
-    <div style="display:flex; align-items:center; gap:20px; margin-bottom:20px;">
-        <img src="data:image/png;base64,{img_base64}" style="height:100px; width:auto;">
-        <div>
-            <h2 style="margin:0;">African NeuroHealth AI</h2>
-            <p style="margin:0; font-size:1rem; color:#6B7280;">Stroke & Dementia Predictor</p>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
-except:
-    st.markdown("""
-    <div style="display:flex; align-items:center; gap:20px; margin-bottom:20px;">
-        <div>
-            <h2 style="margin:0;">African NeuroHealth AI</h2>
-            <p style="margin:0; font-size:1rem; color:#6B7280;">Stroke & Dementia Predictor</p>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
-
-# ====== Fetch Stats ======
-if "previous_stats" not in st.session_state:
-    st.session_state.previous_stats = {"stroke": 1247, "dementia": 892}
-
-stats = {"stroke": 1247, "dementia": 892}  # Replace with model or DB
-
-# ====== Render Metrics in a Row ======
-col1, col2 = st.columns(2)
-with col1:
-    animated_metric(
-        label="🧠 Stroke Predictions",
-        target_value=stats["stroke"],
-        delta=compute_delta(stats["stroke"], st.session_state.previous_stats["stroke"])
-    )
-with col2:
-    animated_metric(
-        label="🧓 Dementia Predictions",
-        target_value=stats["dementia"],
-        delta=compute_delta(stats["dementia"], st.session_state.previous_stats["dementia"])
-    )
-
-# Update session state
-st.session_state.previous_stats = stats
 # ====== SIMPLE LOGIN SYSTEM - FIXED ======
 def simple_login():
     """Simple login without registration or verification"""
@@ -363,6 +299,7 @@ def simple_login():
             st.session_state.logged_in = False
             st.session_state.user_name = ""
             st.session_state.current_page = "Dashboard"
+            init_session_state()
             st.rerun()
 
 
@@ -2443,6 +2380,8 @@ def render_alzheimer_assessment():
 
 import streamlit as st
 import time
+
+
 def animated_metric(label, target_value, delta, duration=0.6, steps=20):
     placeholder = st.empty()
     step_value = max(1, target_value // steps)
@@ -2466,7 +2405,6 @@ def get_dashboard_stats():
 stats = get_dashboard_stats()
 if "previous_stats" not in st.session_state:
     st.session_state.previous_stats = stats
-    
 # ====== DASHBOARD ======
 def render_dashboard():
     """Main dashboard page"""
@@ -2803,12 +2741,10 @@ def generate_stroke_pdf(patient_name, patient_data, risk_score, risk_level, risk
     pdf.ln(10)
     pdf.set_font_size(9)
     pdf.write_content(
-    "DISCLAIMER: This report is generated by the African NeuroHealth AI, a clinically validated screening tool designed for African populations. "
-    "While our models demonstrated high accuracy (95–99%) in clinical studies, this result is a statistical estimate of risk and does not constitute a medical diagnosis.\n\n"
-    "Please share this report with a qualified healthcare provider for formal evaluation and personalized care planning.",
-    "en"
-)
-
+        "DISCLAIMER: This report is generated by the African NeuroHealth AI, a clinically validated screening tool designed for African populations. While our models demonstrated high accuracy (95–99%) in clinical studies, this result is a statistical estimate of risk and does not constitute a medical diagnosis. 
+        "Please share this report with a qualified healthcare provider for formal evaluation and personalized care planning.",
+        "en"
+    )
     
     return bytes(pdf.output())
 
@@ -2914,12 +2850,10 @@ def generate_alzheimer_pdf(patient_name, patient_data, risk_score, risk_level, r
     pdf.ln(10)
     pdf.set_font_size(9)
     pdf.write_content(
-    "DISCLAIMER: This report is generated by the African NeuroHealth AI, a clinically validated screening tool designed for African populations. "
-    "While our models demonstrated high accuracy (95–99%) in clinical studies, this result is a statistical estimate of risk and does not constitute a medical diagnosis.\n\n"
-    "Please share this report with a qualified healthcare provider for formal evaluation and personalized care planning.",
-    "en"
-)
-
+        "DISCLAIMER: This report is generated by the African NeuroHealth AI, a clinically validated screening tool designed for African populations. While our models demonstrated high accuracy (95–99%) in clinical studies, this result is a statistical estimate of risk and does not constitute a medical diagnosis. 
+        "Please share this report with a qualified healthcare provider for formal evaluation and personalized care planning.",
+        "en"
+    )
     
     return bytes(pdf.output())
 
@@ -3249,28 +3183,18 @@ def show_footer():
     st.markdown("---")
     footer_col1, footer_col2, footer_col3 = st.columns(3)
     with footer_col1:
-        st.caption("© 2024 African NeuroHealth AI Dashboard")
+        st.caption("© 2024 African NeuroHealth AI")
     with footer_col2:
-        st.caption("Version 2.0")
+        st.caption("Version 2.0 | PWA Enabled")
     with footer_col3:
         st.caption(f"Last update: {datetime.now().strftime('%Y-%m-%d')}")
+
+init_session_state()
 
 # ====== RUN APP ======
 if __name__ == "__main__":
     main()
    
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
