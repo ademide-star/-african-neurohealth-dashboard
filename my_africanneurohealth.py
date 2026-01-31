@@ -12,7 +12,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
     # ====== HIDE STREAMLIT DEFAULT UI ======
-    st.markdown("""
+st.markdown("""
     <style>
         #MainMenu {visibility: hidden;}
         footer {visibility: hidden;}
@@ -3187,6 +3187,7 @@ def show_footer():
 if __name__ == "__main__":
     main()
    
+
 
 
 
