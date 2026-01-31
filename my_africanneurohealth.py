@@ -211,6 +211,19 @@ def get_user_location():
     except Exception as e:
         print(f"Error fetching location: {e}")
         return "Unknown", "Unknown", "Unknown"
+        
+def init_session_state():
+    defaults = {
+        "logged_in": False,
+        "current_page": "Dashboard",
+        "user_name": "",
+        "user_id": "",
+        "reports": [],
+        "models_loaded": {"Stroke": False, "Dementia": False},
+    }
+    for key, value in defaults.items():
+        if key not in st.session_state:
+            st.session_state[key] = value
 
 # ====== INITIALIZE SESSION STATE ======
 # Initialize all session state variables
@@ -3192,6 +3205,7 @@ def show_footer():
 if __name__ == "__main__":
     main()
    
+
 
 
 
