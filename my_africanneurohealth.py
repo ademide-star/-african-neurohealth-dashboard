@@ -212,18 +212,30 @@ def get_user_location():
         print(f"Error fetching location: {e}")
         return "Unknown", "Unknown", "Unknown"
         
+# ====== INITIALIZE SESSION STATE ======
 def init_session_state():
+    """Initialize all session state variables"""
     defaults = {
         "logged_in": False,
         "current_page": "Dashboard",
         "user_name": "",
-        "user_id": "",
-        "reports": [],
+        "user_id": str(uuid.uuid4())[:8],
+        "patient_data": {},
+        "predictions": {"Stroke": None, "Dementia": None},
+        "reports": {},  # Changed from [] to {} to match usage
         "models_loaded": {"Stroke": False, "Dementia": False},
+        "memory_game": None,
+        "nutritional_score": 3,
+        "stress_score": 0,
+        "memory_score": None
     }
+    
     for key, value in defaults.items():
         if key not in st.session_state:
             st.session_state[key] = value
+
+# Initialize session state
+init_session_state()
 
 # ====== INITIALIZE SESSION STATE ======
 # Initialize all session state variables
@@ -253,8 +265,6 @@ def init_session_state():
     if 'memory_score' not in st.session_state:
         st.session_state.memory_score = None
 
-# Initialize session state
-init_session_state()
 
 # ====== SIMPLE LOGIN SYSTEM - FIXED ======
 def simple_login():
@@ -3209,6 +3219,7 @@ def show_footer():
 if __name__ == "__main__":
     main()
    
+
 
 
 
