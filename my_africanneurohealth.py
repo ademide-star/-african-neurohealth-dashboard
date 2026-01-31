@@ -49,6 +49,31 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded"
 )
+# ====== HIDE STREAMLIT DEFAULT UI ======
+    st.markdown("""
+    <style>
+        #MainMenu {visibility: hidden;}
+        footer {visibility: hidden;}
+        header {visibility: hidden;}
+    </style>
+    """, unsafe_allow_html=True)
+
+    # ====== CUSTOM CSS ======
+    st.markdown("""
+    <style>
+        .metric-card {
+            background-color: #F8FAFC; 
+            padding: 15px; 
+            border-radius: 10px; 
+            border-left: 4px solid #3B82F6;
+            text-align: center;
+        }
+        .metric-label { font-weight: 600; font-size: 1rem; margin-bottom: 5px; }
+        .metric-value { font-size: 1.5rem; font-weight: bold; }
+        .metric-delta { font-size: 1rem; color: #16A34A; }
+    </style>
+    """, unsafe_allow_html=True)
+
 # ====== 2. LOGGING & CLIENTS ======
 # --- Load Environment Variables ---
 SUPABASE_URL = st.secrets["SUPABASE_URL"]
@@ -3011,5 +3036,6 @@ def show_footer():
 # ====== RUN APP ======
 if __name__ == "__main__":
     main()
+
 
 
