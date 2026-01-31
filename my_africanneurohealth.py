@@ -3145,8 +3145,6 @@ def show_welcome_screen():
     with col2:
         st.markdown('<h2 class="main-header-center"> African NeuroHealth AI Dashboard</h2>', unsafe_allow_html=True)
     
-    st.markdown("---")
-    
         st.markdown("""
         ## Your Personal Health Assessment Platform
         
@@ -3204,6 +3202,7 @@ def show_footer():
 if __name__ == "__main__":
     main()
    
+
 
 
 
