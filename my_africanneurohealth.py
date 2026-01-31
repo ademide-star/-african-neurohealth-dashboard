@@ -80,11 +80,83 @@ def animated_metric(label, target_value, delta, duration=0.5, steps=20):
         """, unsafe_allow_html=True)
         time.sleep(duration / steps)
 
-# ====== Helper: Delta ======
+# ====== STATISTICS METRICS ======
+st.markdown("## 📈 Platform Statistics")
+
 def compute_delta(current, previous):
-    diff = current - previous
-    sign = "+" if diff >= 0 else ""
-    return f"{sign}{diff}"
+    """
+    Safe delta computation for Streamlit metrics
+    """
+
+    # Handle missing or invalid previous values
+    if previous is None:
+        return 0, "🆕 New"
+
+    # If previous is a dict, try to extract a value
+    if isinstance(previous, dict):
+        previous = previous.get("value", None)
+
+    # Final safety check
+    if not isinstance(previous, (int, float)):
+        return 0, "—"
+
+    current_val = int(current)
+    previous_val = int(previous)
+    diff = current_val - previous_val
+
+    if diff > 0:
+        label = f"+{diff} ↑"
+    elif diff < 0:
+        label = f"{diff} ↓"
+    else:
+        label = "0 →"
+
+    return diff, label
+
+# ====== SESSION STATE ======
+if "previous_stats" not in st.session_state:
+    st.session_state.previous_stats = {
+        "stroke": 1247,
+        "dementia": 892,
+        "nutrition": 543,
+        "stress": 421
+    }
+
+# Current stats (replace with model / DB)
+stats = {
+    "stroke": 1253,
+    "dementia": 880,
+    "nutrition": 543,
+    "stress": 470
+}
+
+# ====== METRIC CARDS ======
+cols = st.columns(len(stats))
+
+for col, (key, value) in zip(cols, stats.items()):
+    prev = st.session_state.previous_stats.get(key)
+    diff, label = compute_delta(value, prev)
+
+    # Color logic
+    if diff > 0:
+        delta_color = "normal"      # green
+    elif diff < 0:
+        delta_color = "inverse"     # red
+    else:
+        delta_color = "off"         # gray
+
+    col.metric(
+        label=key.title(),
+        value=value,
+        delta=label,
+        delta_color=delta_color
+    )
+
+# ====== AUTO-UPDATE PREVIOUS STATS ======
+st.session_state.previous_stats = {
+    k: int(v) for k, v in stats.items()
+}
+
 
 # ====== Dashboard Header with Logo ======
 def get_base64_of_bin_file(bin_file):
@@ -3232,6 +3304,7 @@ def show_footer():
 if __name__ == "__main__":
     main()
    
+
 
 
 
