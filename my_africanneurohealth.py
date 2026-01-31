@@ -11,12 +11,6 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded"
 )
-def render_dashboard():
-    """Main dashboard page"""
-    import base64
-    import streamlit as st
-    import time
-
     # ====== HIDE STREAMLIT DEFAULT UI ======
     st.markdown("""
     <style>
@@ -212,9 +206,12 @@ def get_user_location():
         print(f"Error fetching location: {e}")
         return "Unknown", "Unknown", "Unknown"
         
+import streamlit as st
+import uuid
+
 # ====== INITIALIZE SESSION STATE ======
 def init_session_state():
-    """Initialize all session state variables"""
+    """Initialize all session state variables using a dictionary"""
     defaults = {
         "logged_in": False,
         "current_page": "Dashboard",
@@ -222,7 +219,7 @@ def init_session_state():
         "user_id": str(uuid.uuid4())[:8],
         "patient_data": {},
         "predictions": {"Stroke": None, "Dementia": None},
-        "reports": {},  # Changed from [] to {} to match usage
+        "reports": {},
         "models_loaded": {"Stroke": False, "Dementia": False},
         "memory_game": None,
         "nutritional_score": 3,
@@ -236,34 +233,6 @@ def init_session_state():
 
 # Initialize session state
 init_session_state()
-
-# ====== INITIALIZE SESSION STATE ======
-# Initialize all session state variables
-def init_session_state():
-    if 'logged_in' not in st.session_state:
-        st.session_state.logged_in = False
-    if 'user_name' not in st.session_state:
-        st.session_state.user_name = ""
-    if 'user_id' not in st.session_state:
-        st.session_state.user_id = str(uuid.uuid4())[:8]
-    if 'current_page' not in st.session_state:
-        st.session_state.current_page = "Dashboard"
-    if 'patient_data' not in st.session_state:
-        st.session_state.patient_data = {}
-    if 'predictions' not in st.session_state:
-        st.session_state.predictions = {"Stroke": None, "Dementia": None}
-    if 'reports' not in st.session_state:
-        st.session_state.reports = {}
-    if 'models_loaded' not in st.session_state:
-        st.session_state.models_loaded = {"Stroke": False, "Dementia": False}
-    if 'memory_game' not in st.session_state:
-        st.session_state.memory_game = None
-    if 'nutritional_score' not in st.session_state:
-        st.session_state.nutritional_score = 3
-    if 'stress_score' not in st.session_state:
-        st.session_state.stress_score = 0
-    if 'memory_score' not in st.session_state:
-        st.session_state.memory_score = None
 
 
 # ====== SIMPLE LOGIN SYSTEM - FIXED ======
@@ -2402,8 +2371,6 @@ def render_alzheimer_assessment():
 
 import streamlit as st
 import time
-
-
 def animated_metric(label, target_value, delta, duration=0.6, steps=20):
     placeholder = st.empty()
     step_value = max(1, target_value // steps)
@@ -2427,6 +2394,7 @@ def get_dashboard_stats():
 stats = get_dashboard_stats()
 if "previous_stats" not in st.session_state:
     st.session_state.previous_stats = stats
+    
 # ====== DASHBOARD ======
 def render_dashboard():
     """Main dashboard page"""
@@ -3219,6 +3187,7 @@ def show_footer():
 if __name__ == "__main__":
     main()
    
+
 
 
 
