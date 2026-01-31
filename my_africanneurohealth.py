@@ -3096,27 +3096,17 @@ def render_sidebar():
 def main():
     """Main function to run the Streamlit app"""
     
-    # Initialize session state
-    if 'logged_in' not in st.session_state:
-        st.session_state.logged_in = False
-    if 'current_page' not in st.session_state:
-        st.session_state.current_page = "Dashboard"
-    
-    # Render sidebar (your existing function)
+    # 1. Render sidebar (Handles Login logic internally now)
     render_sidebar()
     
-    # Check if logged in
+    # 2. Check if logged in
     if not st.session_state.logged_in:
-        # Show welcome screen
+        # Show welcome screen and STOP execution here
         show_welcome_screen()
-        return
+        return 
     
-    # User is logged in - show selected page
-    current_page = st.session_state.current_page
-    
-    # Page routing (your existing routing code)
-    route_pages(current_page)
-    
+    # 3. User is logged in - show selected page
+    route_pages(st.session_state.current_page)  
     # Footer
     show_footer()
 
@@ -3190,6 +3180,7 @@ def show_footer():
 if __name__ == "__main__":
     main()
    
+
 
 
 
