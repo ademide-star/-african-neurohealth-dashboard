@@ -311,29 +311,6 @@ def is_rtl_language():
     return get_current_language() == 'ar'
 
 
-# ====== EXAMPLE USAGE ======
+    
+    
 
-if __name__ == "__main__":
-    st.set_page_config(page_title="Translation System", layout="wide")
-    
-    # Initialize session state
-    if 'current_language' not in st.session_state:
-        st.session_state.current_language = 'en'
-    
-    # Language selector
-    set_language_selector()
-    
-    # Test translations
-    st.title(get_translation("title"))
-    st.subheader(get_translation("subtitle"))
-    
-    st.write(f"**{get_translation('age')}:** 45")
-    st.write(f"**{get_translation('gender')}:** {get_translation('male')}")
-    st.write(f"**{get_translation('blood_group')}:** O+")
-    
-    if st.button(get_translation("predict")):
-        st.success(get_translation("all_validated"))
-    
-    st.markdown("---")
-    st.info(f"Current language: {LANGUAGES[get_current_language()]}")
-    st.info(f"RTL mode: {is_rtl_language()}")
