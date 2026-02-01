@@ -656,15 +656,32 @@ import random
 from datetime import datetime
 import streamlit as st
 
-# Simple translation function (placeholder - modify as needed)
-def get_translation(text, key=None, help=None, placeholder=None, use_container_width=None, clear_on_submit=None, expanded=None):
+def get_translation(text_key):
     """
-    Simple translation function that returns the input text.
-    In a real implementation, this would translate text based on user language.
+    The REAL translation function. 
+    It looks up the key in the dictionary based on the session language.
     """
-    # You can add language detection and translation logic here
-    # For now, just return the text as-is
-    return text
+    # 1. Get the current language (defaults to 'en')
+    current_lang = st.session_state.get('current_language', 'en')
+    
+    # 2. Normalize the key to match your dictionary format
+    normalized_key = text_key.lower().replace(' ', '_').strip()
+    
+    # 3. Look up in your static dictionary first
+    lang_dict = TRANSLATIONS.get(current_lang, TRANSLATIONS['en'])
+    
+    if normalized_key in lang_dict:
+        return lang_dict[normalized_key]
+    
+    # 4. If the key is not found and it's not English, use Google Translate
+    if current_lang != 'en':
+        try:
+            return cached_translate(text_key, current_lang)
+        except:
+            return text_key # Fallback to original text if API fails
+            
+    # 5. Return original if it's English and not in dict
+    return text_key
 
 def memory_recall_game():
     """Memory recall game for cognitive assessment with auto-hide and timer"""
@@ -3013,6 +3030,7 @@ def show_footer():
 # ====== RUN APP ======
 if __name__ == "__main__":
     main()
+
 
 
 
