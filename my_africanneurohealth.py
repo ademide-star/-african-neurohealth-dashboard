@@ -225,6 +225,32 @@ def get_dashboard_stats():
         "dementia": {"value": 892},
         "memory": {"value": 543}
     }
+
+def apply_rtl_logic():
+    """Injects CSS to flip the layout if the current language is Arabic."""
+    if is_rtl_language():
+        st.markdown(
+            """
+            <style>
+                /* Flip the main app container */
+                .main .block-container {
+                    direction: RTL;
+                    text-align: right;
+                }
+                /* Flip the sidebar */
+                section[data-testid="stSidebar"] > div {
+                    direction: RTL;
+                    text-align: right;
+                }
+                /* Ensure radio buttons and checkboxes align correctly */
+                .stRadio > div, .stCheckbox > div {
+                    direction: RTL;
+                    text-align: right;
+                }
+            </style>
+            """,
+            unsafe_allow_html=True
+        )
 # --- 1. SET UP LANGUAGE (Only call this ONCE) ---
 lang = set_language_selector(widget_key="app_language_selector")
 
@@ -318,93 +344,6 @@ def simple_login():
             st.session_state.user_name = ""
             st.session_state.current_page = "Dashboard"
             st.rerun()
-            
-# 1. HELPER FUNCTIONS (Define these FIRST)
-def get_base64_of_bin_file(bin_file):
-    try:
-        with open(bin_file, 'rb') as f:
-            data = f.read()
-        return base64.b64encode(data).decode()
-    except Exception:
-        return None
-
-# 2. THE SIDEBAR (Define this SECOND)
-def render_sidebar():
-    """Render the sidebar content"""
-    
-    # 1. Logo Logic
-    img_path = "Gemini_Generated_Image_rnqv02rnqv02rnqv.png"
-    img_base64 = get_base64_of_bin_file(img_path)
-    
-    if img_base64:
-        st.sidebar.markdown(f"""
-        <div style="text-align: center;">
-            <img src="data:image/png;base64,{img_base64}" width="100" height="100" style="border-radius: 50%;">
-            <h2 style="margin-bottom: 0;">African NeuroHealth AI</h2>
-            <p style="color: #6B7280; font-size: 0.9rem;">Stroke & Dementia Predictor</p>
-        </div>
-        """, unsafe_allow_html=True)
-    else:
-        # Fallback if image missing
-        st.sidebar.markdown("""
-        <div style="text-align: center;">
-            <h2 style="margin-bottom: 0;">African NeuroHealth AI</h2>
-            <p style="color: #6B7280; font-size: 0.9rem;">Stroke & Dementia Predictor</p>
-        </div>
-        """, unsafe_allow_html=True)
-    
-    st.sidebar.markdown("---")
-    
-    # 2. Login Logic
-    simple_login()
-    
-    # 3. Navigation (Only if logged in)
-    if st.session_state.logged_in:
-        st.sidebar.markdown("---")
-        st.sidebar.subheader(get_translation("📍 Navigation"))
-        
-        page_options = [
-            "Dashboard", "Stroke Assessment", "Dementia Assessment", 
-            "Memory Game", "Nutrition Tracker", "Stress Assessment", "My Reports"
-        ]
-        
-        # Determine index safely
-        try:
-            curr_index = page_options.index(st.session_state.current_page)
-        except ValueError:
-            curr_index = 0
-            
-        selected_page = st.sidebar.radio(
-            get_translation("Go to"),
-            page_options,
-            index=curr_index,
-            key="nav_radio"
-        )
-        
-        if selected_page != st.session_state.current_page:
-            st.session_state.current_page = selected_page
-            st.rerun()
-            
-        # Quick Actions
-        st.sidebar.markdown("---")
-        st.sidebar.subheader(get_translation("⚡ Quick Actions"))
-        
-        c1, c2 = st.sidebar.columns(2)
-        if c1.button("🔄 Reload", use_container_width=True):
-            st.session_state.models_loaded = {"Stroke": False, "Dementia": False}
-            st.rerun()
-            
-        if c2.button("📊 Reports", use_container_width=True):
-            st.session_state.current_page = "My Reports"
-            st.rerun()
-            
-        st.sidebar.markdown("---")
-        st.sidebar.info(f"User: {st.session_state.user_name}")
-        
-        if st.sidebar.button("Log Out", use_container_width=True):
-            st.session_state.logged_in = False
-            st.rerun()
-
 
 def render_location_filters():
     """Renders location widgets safely inside the sidebar context"""
@@ -2951,19 +2890,117 @@ def render_reports_page():
                             st.warning("Click again to confirm deletion")
                 
                 st.markdown("</div>", unsafe_allow_html=True)
-
+def render_sidebar():
+    """Render the sidebar content"""
+    
+    # 1. Logo Logic
+    img_path = "Gemini_Generated_Image_rnqv02rnqv02rnqv.png"
+    img_base64 = get_base64_of_bin_file(img_path)
+    
+    if img_base64:
+        st.sidebar.markdown(f"""
+        <div style="text-align: center;">
+            <img src="data:image/png;base64,{img_base64}" width="100" height="100" style="border-radius: 50%;">
+            <h2 style="margin-bottom: 0;">African NeuroHealth AI</h2>
+            <p style="color: #6B7280; font-size: 0.9rem;">Stroke & Dementia Predictor</p>
+        </div>
+        """, unsafe_allow_html=True)
+    else:
+        # Fallback if image missing
+        st.sidebar.markdown("""
+        <div style="text-align: center;">
+            <h2 style="margin-bottom: 0;">African NeuroHealth AI</h2>
+            <p style="color: #6B7280; font-size: 0.9rem;">Stroke & Dementia Predictor</p>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    st.sidebar.markdown("---")
+    
+    # 2. Login Logic
+    simple_login()
+    
+    # 3. Navigation (Only if logged in)
+    if st.session_state.logged_in:
+        st.sidebar.markdown("---")
+        st.sidebar.subheader(get_translation("📍 Navigation"))
+        
+        page_options = [
+            "Dashboard", "Stroke Assessment", "Dementia Assessment", 
+            "Memory Game", "Nutrition Tracker", "Stress Assessment", "My Reports"
+        ]
+        
+        # Determine index safely
+        try:
+            curr_index = page_options.index(st.session_state.current_page)
+        except ValueError:
+            curr_index = 0
+            
+        selected_page = st.sidebar.radio(
+            get_translation("Go to"),
+            page_options,
+            index=curr_index,
+            key="nav_radio"
+        )
+        
+        if selected_page != st.session_state.current_page:
+            st.session_state.current_page = selected_page
+            st.rerun()
+            
+        # Quick Actions
+        st.sidebar.markdown("---")
+        st.sidebar.subheader(get_translation("⚡ Quick Actions"))
+        
+        c1, c2 = st.sidebar.columns(2)
+        if c1.button("🔄 Reload", use_container_width=True):
+            st.session_state.models_loaded = {"Stroke": False, "Dementia": False}
+            st.rerun()
+            
+        if c2.button("📊 Reports", use_container_width=True):
+            st.session_state.current_page = "My Reports"
+            st.rerun()
+            
+        st.sidebar.markdown("---")
+        st.sidebar.info(f"User: {st.session_state.user_name}")
+        
+        if st.sidebar.button("Log Out", use_container_width=True):
+            st.session_state.logged_in = False
+            st.rerun()
 
 # ====== MAIN APP FUNCTION ======
 def main():
     """Main function to run the Streamlit app"""
-    # A. INITIALIZE STATE FIRST
-    if 'logged_in' not in st.session_state:
-        st.session_state.logged_in = False
-    if 'current_page' not in st.session_state:
-        st.session_state.current_page = "Dashboard"
+    # A. Init state first
+    init_session_state()
+    # Initialize session state
+    if 'current_language' not in st.session_state:
+        st.session_state.current_language = 'en'
     
-    # B. CALL UI FUNCTIONS
+    # Language selector
+    set_language_selector()
+    
+    # Test translations
+    st.title(get_translation("title"))
+    st.subheader(get_translation("subtitle"))
+    
+    st.write(f"**{get_translation('age')}:** 45")
+    st.write(f"**{get_translation('gender')}:** {get_translation('male')}")
+    st.write(f"**{get_translation('blood_group')}:** O+")
+    
+    if st.button(get_translation("predict")):
+        st.success(get_translation("all_validated"))
+    
+    st.markdown("---")
+    st.info(f"Current language: {LANGUAGES[get_current_language()]}")
+    st.info(f"RTL mode: {is_rtl_language()}")
+    # 1. Render sidebar (Handles Login logic internally now)
+    if "logged_in" not in st.session_state:
+        st.session_state.logged_in = False
+    
     render_sidebar()
+    
+    if st.session_state.logged_in:
+        st.title("Dashboard")
+        # render_dashboard()
     
     # 2. Check if logged in
     if not st.session_state.logged_in:
@@ -3045,8 +3082,6 @@ def show_footer():
 # ====== RUN APP ======
 if __name__ == "__main__":
     main()
-
-
 
 
 
