@@ -2873,7 +2873,14 @@ def main():
     init_session_state()
     
     # 1. Render sidebar (Handles Login logic internally now)
+    if "logged_in" not in st.session_state:
+        st.session_state.logged_in = False
+    
     render_sidebar()
+    
+    if st.session_state.logged_in:
+        st.title("Dashboard")
+        # render_dashboard()
     
     # 2. Check if logged in
     if not st.session_state.logged_in:
@@ -2955,6 +2962,7 @@ def show_footer():
 # ====== RUN APP ======
 if __name__ == "__main__":
     main()
+
 
 
 
