@@ -118,6 +118,27 @@ def init_session_state():
 # Initialize session state
 init_session_state()
 
+# ====== UTILITY FUNCTIONS ======
+def create_download_link(pdf_bytes, filename):
+    """Create a download link for the PDF"""
+    b64 = base64.b64encode(pdf_bytes).decode()
+    href = f'''
+    <div style="margin: 20px 0;">
+        <a href="data:application/pdf;base64,{b64}" 
+           download="{filename}"
+           style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                  color: white;
+                  padding: 12px 24px;
+                  text-decoration: none;
+                  border-radius: 8px;
+                  display: inline-block;
+                  font-weight: bold;">
+            📥 Download PDF Report
+        </a>
+    </div>
+    '''
+    return href
+    
 def animated_metric(label, target_value, delta=None, prefix="", suffix=""):
     """Displays a metric that animates from 0 to the target value."""
     metric_placeholder = st.empty()
@@ -140,6 +161,43 @@ def animated_metric(label, target_value, delta=None, prefix="", suffix=""):
         value=f"{prefix}{target_value}{suffix}",
         delta=delta
     )
+def show_welcome_screen():
+    """Display the welcome screen"""
+    col1, col2 = st.columns([1, 4])
+    
+    with col1:
+        image_path ="Gemini_Generated_Image_rnqv02rnqv02rnqv.png"
+        try:
+            st.image(image_path, width=125)
+        except:
+            st.info("🧠")
+    
+    with col2:
+        st.markdown('<h2 class="main-header-center"> African NeuroHealth AI Dashboard</h2>', unsafe_allow_html=True)
+    
+        st.markdown("""
+        ## Your Personal Health Assessment Platform
+        
+        **Now with Improvements:**
+        - 📱 Install as a native app
+        - 🔄 Works on any gadget
+        - ⚡ Faster loading
+        - 💾 Automatic data sync
+        
+        **Assessments available:**
+        - 🩺 **Stroke** Risk Assessment
+        - 🧠 **Dementia** Risk Evaluation
+        - 🥗 **Nutrition** Tracking
+        - 😌 **Stress** Assessment
+        
+        ### Getting Started:
+        1. Enter your name in sidebar
+        2. Click "Start Session"
+        3. Complete assessments
+        4. View/download reports
+        5. **Save app for better experience**
+        """)
+    
 
 
 def render_dashboard():
@@ -2703,29 +2761,6 @@ def generate_alzheimer_pdf(patient_name, patient_data, risk_score, risk_level, r
     return bytes(pdf.output())
 
 
-# ====== UTILITY FUNCTION ======
-
-def create_download_link(pdf_bytes, filename):
-    """Create a download link for the PDF"""
-    b64 = base64.b64encode(pdf_bytes).decode()
-    href = f'''
-    <div style="margin: 20px 0;">
-        <a href="data:application/pdf;base64,{b64}" 
-           download="{filename}"
-           style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                  color: white;
-                  padding: 12px 24px;
-                  text-decoration: none;
-                  border-radius: 8px;
-                  display: inline-block;
-                  font-weight: bold;">
-            📥 Download PDF Report
-        </a>
-    </div>
-    '''
-    return href
-
-
 # ====== REPORTS PAGE ======
 
 def render_reports_page():
@@ -2833,83 +2868,80 @@ def render_reports_page():
                             st.warning("Click again to confirm deletion")
                 
                 st.markdown("</div>", unsafe_allow_html=True)
+def route_pages(current_page):
+    """Route to different pages"""
+    if current_page == "Dashboard":
+        render_dashboard()
+    elif current_page == "Stroke Assessment":
+        render_stroke_assessment()
+    elif current_page == "Dementia Assessment":
+        render_alzheimer_assessment()
+    elif current_page == "Memory Game":
+        memory_recall_game()
+    elif current_page == "Nutrition Tracker":
+        nutrition_tracker()
+    elif current_page == "Stress Assessment":
+        stress_assessment()
+    elif current_page == "My Reports":
+        render_reports_page()
 
-
+# ====== SIDEBAR ======
 def render_sidebar():
-    """Render the sidebar content"""
-    
-    # 1. Logo Logic
-    img_path = "Gemini_Generated_Image_rnqv02rnqv02rnqv.png"
-    img_base64 = get_base64_of_bin_file(img_path)
-    
-    if img_base64:
-        st.sidebar.markdown(f"""
-        <div style="text-align: center;">
-            <img src="data:image/png;base64,{img_base64}" width="100" height="100" style="border-radius: 50%;">
-            <h2 style="margin-bottom: 0;">African NeuroHealth AI</h2>
-            <p style="color: #6B7280; font-size: 0.9rem;">Stroke & Dementia Predictor</p>
-        </div>
-        """, unsafe_allow_html=True)
-    else:
-        # Fallback if image missing
-        st.sidebar.markdown("""
-        <div style="text-align: center;">
-            <h2 style="margin-bottom: 0;">African NeuroHealth AI</h2>
-            <p style="color: #6B7280; font-size: 0.9rem;">Stroke & Dementia Predictor</p>
-        </div>
-        """, unsafe_allow_html=True)
-    
-    st.sidebar.markdown("---")
-    
-    # 2. Login Logic
-    simple_login()
-    
-    # 3. Navigation (Only if logged in)
-    if st.session_state.logged_in:
-        st.sidebar.markdown("---")
-        st.sidebar.subheader(get_translation("📍 Navigation"))
+    """Render the sidebar navigation"""
+    with st.sidebar:
+        st.markdown("## 🧭 Navigation")
         
-        page_options = [
-            "Dashboard", "Stroke Assessment", "Dementia Assessment", 
-            "Memory Game", "Nutrition Tracker", "Stress Assessment", "My Reports"
+        # User info if logged in
+        if st.session_state.logged_in:
+            st.markdown(f"**👤 Welcome, {st.session_state.user_name}!**")
+        
+        # Page selection
+        pages = [
+            ("🏠 Dashboard", "Dashboard"),
+            ("🩺 Stroke Assessment", "Stroke Assessment"),
+            ("🧠 Dementia Assessment", "Dementia Assessment"),
+            ("🎮 Memory Game", "Memory Game"),
+            ("🥗 Nutrition Tracker", "Nutrition Tracker"),
+            ("😌 Stress Assessment", "Stress Assessment"),
+            ("📄 My Reports", "My Reports")
         ]
         
-        # Determine index safely
-        try:
-            curr_index = page_options.index(st.session_state.current_page)
-        except ValueError:
-            curr_index = 0
-            
-        selected_page = st.sidebar.radio(
-            get_translation("Go to"),
-            page_options,
-            index=curr_index,
-            key="nav_radio"
-        )
+        for icon, page_name in pages:
+            if st.button(f"{icon} {page_name}", 
+                         key=f"nav_{page_name}",
+                         use_container_width=True,
+                         type="primary" if st.session_state.current_page == page_name else "secondary"):
+                st.session_state.current_page = page_name
+                st.rerun()
         
-        if selected_page != st.session_state.current_page:
-            st.session_state.current_page = selected_page
-            st.rerun()
-            
-        # Quick Actions
-        st.sidebar.markdown("---")
-        st.sidebar.subheader(get_translation("⚡ Quick Actions"))
+        st.markdown("---")
         
-        c1, c2 = st.sidebar.columns(2)
-        if c1.button("🔄 Reload", use_container_width=True):
-            st.session_state.models_loaded = {"Stroke": False, "Dementia": False}
-            st.rerun()
-            
-        if c2.button("📊 Reports", use_container_width=True):
-            st.session_state.current_page = "My Reports"
-            st.rerun()
-            
-        st.sidebar.markdown("---")
-        st.sidebar.info(f"User: {st.session_state.user_name}")
+        # Login/User section
+        if not st.session_state.logged_in:
+            st.markdown("### Start Session")
+            user_name = st.text_input("Enter your name:")
+            if st.button("Start Session", use_container_width=True):
+                if user_name:
+                    st.session_state.user_name = user_name
+                    st.session_state.logged_in = True
+                    st.success(f"Welcome, {user_name}!")
+                    st.rerun()
+                else:
+                    st.error("Please enter your name")
+        else:
+            if st.button("Logout", use_container_width=True):
+                st.session_state.logged_in = False
+                st.session_state.user_name = ""
+                st.rerun()
         
-        if st.sidebar.button("Log Out", use_container_width=True):
-            st.session_state.logged_in = False
-            st.rerun()
+        st.markdown("---")
+        st.markdown("### 📊 Quick Stats")
+        if st.session_state.previous_stats:
+            st.metric("Stroke Predictions", st.session_state.previous_stats.get("stroke_predictions", 0))
+            st.metric("Dementia Predictions", st.session_state.previous_stats.get("dementia_predictions", 0))
+
+# ====== MAIN APP LOGIC ======
+
 # ====== MAIN APP FUNCTION ======
 def main():
     """Main function to run the Streamlit app"""
@@ -2934,61 +2966,6 @@ def main():
     # Footer
     show_footer()
 
-def show_welcome_screen():
-    """Display the welcome screen"""
-    col1, col2 = st.columns([1, 4])
-    
-    with col1:
-        image_path ="Gemini_Generated_Image_rnqv02rnqv02rnqv.png"
-        try:
-            st.image(image_path, width=125)
-        except:
-            st.info("🧠")
-    
-    with col2:
-        st.markdown('<h2 class="main-header-center"> African NeuroHealth AI Dashboard</h2>', unsafe_allow_html=True)
-    
-        st.markdown("""
-        ## Your Personal Health Assessment Platform
-        
-        **Now with Improvements:**
-        - 📱 Install as a native app
-        - 🔄 Works on any gadget
-        - ⚡ Faster loading
-        - 💾 Automatic data sync
-        
-        **Assessments available:**
-        - 🩺 **Stroke** Risk Assessment
-        - 🧠 **Dementia** Risk Evaluation
-        - 🥗 **Nutrition** Tracking
-        - 😌 **Stress** Assessment
-        
-        ### Getting Started:
-        1. Enter your name in sidebar
-        2. Click "Start Session"
-        3. Complete assessments
-        4. View/download reports
-        5. **Save app for better experience**
-        """)
-    
-
-def route_pages(current_page):
-    """Route to different pages"""
-    if current_page == "Dashboard":
-        render_dashboard()
-    elif current_page == "Stroke Assessment":
-        render_stroke_assessment()
-    elif current_page == "Dementia Assessment":
-        render_alzheimer_assessment()
-    elif current_page == "Memory Game":
-        memory_recall_game()
-    elif current_page == "Nutrition Tracker":
-        nutrition_tracker()
-    elif current_page == "Stress Assessment":
-        stress_assessment()
-    elif current_page == "My Reports":
-        render_reports_page()
-
 def show_footer():
     """Display footer"""
     st.markdown("---")
@@ -3003,6 +2980,7 @@ def show_footer():
 # ====== RUN APP ======
 if __name__ == "__main__":
     main()
+
 
 
 
