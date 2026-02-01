@@ -73,7 +73,23 @@ st.markdown("""
     .metric-delta { font-size: 1rem; color: #16A34A; }
 </style>
 """, unsafe_allow_html=True)
+import base64
 
+def get_base64_of_bin_file(bin_file):
+    """
+    Reads a binary file (like an image) and converts it to a base64 string 
+    so it can be displayed in Streamlit HTML.
+    """
+    try:
+        with open(bin_file, 'rb') as f:
+            data = f.read()
+        return base64.b64encode(data).decode()
+    except FileNotFoundError:
+        # If the image is missing, return None so the app doesn't crash
+        return None
+    except Exception as e:
+        print(f"Error encoding image: {e}")
+        return None
 # ====== 2. LOGGING & CLIENTS ======
 # --- Load Environment Variables ---
 SUPABASE_URL = st.secrets["SUPABASE_URL"]
@@ -3069,6 +3085,7 @@ def show_footer():
 # ====== RUN APP ======
 if __name__ == "__main__":
     main()
+
 
 
 
