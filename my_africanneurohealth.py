@@ -225,7 +225,11 @@ def get_dashboard_stats():
         "dementia": {"value": 892},
         "memory": {"value": 543}
     }
-
+def is_rtl_language():
+    """Check if current language is RTL (Right-to-Left) with a safety default."""
+    # .get('key', 'default') ensures it returns 'en' if the key doesn't exist yet
+    return st.session_state.get('current_language', 'en') == 'ar'
+    
 def apply_rtl_logic():
     """Injects CSS to flip the layout if the current language is Arabic."""
     if is_rtl_language():
@@ -3065,6 +3069,7 @@ def show_footer():
 # ====== RUN APP ======
 if __name__ == "__main__":
     main()
+
 
 
 
