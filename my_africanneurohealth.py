@@ -2924,9 +2924,10 @@ def route_pages(current_page):
 # ====== SIDEBAR ======
 def render_sidebar():
     """Render the sidebar navigation"""
+    display_logo()
     with st.sidebar:
         st.markdown("## 🧭 Navigation")
-         display_logo()
+        
         # User info if logged in
         if st.session_state.logged_in:
             st.markdown(f"**👤 Welcome, {st.session_state.user_name}!**")
@@ -3009,5 +3010,6 @@ def show_footer():
 # ====== RUN APP ======
 if __name__ == "__main__":
     main()
+
 
 
