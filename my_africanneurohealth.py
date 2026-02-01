@@ -2924,8 +2924,10 @@ def route_pages(current_page):
 # ====== SIDEBAR ======
 def render_sidebar():
     """Render the sidebar navigation"""
-    display_logo()
     with st.sidebar:
+        # Display logo inside the sidebar
+        display_logo()
+        
         st.markdown("## 🧭 Navigation")
         
         # User info if logged in
@@ -2961,7 +2963,6 @@ def render_sidebar():
                 if user_name:
                     st.session_state.user_name = user_name
                     st.session_state.logged_in = True
-                    st.success(f"Welcome, {user_name}!")
                     st.rerun()
                 else:
                     st.error("Please enter your name")
@@ -2976,7 +2977,6 @@ def render_sidebar():
         if st.session_state.previous_stats:
             st.metric("Stroke Predictions", st.session_state.previous_stats.get("stroke_predictions", 0))
             st.metric("Dementia Predictions", st.session_state.previous_stats.get("dementia_predictions", 0))
-
 # ====== MAIN APP LOGIC ======
     
 def main():
@@ -3010,6 +3010,7 @@ show_footer()
 # ====== RUN APP ======
 if __name__ == "__main__":
     main()
+
 
 
 
