@@ -132,115 +132,133 @@ def render_dashboard():
     """Main dashboard page"""
     import base64
     import streamlit as st
-    import time
 
-    # ====== HIDE STREAMLIT DEFAULT UI ======
-    st.markdown("""
-    <style>
-        #MainMenu {visibility: hidden;}
-        footer {visibility: hidden;}
-        header {visibility: hidden;}
-    </style>
-    """, unsafe_allow_html=True)
-
-    # ====== CUSTOM CSS ======
-    st.markdown("""
-    <style>
-        .metric-card {
-            background-color: #F8FAFC; 
-            padding: 15px; 
-            border-radius: 10px; 
-            border-left: 4px solid #3B82F6;
-            text-align: center;
-        }
-        .metric-label { font-weight: 600; font-size: 1rem; margin-bottom: 5px; }
-        .metric-value { font-size: 1.5rem; font-weight: bold; }
-        .metric-delta { font-size: 1rem; color: #16A34A; }
-    </style>
-    """, unsafe_allow_html=True)
-
-    # ====== Helper: Animated Metric ======
-    def animated_metric(label, target_value, delta, duration=0.5, steps=20):
-        placeholder = st.empty()
-        step_value = max(1, target_value // steps)
-        for i in range(steps + 1):
-            current = min(i * step_value, target_value)
-            placeholder.markdown(f"""
-            <div class="metric-card">
-                <div class="metric-label">{label}</div>
-                <div class="metric-value">{current:,}</div>
-                <div class="metric-delta">{delta}</div>
-            </div>
-            """, unsafe_allow_html=True)
-            time.sleep(duration / steps)
-
-    # ====== Helper: Delta ======
-    def compute_delta(current, previous):
-        diff = current - previous
-        sign = "+" if diff >= 0 else ""
-        return f"{sign}{diff}"
-
-    # ====== Dashboard Header with Logo ======
+    # Helper function: convert image to base64
     def get_base64_of_bin_file(bin_file):
         with open(bin_file, 'rb') as f:
-            return base64.b64encode(f.read()).decode()
+            data = f.read()
+        return base64.b64encode(data).decode()
 
-    img_path ="Generated_Image_rnqv02rnqv02rnqv.png"
+    # Image path
+    img_path = r"C:\Users\sibs2\Downloads\Gemini_Generated_Image_rnqv02rnqv02rnqv.png"
+
     try:
         img_base64 = get_base64_of_bin_file(img_path)
         st.markdown(f"""
-        <div style="display:flex; align-items:center; gap:20px; margin-bottom:20px;">
-            <img src="data:image/png;base64,{img_base64}" style="height:100px; width:auto;">
+        <div style="display: flex; align-items: center; gap: 20px;">
+            <img src="data:image/png;base64,{img_base64}" 
+                 style="height: 100px; width: auto;">
             <div>
-                <h2 style="margin:0;">African NeuroHealth AI</h2>
-                <p style="margin:0; font-size:1rem; color:#6B7280;">Stroke & Dementia Predictor</p>
+                <h1 style="margin: 0;">African NeuroHealth AI Dashboard</h1>
+                <p style="color: #6B7280; font-size: 1rem; margin: 0;">Stroke & Dementia Predictor</p>
             </div>
-        </div>
         """, unsafe_allow_html=True)
-    except:
+    except Exception as e:
+        # Fallback if image fails
         st.markdown("""
-        <div style="display:flex; align-items:center; gap:20px; margin-bottom:20px;">
+        <div style="display: flex; align-items: center; gap: 20px;">
             <div>
-                <h2 style="margin:0;">African NeuroHealth AI</h2>
-                <p style="margin:0; font-size:1rem; color:#6B7280;">Stroke & Dementia Predictor</p>
+                <h1 style="margin: 0;">African NeuroHealth AI Dashboard</h1>
+                <p style="color: #6B7280; font-size: 1rem; margin: 0;">Stroke & Dementia Predictor</p>
             </div>
-        </div>
         """, unsafe_allow_html=True)
 
-    # ====== Fetch Stats ======
-    if "previous_stats" not in st.session_state:
-        st.session_state.previous_stats = {"stroke": 1247, "dementia": 892}
+    st.markdown("---")
+    st.markdown(get_translation("""
+    Welcome to the **African NeuroHealth AI Dashboard** - an integrated platform for predicting 
+    **stroke** and **dementia** risks using advanced machine learning models.This platform is a culturally attuned, context-aware diagnostic tool tailored for assessing neuro-health risks in African populations. 
+    It blends conventional biomedical metrics with locally relevant stressors, lifestyle habits, and cultural practices to offer a truly holistic health assessment experience.
 
-    stats = {"stroke": 1247, "dementia": 892}  # Replace with model or DB
+    
+    ### Features:
+    - **Stroke Risk Prediction**: Assess your risk factors and get personalized recommendations
+    - **Dementia Risk Assessment**: Evaluate cognitive health and dementia risk
+    - **Memory Game**: Test and train your cognitive abilities
+    - **Nutrition Tracker**: Monitor dietary habits and get nutritional scores
+    - **Stress Assessment**: Evaluate stress levels and coping mechanisms
+    - **PDF Reports**: Download printable medical reports
+               
+    **This application was proudly developed by Adebimpe-John Omolola E., with invaluable support from the GRASP / NIH / DSI Collaborative Program. 
+    Their collaborative spirit and commitment to innovation helped bring this vision to life.**
+    """))
+    
+    # Quick Stats
+    col1, col2, col3 = st.columns(3)
 
-    # ====== Render Metrics in a Row ======
-    col1, col2 = st.columns(2)
     with col1:
         animated_metric(
-            label="🧠 Stroke Predictions",
-            target_value=stats["stroke"],
-            delta=compute_delta(stats["stroke"], st.session_state.previous_stats["stroke"])
-        )
-    with col2:
-        animated_metric(
-            label="🧓 Dementia Predictions",
-            target_value=stats["dementia"],
-            delta=compute_delta(stats["dementia"], st.session_state.previous_stats["dementia"])
+            label="🧠 " + get_translation("Stroke Predictions"),
+            target_value=1247,
+            delta="+23"
         )
 
-    # Update session state
-    st.session_state.previous_stats = stats
+    with col2:
+        animated_metric(
+            label="🧓 " + get_translation("Dementia Predictions"),
+            target_value=892,
+            delta="+15"
+        )
     
-@st.cache_data(ttl=60)
-def get_dashboard_stats():
-    """
-    Fetch dashboard statistics from model / DB
-    """
-    return {
-        "stroke": {"value": 1247},
-        "dementia": {"value": 892},
-        "memory": {"value": 543}
-    }
+    with col3:
+        animated_metric(
+            label="🎮 " + get_translation("Memory Game Players"),
+            target_value=543,
+            delta="+12"
+        )
+    st.session_state.previous_stats = stats
+
+
+# Feature Cards
+    st.markdown(
+        get_translation('<h2 class="sub-header">🎯 Quick Access</h2>'),
+    unsafe_allow_html=True
+)  
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        with st.container(border=True):
+            st.markdown(get_translation("### 🩺 Stroke Prediction"))
+            st.markdown(get_translation("""
+            - Assess stroke risk factors
+            - Get personalized recommendations
+            - Download printable report
+            """))
+            if st.button(get_translation("Start Assessment"), key="dash_stroke", use_container_width=True):
+                st.session_state.current_page = "Stroke Assessment"
+                st.rerun()
+    
+    with col2:
+        with st.container(border=True):
+            st.markdown(get_translation("### 🧠 Dementia Prediction"))
+            st.markdown(get_translation("""
+            - Cognitive health assessment
+            - Memory function evaluation
+            - Download printable report
+            """))
+            if st.button(get_translation("Start Assessment"), key="dash_dementia", use_container_width=True):
+                st.session_state.current_page = "Dementia Assessment"
+                st.rerun()
+    
+    # Additional Tools
+    st.markdown(get_translation('<h2 class="sub-header">🛠️ Health Tools</h2>'), unsafe_allow_html=True)
+    
+    col1, col2, col3 = st.columns(3)
+    
+    with col1:
+        if st.button(get_translation("🧠 Memory Game"), use_container_width=True, key="dash_memory"):
+            st.session_state.current_page = "Memory Game"
+            st.rerun()
+    
+    with col2:
+        if st.button(get_translation("🥗 Nutrition Tracker"), use_container_width=True, key="dash_nutrition"):
+            st.session_state.current_page = "Nutrition Tracker"
+            st.rerun()
+    
+    with col3:
+        if st.button(get_translation("😌 Stress Assessment"), use_container_width=True, key="dash_stress"):
+            st.session_state.current_page = "Stress Assessment"
+            st.rerun()
+
 def is_rtl_language():
     """Check if current language is RTL (Right-to-Left) with a safety default."""
     # .get('key', 'default') ensures it returns 'en' if the key doesn't exist yet
@@ -2360,103 +2378,7 @@ def render_alzheimer_assessment():
             st.info(get_translation("👈 Fill the form and click 'Submit Dementia Assessment' to see results"))
 
 
-    st.markdown("---")
-    st.markdown(get_translation("""
-    Welcome to the **African NeuroHealth AI Dashboard** - an integrated platform for predicting 
-    **stroke** and **dementia** risks using advanced machine learning models.This platform is a culturally attuned, context-aware diagnostic tool tailored for assessing neuro-health risks in African populations. 
-    It blends conventional biomedical metrics with locally relevant stressors, lifestyle habits, and cultural practices to offer a truly holistic health assessment experience.
-
     
-    ### Features:
-    - **Stroke Risk Prediction**: Assess your risk factors and get personalized recommendations
-    - **Dementia Risk Assessment**: Evaluate cognitive health and dementia risk
-    - **Memory Game**: Test and train your cognitive abilities
-    - **Nutrition Tracker**: Monitor dietary habits and get nutritional scores
-    - **Stress Assessment**: Evaluate stress levels and coping mechanisms
-    - **PDF Reports**: Download printable medical reports
-               
-    **This application was proudly developed by Adebimpe-John Omolola E., with invaluable support from the GRASP / NIH / DSI Collaborative Program. 
-    Their collaborative spirit and commitment to innovation helped bring this vision to life.**
-    """))
-    
-  # Quick Stats
-    col1, col2, col3 = st.columns(3)
-
-    with col1:
-        animated_metric(
-            label="🧠 " + get_translation("Stroke Predictions"),
-            target_value=1247,
-            delta="+23"
-        )
-
-    with col2:
-        animated_metric(
-            label="🧓 " + get_translation("Dementia Predictions"),
-            target_value=892,
-            delta="+15"
-        )
-    
-    with col3:
-        animated_metric(
-            label="🎮 " + get_translation("Memory Game Players"),
-            target_value=543,
-            delta="+12"
-        )
-    st.session_state.previous_stats = stats
-    
-# Feature Cards
-    st.markdown(
-        get_translation('<h2 class="sub-header">🎯 Quick Access</h2>'),
-    unsafe_allow_html=True
-)
-
-    
-    col1, col2 = st.columns(2)
-    
-    with col1:
-        with st.container(border=True):
-            st.markdown(get_translation("### 🩺 Stroke Prediction"))
-            st.markdown(get_translation("""
-            - Assess stroke risk factors
-            - Get personalized recommendations
-            - Download printable report
-            """))
-            if st.button(get_translation("Start Assessment"), key="dash_stroke", use_container_width=True):
-                st.session_state.current_page = "Stroke Assessment"
-                st.rerun()
-    
-    with col2:
-        with st.container(border=True):
-            st.markdown(get_translation("### 🧠 Dementia Prediction"))
-            st.markdown(get_translation("""
-            - Cognitive health assessment
-            - Memory function evaluation
-            - Download printable report
-            """))
-            if st.button(get_translation("Start Assessment"), key="dash_dementia", use_container_width=True):
-                st.session_state.current_page = "Dementia Assessment"
-                st.rerun()
-    
-    # Additional Tools
-    st.markdown(get_translation('<h2 class="sub-header">🛠️ Health Tools</h2>'), unsafe_allow_html=True)
-    
-    col1, col2, col3 = st.columns(3)
-    
-    with col1:
-        if st.button(get_translation("🧠 Memory Game"), use_container_width=True, key="dash_memory"):
-            st.session_state.current_page = "Memory Game"
-            st.rerun()
-    
-    with col2:
-        if st.button(get_translation("🥗 Nutrition Tracker"), use_container_width=True, key="dash_nutrition"):
-            st.session_state.current_page = "Nutrition Tracker"
-            st.rerun()
-    
-    with col3:
-        if st.button(get_translation("😌 Stress Assessment"), use_container_width=True, key="dash_stress"):
-            st.session_state.current_page = "Stress Assessment"
-            st.rerun()
-
 import os
 import base64
 from fpdf import FPDF
@@ -3084,6 +3006,7 @@ def show_footer():
 # ====== RUN APP ======
 if __name__ == "__main__":
     main()
+
 
 
 
