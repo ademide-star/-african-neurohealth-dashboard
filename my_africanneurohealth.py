@@ -173,16 +173,61 @@ def show_footer():
     with footer_col3:
         st.caption(f"Last update: {datetime.now().strftime('%Y-%m-%d')}")
 
+# ====== IMAGE HANDLING FOR DEPLOYMENT ======
+def load_image_for_deployment():
+    """
+    Safely load image for Streamlit Cloud deployment.
+    Returns either the image or None if not found.
+    """
+    try:
+        # Try multiple possible locations for the image
+        possible_paths = [
+            "Gemini_Generated_Image_rnqv02rnqv02rnqv.png",
+            "./Gemini_Generated_Image_rnqv02rnqv02rnqv.png",
+            "app/Gemini_Generated_Image_rnqv02rnqv02rnqv.png",
+            "./app/Gemini_Generated_Image_rnqv02rnqv02rnqv.png",
+        ]
+        
+        for img_path in possible_paths:
+            try:
+                if os.path.exists(img_path):
+                    image = Image.open(img_path)
+                    return image
+            except:
+                continue
+        
+        # If no image found, return None
+        return None
+        
+    except Exception as e:
+        st.warning(f"Could not load image: {e}")
+        return None
+
+def display_logo():
+    """Display the logo image safely for deployment"""
+    try:
+        image = load_image_for_deployment()
+        if image:
+            # Resize for display
+            image.thumbnail((100, 100))
+            st.image(image, width=100)
+        else:
+            # Fallback emoji logo
+            st.markdown("""
+            <div style="background-color: #3B82F6; padding: 20px; border-radius: 10px; color: white; text-align: center;">
+                <span style="font-size: 2rem;">🧠</span>
+            </div>
+            """, unsafe_allow_html=True)
+    except Exception as e:
+        # Final fallback
+        st.markdown("🧠")
+
 def show_welcome_screen():
     """Display the welcome screen"""
     col1, col2 = st.columns([1, 4])
     
     with col1:
-        image_path ="Gemini_Generated_Image_rnqv02rnqv02rnqv.png"
-        try:
-            st.image(image_path, width=125)
-        except:
-            st.info("🧠")
+        display_logo()
     
     with col2:
         st.markdown('<h2 class="main-header-center"> African NeuroHealth AI Dashboard</h2>', unsafe_allow_html=True)
@@ -209,9 +254,8 @@ def show_welcome_screen():
         4. View/download reports
         5. **Save app for better experience**
         """)
-    
 
-
+# ====== PAGE RENDERING FUNCTIONS ======
 def render_dashboard():
     """Main dashboard page"""
     
@@ -219,18 +263,8 @@ def render_dashboard():
     col1, col2 = st.columns([1, 4])
     
     with col1:
-        try:
-            # Load and display the image using PIL and Streamlit
-            image = Image.open("Gemini_Generated_Image_rnqv02rnqv02rnqv.png")
-            st.image(image, width=100)
-        except Exception as e:
-            # Fallback if image fails to load
-            st.markdown("""
-            <div style="background-color: #3B82F6; padding: 20px; border-radius: 10px; color: white; text-align: center;">
-                <span style="font-size: 2rem;">🧠</span>
-            </div>
-            """, unsafe_allow_html=True)
-            st.warning(f"Image not found: {e}")
+        display_logo()
+    
     
     with col2:
         st.markdown("""
@@ -2974,6 +3008,7 @@ def main():
 if __name__ == "__main__":
     main()
 ```
+
 
 
 
