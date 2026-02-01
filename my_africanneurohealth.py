@@ -162,7 +162,14 @@ def render_dashboard():
                 <p style="color: #6B7280; font-size: 1rem; margin: 0;">Stroke & Dementia Predictor</p>
             </div>
         """, unsafe_allow_html=True)
-
+    # Use the KEY instead of the full text
+    st.markdown(get_translation("welcome_text"))
+    
+    st.markdown(f"### {get_translation('features_title')}")
+    st.markdown(f"""
+    - **{get_translation('stroke_assessment')}**: {get_translation('stroke_feature_desc')}
+    - **{get_translation('dementia_assessment')}**: {get_translation('dementia_feature_desc')}
+    """)
     st.markdown("---")
     st.markdown(get_translation("""
     Welcome to the **African NeuroHealth AI Dashboard** - an integrated platform for predicting 
@@ -258,7 +265,81 @@ def render_dashboard():
         if st.button(get_translation("😌 Stress Assessment"), use_container_width=True, key="dash_stress"):
             st.session_state.current_page = "Stress Assessment"
             st.rerun()
-
+def render_sidebar():
+    """Render the sidebar content"""
+    
+    # 1. Logo Logic
+    img_path = "Gemini_Generated_Image_rnqv02rnqv02rnqv.png"
+    img_base64 = get_base64_of_bin_file(img_path)
+    
+    if img_base64:
+        st.sidebar.markdown(f"""
+        <div style="text-align: center;">
+            <img src="data:image/png;base64,{img_base64}" width="100" height="100" style="border-radius: 50%;">
+            <h2 style="margin-bottom: 0;">African NeuroHealth AI</h2>
+            <p style="color: #6B7280; font-size: 0.9rem;">Stroke & Dementia Predictor</p>
+        </div>
+        """, unsafe_allow_html=True)
+    else:
+        # Fallback if image missing
+        st.sidebar.markdown("""
+        <div style="text-align: center;">
+            <h2 style="margin-bottom: 0;">African NeuroHealth AI</h2>
+            <p style="color: #6B7280; font-size: 0.9rem;">Stroke & Dementia Predictor</p>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    st.sidebar.markdown("---")
+    
+    # 2. Login Logic
+    simple_login()
+    
+    # 3. Navigation (Only if logged in)
+    if st.session_state.logged_in:
+        st.sidebar.markdown("---")
+        st.sidebar.subheader(get_translation("📍 Navigation"))
+        
+        page_options = [
+            "Dashboard", "Stroke Assessment", "Dementia Assessment", 
+            "Memory Game", "Nutrition Tracker", "Stress Assessment", "My Reports"
+        ]
+        
+        # Determine index safely
+        try:
+            curr_index = page_options.index(st.session_state.current_page)
+        except ValueError:
+            curr_index = 0
+            
+        selected_page = st.sidebar.radio(
+            get_translation("Go to"),
+            page_options,
+            index=curr_index,
+            key="nav_radio"
+        )
+        
+        if selected_page != st.session_state.current_page:
+            st.session_state.current_page = selected_page
+            st.rerun()
+            
+        # Quick Actions
+        st.sidebar.markdown("---")
+        st.sidebar.subheader(get_translation("⚡ Quick Actions"))
+        
+        c1, c2 = st.sidebar.columns(2)
+        if c1.button("🔄 Reload", use_container_width=True):
+            st.session_state.models_loaded = {"Stroke": False, "Dementia": False}
+            st.rerun()
+            
+        if c2.button("📊 Reports", use_container_width=True):
+            st.session_state.current_page = "My Reports"
+            st.rerun()
+            
+        st.sidebar.markdown("---")
+        st.sidebar.info(f"User: {st.session_state.user_name}")
+        
+        if st.sidebar.button("Log Out", use_container_width=True):
+            st.session_state.logged_in = False
+            st.rerun()
 def is_rtl_language():
     """Check if current language is RTL (Right-to-Left) with a safety default."""
     # .get('key', 'default') ensures it returns 'en' if the key doesn't exist yet
@@ -2832,81 +2913,6 @@ def render_reports_page():
                             st.warning("Click again to confirm deletion")
                 
                 st.markdown("</div>", unsafe_allow_html=True)
-def render_sidebar():
-    """Render the sidebar content"""
-    
-    # 1. Logo Logic
-    img_path = "Gemini_Generated_Image_rnqv02rnqv02rnqv.png"
-    img_base64 = get_base64_of_bin_file(img_path)
-    
-    if img_base64:
-        st.sidebar.markdown(f"""
-        <div style="text-align: center;">
-            <img src="data:image/png;base64,{img_base64}" width="100" height="100" style="border-radius: 50%;">
-            <h2 style="margin-bottom: 0;">African NeuroHealth AI</h2>
-            <p style="color: #6B7280; font-size: 0.9rem;">Stroke & Dementia Predictor</p>
-        </div>
-        """, unsafe_allow_html=True)
-    else:
-        # Fallback if image missing
-        st.sidebar.markdown("""
-        <div style="text-align: center;">
-            <h2 style="margin-bottom: 0;">African NeuroHealth AI</h2>
-            <p style="color: #6B7280; font-size: 0.9rem;">Stroke & Dementia Predictor</p>
-        </div>
-        """, unsafe_allow_html=True)
-    
-    st.sidebar.markdown("---")
-    
-    # 2. Login Logic
-    simple_login()
-    
-    # 3. Navigation (Only if logged in)
-    if st.session_state.logged_in:
-        st.sidebar.markdown("---")
-        st.sidebar.subheader(get_translation("📍 Navigation"))
-        
-        page_options = [
-            "Dashboard", "Stroke Assessment", "Dementia Assessment", 
-            "Memory Game", "Nutrition Tracker", "Stress Assessment", "My Reports"
-        ]
-        
-        # Determine index safely
-        try:
-            curr_index = page_options.index(st.session_state.current_page)
-        except ValueError:
-            curr_index = 0
-            
-        selected_page = st.sidebar.radio(
-            get_translation("Go to"),
-            page_options,
-            index=curr_index,
-            key="nav_radio"
-        )
-        
-        if selected_page != st.session_state.current_page:
-            st.session_state.current_page = selected_page
-            st.rerun()
-            
-        # Quick Actions
-        st.sidebar.markdown("---")
-        st.sidebar.subheader(get_translation("⚡ Quick Actions"))
-        
-        c1, c2 = st.sidebar.columns(2)
-        if c1.button("🔄 Reload", use_container_width=True):
-            st.session_state.models_loaded = {"Stroke": False, "Dementia": False}
-            st.rerun()
-            
-        if c2.button("📊 Reports", use_container_width=True):
-            st.session_state.current_page = "My Reports"
-            st.rerun()
-            
-        st.sidebar.markdown("---")
-        st.sidebar.info(f"User: {st.session_state.user_name}")
-        
-        if st.sidebar.button("Log Out", use_container_width=True):
-            st.session_state.logged_in = False
-            st.rerun()
 
 # ====== MAIN APP FUNCTION ======
 def main():
@@ -3006,6 +3012,7 @@ def show_footer():
 # ====== RUN APP ======
 if __name__ == "__main__":
     main()
+
 
 
 
