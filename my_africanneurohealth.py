@@ -183,14 +183,7 @@ def render_dashboard():
                 <p style="color: #6B7280; font-size: 1rem; margin: 0;">Stroke & Dementia Predictor</p>
             </div>
         """, unsafe_allow_html=True)
-    # Use the KEY instead of the full text
-    st.markdown(get_translation("welcome_text"))
-    
-    st.markdown(f"### {get_translation('features_title')}")
-    st.markdown(f"""
-    - **{get_translation('stroke_assessment')}**: {get_translation('stroke_feature_desc')}
-    - **{get_translation('dementia_assessment')}**: {get_translation('dementia_feature_desc')}
-    """)
+ 
     st.markdown("---")
     st.markdown(get_translation("""
     Welcome to the **African NeuroHealth AI Dashboard** - an integrated platform for predicting 
@@ -3020,6 +3013,7 @@ def show_footer():
 # ====== RUN APP ======
 if __name__ == "__main__":
     main()
+
 
 
 
