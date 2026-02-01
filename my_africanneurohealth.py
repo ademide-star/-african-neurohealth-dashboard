@@ -3006,13 +3006,14 @@ def show_footer():
     with footer_col1:
         st.caption("© 2024 African NeuroHealth AI")
     with footer_col2:
-        st.caption("Version 2.0)
+        st.caption("Version 2.0")
     with footer_col3:
         st.caption(f"Last update: {datetime.now().strftime('%Y-%m-%d')}")
 
 # ====== RUN APP ======
 if __name__ == "__main__":
     main()
+
 
 
 
