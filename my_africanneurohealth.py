@@ -361,7 +361,7 @@ def render_dashboard():
         if st.button("😌 Stress Assessment", use_container_width=True, key="dash_stress"):
             st.session_state.current_page = "Stress Assessment"
             st.rerun()
-show_footer()
+
 
 
 def is_rtl_language():
@@ -2926,7 +2926,7 @@ def render_sidebar():
     """Render the sidebar navigation"""
     with st.sidebar:
         st.markdown("## 🧭 Navigation")
-        
+         display_logo()
         # User info if logged in
         if st.session_state.logged_in:
             st.markdown(f"**👤 Welcome, {st.session_state.user_name}!**")
@@ -2992,6 +2992,9 @@ def main():
         show_welcome_screen()
     else:
         route_pages(st.session_state.current_page)
+
+show_footer()
+
 def show_footer():
     """Display footer"""
     st.markdown("---")
@@ -3002,7 +3005,9 @@ def show_footer():
         st.caption("Version 2.0")
     with footer_col3:
         st.caption(f"Last update: {datetime.now().strftime('%Y-%m-%d')}")
+
 # ====== RUN APP ======
 if __name__ == "__main__":
     main()
+
 
