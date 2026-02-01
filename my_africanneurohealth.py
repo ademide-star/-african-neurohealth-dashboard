@@ -2989,8 +2989,7 @@ def render_sidebar():
 # ====== MAIN APP FUNCTION ======
 def main():
     """Main function to run the Streamlit app"""
-    # 1. Initialize language first
-    set_language_selector()
+   
     
     # 2. Apply the RTL CSS if needed
     apply_rtl_logic()
@@ -3085,6 +3084,7 @@ def show_footer():
 # ====== RUN APP ======
 if __name__ == "__main__":
     main()
+
 
 
 
