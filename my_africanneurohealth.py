@@ -161,6 +161,18 @@ def animated_metric(label, target_value, delta=None, prefix="", suffix=""):
         value=f"{prefix}{target_value}{suffix}",
         delta=delta
     )
+
+def show_footer():
+    """Display footer"""
+    st.markdown("---")
+    footer_col1, footer_col2, footer_col3 = st.columns(3)
+    with footer_col1:
+        st.caption("© 2024 African NeuroHealth AI")
+    with footer_col2:
+        st.caption("Version 2.0")
+    with footer_col3:
+        st.caption(f"Last update: {datetime.now().strftime('%Y-%m-%d')}")
+
 def show_welcome_screen():
     """Display the welcome screen"""
     col1, col2 = st.columns([1, 4])
@@ -326,6 +338,7 @@ def render_dashboard():
         if st.button("😌 Stress Assessment", use_container_width=True, key="dash_stress"):
             st.session_state.current_page = "Stress Assessment"
             st.rerun()
+show_footer()
 
 
 def is_rtl_language():
@@ -2941,51 +2954,26 @@ def render_sidebar():
             st.metric("Dementia Predictions", st.session_state.previous_stats.get("dementia_predictions", 0))
 
 # ====== MAIN APP LOGIC ======
-
-# ====== MAIN APP FUNCTION ======
+    
 def main():
     """Main function to run the Streamlit app"""
    
     # 2. Apply the RTL CSS if needed
     apply_rtl_logic()
     
-    # 1. Render sidebar (Handles Login logic internally now)
-    if "logged_in" not in st.session_state:
-        st.session_state.logged_in = False
-    
+    # Show sidebar navigation
     render_sidebar()
     
-    # 2. Check if logged in
+    # Show welcome screen or route to pages
     if not st.session_state.logged_in:
-        # Show welcome screen and STOP execution here
         show_welcome_screen()
-        return 
-    
-    # 3. User is logged in - show selected page
-    route_pages(st.session_state.current_page)  
-    # Footer
-    show_footer()
-
-def show_footer():
-    """Display footer"""
-    st.markdown("---")
-    footer_col1, footer_col2, footer_col3 = st.columns(3)
-    with footer_col1:
-        st.caption("© 2024 African NeuroHealth AI")
-    with footer_col2:
-        st.caption("Version 2.0")
-    with footer_col3:
-        st.caption(f"Last update: {datetime.now().strftime('%Y-%m-%d')}")
+    else:
+        route_pages(st.session_state.current_page)
 
 # ====== RUN APP ======
 if __name__ == "__main__":
     main()
-
-
-
-
-
-
+```
 
 
 
