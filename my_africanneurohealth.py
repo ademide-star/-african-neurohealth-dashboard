@@ -165,7 +165,7 @@ def render_dashboard():
         return base64.b64encode(data).decode()
 
     # Image path
-    img_path = r"C:\Users\sibs2\Downloads\Gemini_Generated_Image_rnqv02rnqv02rnqv.png"
+    img_path ="Gemini_Generated_Image_rnqv02rnqv02rnqv.png"
 
     try:
         img_base64 = get_base64_of_bin_file(img_path)
@@ -230,6 +230,12 @@ def render_dashboard():
             target_value=543,
             delta="+12"
         )
+    stats = {
+    "stroke_predictions": 1247,
+    "dementia_predictions": 892,
+    "memory_game_players": 543
+}
+
     st.session_state.previous_stats = stats
 
 
@@ -3017,6 +3023,7 @@ def show_footer():
 # ====== RUN APP ======
 if __name__ == "__main__":
     main()
+
 
 
 
