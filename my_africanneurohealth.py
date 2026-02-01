@@ -319,148 +319,61 @@ def simple_login():
             st.session_state.current_page = "Dashboard"
             st.rerun()
 
-# 1. MOVED: Location and Ethnicity logic into a function
 def render_location_filters():
     """Renders location widgets safely inside the sidebar context"""
+    
+    # 1. Define Data inside the function to prevent global scope initialization errors
+    countries_with_provinces = {
+        "Nigeria": ["Abia", "Adamawa", "Akwa Ibom", "Anambra", "Bauchi", "Bayelsa", "Benue", "Borno", "Cross River", "Delta", "Ebonyi", "Edo", "Ekiti", "Enugu", "FCT", "Gombe", "Imo", "Jigawa", "Kaduna", "Kano", "Katsina", "Kebbi", "Kogi", "Kwara", "Lagos", "Nasarawa", "Niger", "Ogun", "Ondo", "Osun", "Oyo", "Plateau", "Rivers", "Sokoto", "Taraba", "Yobe", "Zamfara"],
+        "Ghana": ["Greater Accra", "Ashanti", "Western", "Eastern", "Volta", "Northern", "Upper East", "Upper West", "Bono", "Ahafo", "Savannah", "Oti", "North East", "Western North", "Central"],
+        "Kenya": ["Nairobi", "Mombasa", "Kisumu", "Nakuru", "Kiambu", "Machakos", "Uasin Gishu", "Meru", "Embu", "Kakamega", "Bungoma", "Kisii"],
+        "South Africa": ["Gauteng", "Western Cape", "Eastern Cape", "Northern Cape", "KwaZulu-Natal", "Free State", "North West", "Mpumalanga", "Limpopo"],
+        "Uganda": ["Central", "Eastern", "Northern", "Western"],
+        "Tanzania": ["Arusha", "Dar es Salaam", "Dodoma", "Geita", "Kagera", "Kigoma", "Kilimanjaro", "Lindi", "Manyara", "Mara", "Mbeya", "Morogoro", "Mtwara", "Mwanza", "Njombe", "Pwani", "Rukwa", "Ruvuma", "Shinyanga", "Simiyu", "Singida", "Tabora", "Tanga", "Zanzibar Central", "Zanzibar North", "Zanzibar South"],
+        "Ethiopia": ["Addis Ababa", "Amhara", "Oromia", "Tigray", "Sidama", "Somali", "Benishangul-Gumuz", "SNNPR", "Afar", "Gambela", "Harari"],
+        "Egypt": ["Cairo", "Alexandria", "Giza", "Aswan", "Asyut", "Beheira", "Beni Suef", "Dakahlia", "Damietta", "Faiyum", "Gharbia", "Ismailia", "Kafr El Sheikh", "Luxor", "Matruh", "Minya", "Monufia", "New Valley", "North Sinai", "Port Said", "Qalyubia", "Qena", "Red Sea", "Sharqia", "Sohag", "South Sinai", "Suez"],
+        "Morocco": ["Casablanca-Settat", "Rabat-Salé-Kénitra", "Fès-Meknès", "Marrakesh-Safi", "Tangier-Tetouan-Al Hoceima", "Souss-Massa", "Oriental", "Beni Mellal-Khenifra", "Drâa-Tafilalet", "Guelmim-Oued Noun", "Laâyoune-Sakia El Hamra", "Dakhla-Oued Ed-Dahab"],
+        "Cameroon": ["Adamawa", "Centre", "East", "Far North", "Littoral", "North", "Northwest", "South", "Southwest", "West"],
+        "Zimbabwe": ["Bulawayo", "Harare", "Manicaland", "Mashonaland Central", "Mashonaland East", "Mashonaland West", "Masvingo", "Matabeleland North", "Matabeleland South", "Midlands"],
+        "Zambia": ["Central", "Copperbelt", "Eastern", "Luapula", "Lusaka", "Muchinga", "Northern", "North-Western", "Southern", "Western"],
+        "Rwanda": ["Kigali", "Eastern", "Northern", "Southern", "Western"],
+        "Sudan": ["Khartoum", "North Darfur", "South Darfur", "East Darfur", "West Darfur", "Central Darfur", "North Kordofan", "South Kordofan", "White Nile", "Blue Nile", "River Nile", "Red Sea", "Kassala", "Gedaref", "Al Jazirah", "Sennar"],
+        "Namibia": ["Erongo", "Hardap", "Karas", "Kavango East", "Kavango West", "Khomas", "Kunene", "Ohangwena", "Omaheke", "Omusati", "Oshana", "Oshikoto", "Otjozondjupa", "Zambezi"],
+        "Botswana": ["Central", "Ghanzi", "Kgalagadi", "Kgatleng", "Kweneng", "North-East", "North-West", "South-East", "Southern"],
+        "Algeria": ["Algiers", "Oran", "Constantine", "Blida", "Annaba", "Batna", "Sétif", "Djelfa", "Tlemcen", "Tizi Ouzou", "Béjaïa", "Skikda", "Mostaganem", "El Oued", "Laghouat", "Ouargla", "Biskra", "Chlef", "Ghardaïa", "Médéa"]
+    }
+
+    region_with_ethnicity = {
+        "North Africa": ["Amazigh (Berber)", "Arab", "Bedouin", "Coptic", "Nubian", "Tuareg", "Tebu", "Siwi", "Beja", "Riffian"],
+        "West Africa": ["Yoruba", "Hausa", "Igbo", "Fulani", "Akan", "Ashanti", "Ewe", "Fon", "Ga", "Mandinka", "Wolof", "Serer", "Toucouleur", "Mossi", "Dogon", "Songhai", "Senufo", "Gurma", "Dagomba", "Tiv", "Ijaw", "Ibibio", "Kanuri", "Nupe", "Teda", "Sara", "Beti-Pahuin", "Fang", "Bamileke", "Bamum", "Kirdi", "Kissi", "Limba", "Temne", "Mende", "Kpelle", "Vai", "Bassa", "Grebo", "Kru", "Malinke", "Susu", "Kissi", "Baga", "Landuma"],
+        "Central Africa": ["Bantu", "Kongo", "Luba", "Mongo", "Teke", "Sanga", "Pygmy (Aka, Baka, Mbuti)", "Fang", "Beti", "Bamileke", "Bamum", "Chokwe", "Ovimbundu", "Mbundu", "Lunda", "Gbagyi", "Zande", "Ngbaka", "Sara", "Kanuri", "Bagirmi", "Sango", "Gbaya", "Banda", "Azande", "Mangbetu", "Hema", "Lendu", "Tutsi", "Hutu", "Twa"],
+        "East Africa": ["Amhara", "Tigray", "Oromo", "Somali", "Afar", "Sidama", "Gurage", "Welayta", "Hadiya", "Kamba", "Kikuyu", "Luhya", "Luo", "Kalenjin", "Kisii", "Meru", "Maasai", "Chaga", "Sukuma", "Nyamwezi", "Haya", "Ganda", "Soga", "Nkole", "Toro", "Rundi", "Rwanda", "Tutsi", "Hutu", "Twa", "Dinka", "Nuer", "Shilluk", "Bari", "Lotuko", "Acholi", "Lango", "Karamojong", "Alur", "Lugbara", "Madi", "Kakwa", "Banyoro", "Baganda"],
+        "Southern Africa": ["Shona", "Ndebele", "Zulu", "Xhosa", "Sotho", "Tswana", "Swazi", "Venda", "Tsonga", "Pedi", "Nama", "Herero", "Himba", "Ovambo", "Kavango", "San (Bushmen)", "Khoikhoi", "Lozi", "Tonga", "Chewa", "Yao", "Lomwe", "Makua", "Ngoni", "Tumbuka", "Bemba", "Lunda", "Luvale", "Kaonde", "Tonga", "Nyanja", "Sena", "Chopi", "Shona", "Ndau", "Manyika", "Kalanga", "Kgalagadi", "Mbukushu", "Damara", "Basters", "Griqua"],
+        "Indian Ocean Islands": ["Merina", "Betsileo", "Betsimisaraka", "Sakalava", "Antandroy", "Antanosy", "Comorian", "Réunionese", "Mauritian", "Seychellois Creole", "Zanzibari"]
+    }
+
+    # 2. Rendering UI
     st.sidebar.markdown("---")
     st.sidebar.header(get_translation("🌍 Location Information"))
-    countries_with_provinces = {
-    "Nigeria": [
-        "Abia", "Adamawa", "Akwa Ibom", "Anambra", "Bauchi", "Bayelsa", "Benue", "Borno", "Cross River", "Delta",
-        "Ebonyi", "Edo", "Ekiti", "Enugu", "FCT", "Gombe", "Imo", "Jigawa", "Kaduna", "Kano", "Katsina", "Kebbi",
-        "Kogi", "Kwara", "Lagos", "Nasarawa", "Niger", "Ogun", "Ondo", "Osun", "Oyo", "Plateau", "Rivers",
-        "Sokoto", "Taraba", "Yobe", "Zamfara"
-    ],
-    "Ghana": [
-        "Greater Accra", "Ashanti", "Western", "Eastern", "Volta", "Northern", "Upper East", "Upper West", "Bono",
-        "Ahafo", "Savannah", "Oti", "North East", "Western North", "Central"
-    ],
-    "Kenya": [
-        "Nairobi", "Mombasa", "Kisumu", "Nakuru", "Kiambu", "Machakos", "Uasin Gishu", "Meru", "Embu",
-        "Kakamega", "Bungoma", "Kisii"
-    ],
-    "South Africa": [
-        "Gauteng", "Western Cape", "Eastern Cape", "Northern Cape", "KwaZulu-Natal", "Free State", "North West",
-        "Mpumalanga", "Limpopo"
-    ],
-    "Uganda": ["Central", "Eastern", "Northern", "Western"],
-    "Tanzania": [
-        "Arusha", "Dar es Salaam", "Dodoma", "Geita", "Kagera", "Kigoma", "Kilimanjaro", "Lindi", "Manyara", "Mara",
-        "Mbeya", "Morogoro", "Mtwara", "Mwanza", "Njombe", "Pwani", "Rukwa", "Ruvuma", "Shinyanga", "Simiyu",
-        "Singida", "Tabora", "Tanga", "Zanzibar Central", "Zanzibar North", "Zanzibar South"
-    ],
-    "Ethiopia": [
-        "Addis Ababa", "Amhara", "Oromia", "Tigray", "Sidama", "Somali", "Benishangul-Gumuz", "SNNPR", "Afar",
-        "Gambela", "Harari"
-    ],
-    "Egypt": [
-        "Cairo", "Alexandria", "Giza", "Aswan", "Asyut", "Beheira", "Beni Suef", "Dakahlia", "Damietta", "Faiyum",
-        "Gharbia", "Ismailia", "Kafr El Sheikh", "Luxor", "Matruh", "Minya", "Monufia", "New Valley", "North Sinai",
-        "Port Said", "Qalyubia", "Qena", "Red Sea", "Sharqia", "Sohag", "South Sinai", "Suez"
-    ],
-    "Morocco": [
-        "Casablanca-Settat", "Rabat-Salé-Kénitra", "Fès-Meknès", "Marrakesh-Safi", "Tangier-Tetouan-Al Hoceima",
-        "Souss-Massa", "Oriental", "Beni Mellal-Khenifra", "Drâa-Tafilalet", "Guelmim-Oued Noun",
-        "Laâyoune-Sakia El Hamra", "Dakhla-Oued Ed-Dahab"
-    ],
-    "Cameroon": [
-        "Adamawa", "Centre", "East", "Far North", "Littoral", "North", "Northwest", "South", "Southwest", "West"
-    ],
-    "Zimbabwe": [
-        "Bulawayo", "Harare", "Manicaland", "Mashonaland Central", "Mashonaland East", "Mashonaland West",
-        "Masvingo", "Matabeleland North", "Matabeleland South", "Midlands"
-    ],
-    "Zambia": [
-        "Central", "Copperbelt", "Eastern", "Luapula", "Lusaka", "Muchinga", "Northern", "North-Western",
-        "Southern", "Western"
-    ],
-    "Rwanda": ["Kigali", "Eastern", "Northern", "Southern", "Western"],
-    "Sudan": [
-        "Khartoum", "North Darfur", "South Darfur", "East Darfur", "West Darfur", "Central Darfur",
-        "North Kordofan", "South Kordofan", "White Nile", "Blue Nile", "River Nile", "Red Sea", "Kassala",
-        "Gedaref", "Al Jazirah", "Sennar"
-    ],
-    "Namibia": [
-        "Erongo", "Hardap", "Karas", "Kavango East", "Kavango West", "Khomas", "Kunene", "Ohangwena", "Omaheke",
-        "Omusati", "Oshana", "Oshikoto", "Otjozondjupa", "Zambezi"
-    ],
-    "Botswana": [
-        "Central", "Ghanzi", "Kgalagadi", "Kgatleng", "Kweneng", "North-East", "North-West", "South-East", "Southern"
-    ],
-    "Algeria": [
-        "Algiers", "Oran", "Constantine", "Blida", "Annaba", "Batna", "Sétif", "Djelfa", "Tlemcen", "Tizi Ouzou",
-        "Béjaïa", "Skikda", "Mostaganem", "El Oued", "Laghouat", "Ouargla", "Biskra", "Chlef", "Ghardaïa", "Médéa"
-    ]
-}
-# Ethnic groups list
-region_with_ethnicity = {
-    "North Africa":[
-    "Amazigh (Berber)", "Arab", "Bedouin", "Coptic", "Nubian", "Tuareg", "Tebu", "Siwi", "Beja", "Riffian"],
     
-    "West Africa":[
-    "Yoruba", "Hausa", "Igbo", "Fulani", "Akan", "Ashanti", "Ewe", "Fon", "Ga", "Mandinka", "Wolof", "Serer", 
-    "Toucouleur", "Mossi", "Dogon", "Songhai", "Senufo", "Gurma", "Dagomba", "Tiv", "Ijaw", "Ibibio", "Kanuri", 
-    "Nupe", "Teda", "Sara", "Beti-Pahuin", "Fang", "Bamileke", "Bamum", "Kirdi", "Kissi", "Limba", "Temne", 
-    "Mende", "Kpelle", "Vai", "Bassa", "Grebo", "Kru", "Malinke", "Susu", "Kissi", "Baga", "Landuma"],
-    
-    "Central Africa":[
-    "Bantu", "Kongo", "Luba", "Mongo", "Teke", "Sanga", "Pygmy (Aka, Baka, Mbuti)", "Fang", "Beti", "Bamileke", 
-    "Bamum", "Chokwe", "Ovimbundu", "Mbundu", "Lunda", "Gbagyi", "Zande", "Ngbaka", "Sara", "Kanuri", "Bagirmi", 
-    "Sango", "Gbaya", "Banda", "Azande", "Mangbetu", "Hema", "Lendu", "Tutsi", "Hutu", "Twa"],
-    
-    "East Africa":[ 
-    "Amhara", "Tigray", "Oromo", "Somali", "Afar", "Sidama", "Gurage", "Welayta", "Hadiya", "Kamba", "Kikuyu", 
-    "Luhya", "Luo", "Kalenjin", "Kisii", "Meru", "Maasai", "Chaga", "Sukuma", "Nyamwezi", "Haya", "Ganda", 
-    "Soga", "Nkole", "Toro", "Rundi", "Rwanda", "Tutsi", "Hutu", "Twa", "Dinka", "Nuer", "Shilluk", "Bari", 
-    "Lotuko", "Acholi", "Lango", "Karamojong", "Alur", "Lugbara", "Madi", "Kakwa", "Banyoro", "Baganda"],
-    
-    "Southern Africa":[
-    "Shona", "Ndebele", "Zulu", "Xhosa", "Sotho", "Tswana", "Swazi", "Venda", "Tsonga", "Pedi", "Nama", 
-    "Herero", "Himba", "Ovambo", "Kavango", "San (Bushmen)", "Khoikhoi", "Lozi", "Tonga", "Chewa", "Yao", 
-    "Lomwe", "Makua", "Ngoni", "Tumbuka", "Bemba", "Lunda", "Luvale", "Kaonde", "Tonga", "Nyanja", "Sena", 
-    "Chopi", "Shona", "Ndau", "Manyika", "Kalanga", "Kgalagadi", "Mbukushu", "Damara", "Basters", "Griqua"],
-    
-    "Indian Ocean Islands":[
-    "Merina", "Betsileo", "Betsimisaraka", "Sakalava", "Antandroy", "Antanosy", "Comorian", "Réunionese", 
-    "Mauritian", "Seychellois Creole", "Zanzibari"
-]}
+    country = st.sidebar.selectbox(get_translation("Select Country"), list(countries_with_provinces.keys()))
+    province = st.sidebar.selectbox(get_translation("Select Province"), countries_with_provinces[country])
+    region = st.sidebar.selectbox(get_translation("🌍 Select Region"), list(region_with_ethnicity.keys()))
+    ethnicity = st.sidebar.selectbox(get_translation("Select Ethnicity"), region_with_ethnicity[region])
 
-    # Example encoding maps (assign integer codes)
-country_map = {country: i for i, country in enumerate(countries_with_provinces.keys())}
+    # 3. Dynamic Map Generation (Mapping names to numbers for the model)
+    c_map = {name: i for i, name in enumerate(countries_with_provinces.keys())}
+    p_map = {name: i for i, name in enumerate(countries_with_provinces[country])}
+    r_map = {name: i for i, name in enumerate(region_with_ethnicity.keys())}
+    e_map = {name: i for i, name in enumerate(region_with_ethnicity[region])}
 
-# Since provinces depend on country, encode them dynamically
-province_map = {}
-for c, provinces in countries_with_provinces.items():
-    province_map.update({p: i for i, p in enumerate(provinces)})
-
-region_map = {region: i for i, region in enumerate(region_with_ethnicity.keys())}
-
-ethnicity_map = {}
-for r, ethnicities in region_with_ethnicity.items():
-    ethnicity_map.update({e: i for i, e in enumerate(ethnicities)})
-
-# Streamlit UI
-with st.sidebar:
-    # ✅ CORRECT
-    st.header(get_translation("🌍 Location Information"))
-    selected_country = st.selectbox(get_translation("Select Country"), list(countries_with_provinces.keys()))
-    selected_province = st.selectbox(get_translation("Select Province"), countries_with_provinces[selected_country])
-    selected_region = st.selectbox(get_translation("🌍 Select Region"), list(region_with_ethnicity.keys()))
-    selected_ethnicity = st.selectbox(get_translation("Select Ethnicity"), region_with_ethnicity[selected_region])
-# Convert selections to numerical codes
-    encoded_country = country_map[selected_country]
-    encoded_province = province_map[selected_province]
-    encoded_region = region_map[selected_region]
-    encoded_ethnicity = ethnicity_map[selected_ethnicity]
-
-# Use these in your payload
-payload = {
-    "country": encoded_country,
-    "province": encoded_province,
-    "region": encoded_region,
-    "ethnicity": encoded_ethnicity,
-    # include other fields...
-}
+    # 4. Return Payload
+    return {
+        "country": c_map[country],
+        "province": p_map[province],
+        "region": r_map[region],
+        "ethnicity": e_map[ethnicity]
+    }
 # -------------------
 # Utility Functions
 # -------------------
@@ -3042,6 +2955,7 @@ def show_footer():
 # ====== RUN APP ======
 if __name__ == "__main__":
     main()
+
 
 
 
