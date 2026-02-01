@@ -132,23 +132,27 @@ import time
 def animated_metric(label, target_value, delta=None, prefix="", suffix=""):
     """Displays a metric that animates from 0 to the target value."""
     metric_placeholder = st.empty()
-    
-    # Simple animation loop
-    step = target_value // 20 if target_value > 20 else 1
-    for i in range(0, target_value + 1, step):
+
+    # Determine animation direction and step
+    step = max(int(abs(target_value) // 20), 1)
+    step = step if target_value >= 0 else -step
+
+    for i in range(0, target_value + step, step):
         metric_placeholder.metric(
-            label=label, 
-            value=f("{prefix}{i}{suffix}"), 
+            label=label,
+            value=f"{prefix}{i}{suffix}",
             delta=delta
         )
         time.sleep(0.01)
-        
-    # Ensure it lands exactly on the target value
+
+    # Ensure exact final value
     metric_placeholder.metric(
-        label=label, 
-        value=f("{prefix}{target_value}{suffix}"), 
+        label=label,
+        value=f"{prefix}{target_value}{suffix}",
         delta=delta
     )
+
+
 def render_dashboard():
     """Main dashboard page"""
     import base64
@@ -3013,6 +3017,7 @@ def show_footer():
 # ====== RUN APP ======
 if __name__ == "__main__":
     main()
+
 
 
 
