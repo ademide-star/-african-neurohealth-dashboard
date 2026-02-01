@@ -127,7 +127,28 @@ def init_session_state():
 
 # Initialize session state
 init_session_state()
+import time
 
+def animated_metric(label, target_value, delta=None, prefix="", suffix=""):
+    """Displays a metric that animates from 0 to the target value."""
+    metric_placeholder = st.empty()
+    
+    # Simple animation loop
+    step = target_value // 20 if target_value > 20 else 1
+    for i in range(0, target_value + 1, step):
+        metric_placeholder.metric(
+            label=label, 
+            value=f("{prefix}{i}{suffix}"), 
+            delta=delta
+        )
+        time.sleep(0.01)
+        
+    # Ensure it lands exactly on the target value
+    metric_placeholder.metric(
+        label=label, 
+        value=f("{prefix}{target_value}{suffix}"), 
+        delta=delta
+    )
 def render_dashboard():
     """Main dashboard page"""
     import base64
@@ -2919,10 +2940,6 @@ def main():
     
     render_sidebar()
     
-    if st.session_state.logged_in:
-        st.title("Dashboard")
-        # render_dashboard()
-    
     # 2. Check if logged in
     if not st.session_state.logged_in:
         # Show welcome screen and STOP execution here
@@ -3003,6 +3020,7 @@ def show_footer():
 # ====== RUN APP ======
 if __name__ == "__main__":
     main()
+
 
 
 
