@@ -426,8 +426,8 @@ def generate_stroke_pdf(user_name, patient_data, risk_score, risk_level, factors
         "Maintain healthy BMI through diet and exercise",
         "Control blood glucose levels",
         "Quit smoking and limit alcohol consumption",
-        "Engage in regular physical activity (30 mins/day)",
-        "Reduce sodium intake to less than 2,300 mg/day",
+        "Engage in regular physical activity",
+        "Reduce sodium intake to less than 2,300 milligram per day",
         "Eat more fruits, vegetables, and whole grains",
         "Manage stress through meditation or relaxation techniques",
         "Get 7-8 hours of quality sleep nightly",
@@ -2955,6 +2955,7 @@ def show_footer():
 # ====== RUN APP ======
 if __name__ == "__main__":
     main()
+
 
 
 
