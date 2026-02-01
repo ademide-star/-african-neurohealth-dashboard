@@ -2994,7 +2994,7 @@ def main():
     else:
         route_pages(st.session_state.current_page)
 
-show_footer()
+
 
 def show_footer():
     """Display footer"""
@@ -3006,10 +3006,11 @@ def show_footer():
         st.caption("Version 2.0")
     with footer_col3:
         st.caption(f"Last update: {datetime.now().strftime('%Y-%m-%d')}")
-
+show_footer()
 # ====== RUN APP ======
 if __name__ == "__main__":
     main()
+
 
 
 
