@@ -305,12 +305,11 @@ def get_current_language():
     """Get the current language code"""
     return st.session_state.get('current_language', 'en')
 
-
 def is_rtl_language():
-    """Check if current language is RTL (Right-to-Left)"""
-    return get_current_language() == 'ar'
-
-
+    """Check if current language is RTL (Right-to-Left) with a safety default."""
+    # .get('key', 'default') ensures it returns 'en' if the key doesn't exist yet
+    return st.session_state.get('current_language', 'en') == 'ar'
     
     
+
 
