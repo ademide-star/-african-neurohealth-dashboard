@@ -1,4 +1,4 @@
-# 1. Standard Imports (NO streamlit commands here)
+# 1. Sta# Standard Imports (NO streamlit commands here)
 import streamlit as st
 import uuid
 import random
@@ -41,6 +41,7 @@ import traceback
 from sklearn.pipeline import Pipeline
 from supabase import create_client, Client
 from translations import get_translation, set_language_selector
+from PIL import Image
 
 # ====== PAGE CONFIG - MUST BE FIRST AND ONLY ONCE ======
 st.set_page_config(
@@ -49,6 +50,7 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded"
 )
+
 # ====== HIDE STREAMLIT DEFAULT UI ======
 st.markdown("""
 <style>
@@ -58,7 +60,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-    # ====== CUSTOM CSS ======
+# ====== CUSTOM CSS ======
 st.markdown("""
 <style>
     .metric-card {
@@ -73,27 +75,13 @@ st.markdown("""
     .metric-delta { font-size: 1rem; color: #16A34A; }
 </style>
 """, unsafe_allow_html=True)
-import base64
 
-def get_base64_of_bin_file(bin_file):
-    """
-    Reads a binary file (like an image) and converts it to a base64 string 
-    so it can be displayed in Streamlit HTML.
-    """
-    try:
-        with open(bin_file, 'rb') as f:
-            data = f.read()
-        return base64.b64encode(data).decode()
-    except FileNotFoundError:
-        # If the image is missing, return None so the app doesn't crash
-        return None
-    except Exception as e:
-        print(f"Error encoding image: {e}")
-        return None
 # ====== 2. LOGGING & CLIENTS ======
 # --- Load Environment Variables ---
-SUPABASE_URL = st.secrets["SUPABASE_URL"]
-SUPABASE_KEY = st.secrets["SUPABASE_KEY"]
+# Use your provided Supabase keys here
+SUPABASE_URL = "https://hmmcyiimykgsauqiiknb.supabase.co"
+SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhtbWN5aWlteWtnc2F1cWlpa25iIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzA1Njc3MDgsImV4cCI6MjA0NjE0MzcwOH0.-hTqCiw3slxBLCDiFOozdQXpxalwHCGOeRS4SmERgZc"
+
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 logging.basicConfig(level=logging.DEBUG)
 
@@ -124,10 +112,11 @@ def init_session_state():
         st.session_state.stress_score = 0
     if 'memory_score' not in st.session_state:
         st.session_state.memory_score = None
+    if 'previous_stats' not in st.session_state:
+        st.session_state.previous_stats = {}
 
 # Initialize session state
 init_session_state()
-import time
 
 def animated_metric(label, target_value, delta=None, prefix="", suffix=""):
     """Displays a metric that animates from 0 to the target value."""
@@ -155,45 +144,38 @@ def animated_metric(label, target_value, delta=None, prefix="", suffix=""):
 
 def render_dashboard():
     """Main dashboard page"""
-    import base64
-    import streamlit as st
-
-    # Helper function: convert image to base64
-    def get_base64_of_bin_file(bin_file):
-        with open(bin_file, 'rb') as f:
-            data = f.read()
-        return base64.b64encode(data).decode()
-
-    # Image path
-    img_path ="Gemini_Generated_Image_rnqv02rnqv02rnqv.png"
-
-    try:
-        img_base64 = get_base64_of_bin_file(img_path)
-        st.markdown(f"""
-        <div style="display: flex; align-items: center; gap: 20px;">
-            <img src="data:image/png;base64,{img_base64}" 
-                 style="height: 100px; width: auto;">
-            <div>
-                <h1 style="margin: 0;">African NeuroHealth AI Dashboard</h1>
-                <p style="color: #6B7280; font-size: 1rem; margin: 0;">Stroke & Dementia Predictor</p>
+    
+    # Create columns for logo and title
+    col1, col2 = st.columns([1, 4])
+    
+    with col1:
+        try:
+            # Load and display the image using PIL and Streamlit
+            image = Image.open("Gemini_Generated_Image_rnqv02rnqv02rnqv.png")
+            st.image(image, width=100)
+        except Exception as e:
+            # Fallback if image fails to load
+            st.markdown("""
+            <div style="background-color: #3B82F6; padding: 20px; border-radius: 10px; color: white; text-align: center;">
+                <span style="font-size: 2rem;">🧠</span>
             </div>
-        """, unsafe_allow_html=True)
-    except Exception as e:
-        # Fallback if image fails
+            """, unsafe_allow_html=True)
+            st.warning(f"Image not found: {e}")
+    
+    with col2:
         st.markdown("""
-        <div style="display: flex; align-items: center; gap: 20px;">
-            <div>
-                <h1 style="margin: 0;">African NeuroHealth AI Dashboard</h1>
-                <p style="color: #6B7280; font-size: 1rem; margin: 0;">Stroke & Dementia Predictor</p>
-            </div>
+        <div style="margin-top: 10px;">
+            <h1 style="margin: 0;">African NeuroHealth AI Dashboard</h1>
+            <p style="color: #6B7280; font-size: 1rem; margin: 0;">Stroke & Dementia Predictor</p>
+        </div>
         """, unsafe_allow_html=True)
  
     st.markdown("---")
-    st.markdown(get_translation("""
+    
+    st.markdown("""
     Welcome to the **African NeuroHealth AI Dashboard** - an integrated platform for predicting 
     **stroke** and **dementia** risks using advanced machine learning models.This platform is a culturally attuned, context-aware diagnostic tool tailored for assessing neuro-health risks in African populations. 
     It blends conventional biomedical metrics with locally relevant stressors, lifestyle habits, and cultural practices to offer a truly holistic health assessment experience.
-
     
     ### Features:
     - **Stroke Risk Prediction**: Assess your risk factors and get personalized recommendations
@@ -205,90 +187,88 @@ def render_dashboard():
                
     **This application was proudly developed by Adebimpe-John Omolola E., with invaluable support from the GRASP / NIH / DSI Collaborative Program. 
     Their collaborative spirit and commitment to innovation helped bring this vision to life.**
-    """))
+    """)
     
     # Quick Stats
     col1, col2, col3 = st.columns(3)
 
     with col1:
         animated_metric(
-            label="🧠 " + get_translation("Stroke Predictions"),
+            label="🧠 Stroke Predictions",
             target_value=1247,
             delta="+23"
         )
 
     with col2:
         animated_metric(
-            label="🧓 " + get_translation("Dementia Predictions"),
+            label="🧓 Dementia Predictions",
             target_value=892,
             delta="+15"
         )
     
     with col3:
         animated_metric(
-            label="🎮 " + get_translation("Memory Game Players"),
+            label="🎮 Memory Game Players",
             target_value=543,
             delta="+12"
         )
-    stats = {
-    "stroke_predictions": 1247,
-    "dementia_predictions": 892,
-    "memory_game_players": 543
-}
+    
+    # Store stats in session state
+    st.session_state.previous_stats = {
+        "stroke_predictions": 1247,
+        "dementia_predictions": 892,
+        "memory_game_players": 543
+    }
 
-    st.session_state.previous_stats = stats
-
-
-# Feature Cards
-    st.markdown(
-        get_translation('<h2 class="sub-header">🎯 Quick Access</h2>'),
-    unsafe_allow_html=True
-)  
+    # Feature Cards
+    st.markdown('<h2 class="sub-header">🎯 Quick Access</h2>', unsafe_allow_html=True)
+    
     col1, col2 = st.columns(2)
     
     with col1:
         with st.container(border=True):
-            st.markdown(get_translation("### 🩺 Stroke Prediction"))
-            st.markdown(get_translation("""
+            st.markdown("### 🩺 Stroke Prediction")
+            st.markdown("""
             - Assess stroke risk factors
             - Get personalized recommendations
             - Download printable report
-            """))
-            if st.button(get_translation("Start Assessment"), key="dash_stroke", use_container_width=True):
+            """)
+            if st.button("Start Assessment", key="dash_stroke", use_container_width=True):
                 st.session_state.current_page = "Stroke Assessment"
                 st.rerun()
     
     with col2:
         with st.container(border=True):
-            st.markdown(get_translation("### 🧠 Dementia Prediction"))
-            st.markdown(get_translation("""
+            st.markdown("### 🧠 Dementia Prediction")
+            st.markdown("""
             - Cognitive health assessment
             - Memory function evaluation
             - Download printable report
-            """))
-            if st.button(get_translation("Start Assessment"), key="dash_dementia", use_container_width=True):
+            """)
+            if st.button("Start Assessment", key="dash_dementia", use_container_width=True):
                 st.session_state.current_page = "Dementia Assessment"
                 st.rerun()
     
     # Additional Tools
-    st.markdown(get_translation('<h2 class="sub-header">🛠️ Health Tools</h2>'), unsafe_allow_html=True)
+    st.markdown('<h2 class="sub-header">🛠️ Health Tools</h2>', unsafe_allow_html=True)
     
     col1, col2, col3 = st.columns(3)
     
     with col1:
-        if st.button(get_translation("🧠 Memory Game"), use_container_width=True, key="dash_memory"):
+        if st.button("🧠 Memory Game", use_container_width=True, key="dash_memory"):
             st.session_state.current_page = "Memory Game"
             st.rerun()
     
     with col2:
-        if st.button(get_translation("🥗 Nutrition Tracker"), use_container_width=True, key="dash_nutrition"):
+        if st.button("🥗 Nutrition Tracker", use_container_width=True, key="dash_nutrition"):
             st.session_state.current_page = "Nutrition Tracker"
             st.rerun()
     
     with col3:
-        if st.button(get_translation("😌 Stress Assessment"), use_container_width=True, key="dash_stress"):
+        if st.button("😌 Stress Assessment", use_container_width=True, key="dash_stress"):
             st.session_state.current_page = "Stress Assessment"
             st.rerun()
+
 
 def is_rtl_language():
     """Check if current language is RTL (Right-to-Left) with a safety default."""
@@ -3023,6 +3003,7 @@ def show_footer():
 # ====== RUN APP ======
 if __name__ == "__main__":
     main()
+
 
 
 
