@@ -405,24 +405,6 @@ def apply_rtl_logic():
             unsafe_allow_html=True
         )
 
-# --- 3. RENDER UI WITH RTL SUPPORT ---
-if lang == "ar":
-    # Right-to-Left alignment for Arabic
-    st.sidebar.markdown(f"""
-        <div style="text-align: right; direction: rtl;">
-            <h2 style="margin-bottom:0;">{title}</h2>
-            <p style="color: #6B7280;">{subtitle}</p>
-        </div>
-    """, unsafe_allow_html=True)
-else:
-    # Standard Left-to-Right for other languages
-    st.sidebar.markdown(f"""
-        <div style="text-align: center;">
-            <h2 style="margin-bottom:0;">{title}</h2>
-            <p style="color: #6B7280;">{subtitle}</p>
-        </div>
-    """, unsafe_allow_html=True)
-
 # --- Get User Location ---
 def get_user_location():
     try: 
@@ -3014,6 +2996,7 @@ show_footer()
 # ====== RUN APP ======
 if __name__ == "__main__":
     main()
+
 
 
 
