@@ -244,25 +244,37 @@ def show_welcome_screen():
         5. **Save app for better experience**
         """)
 
-# ====== PAGE RENDERING FUNCTIONS ======
-def render_dashboard():
-    """Main dashboard page"""
-    
-    # Create columns for logo and title
-    col1, col2 = st.columns([1, 4])
-    
-    with col1:
+def render_sidebar():
+    """Render the sidebar navigation"""
+    with st.sidebar:
+        # Language selector - MUST be inside a function, not at module level
+        lang = set_language_selector(widget_key="app_language_selector")
+        
+        # Get translated text
+        title = get_translation("title")
+        subtitle = get_translation("subtitle")
+        
+        # Display logo
         display_logo()
-    
-    
-    with col2:
-        st.markdown("""
-        <div style="margin-top: 10px;">
-            <h1 style="margin: 0;">African NeuroHealth AI Dashboard</h1>
-            <p style="color: #6B7280; font-size: 1rem; margin: 0;">Stroke & Dementia Predictor</p>
-        </div>
-        """, unsafe_allow_html=True)
- 
+        
+        # Render title with RTL support
+        if lang == "ar":
+            st.markdown(f"""
+                <div style="text-align: right; direction: rtl;">
+                    <h2 style="margin-bottom:0;">{title}</h2>
+                    <p style="color: #6B7280;">{subtitle}</p>
+                </div>
+            """, unsafe_allow_html=True)
+        else:
+            st.markdown(f"""
+                <div style="text-align: center;">
+                    <h2 style="margin-bottom:0;">{title}</h2>
+                    <p style="color: #6B7280;">{subtitle}</p>
+                </div>
+            """, unsafe_allow_html=True)
+        
+        st.markdown("## 🧭 Navigation")
+
     st.markdown("---")
     
     st.markdown("""
@@ -361,9 +373,7 @@ def render_dashboard():
         if st.button("😌 Stress Assessment", use_container_width=True, key="dash_stress"):
             st.session_state.current_page = "Stress Assessment"
             st.rerun()
-
-
-
+            
 def is_rtl_language():
     """Check if current language is RTL (Right-to-Left) with a safety default."""
     # .get('key', 'default') ensures it returns 'en' if the key doesn't exist yet
@@ -394,12 +404,6 @@ def apply_rtl_logic():
             """,
             unsafe_allow_html=True
         )
-# --- 1. SET UP LANGUAGE (Only call this ONCE) ---
-lang = set_language_selector(widget_key="app_language_selector")
-
-# --- 2. GET TRANSLATED TEXT ---
-title = get_translation("title")
-subtitle = get_translation("subtitle")
 
 # --- 3. RENDER UI WITH RTL SUPPORT ---
 if lang == "ar":
@@ -2981,11 +2985,13 @@ def render_sidebar():
     
 def main():
     """Main function to run the Streamlit app"""
-   
-    # 2. Apply the RTL CSS if needed
+    # Initialize session state FIRST
+    init_session_state()
+    
+    # Apply RTL logic
     apply_rtl_logic()
     
-    # Show sidebar navigation
+    # Show sidebar navigation (language selector is inside here now)
     render_sidebar()
     
     # Show welcome screen or route to pages
@@ -2993,8 +2999,6 @@ def main():
         show_welcome_screen()
     else:
         route_pages(st.session_state.current_page)
-
-
 
 def show_footer():
     """Display footer"""
@@ -3010,6 +3014,7 @@ show_footer()
 # ====== RUN APP ======
 if __name__ == "__main__":
     main()
+
 
 
 
