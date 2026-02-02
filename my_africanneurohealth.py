@@ -257,6 +257,12 @@ def render_sidebar():
         # Display logo
         display_logo()
         
+        # Language selector at the top
+        st.markdown("---")
+        st.markdown("### 🌍 Language")
+        lang = set_language_selector(widget_key="app_language_selector")
+        st.session_state.current_language = lang  # Store in session state
+        
         # Render title with RTL support
         if lang == "ar":
             st.markdown(f"""
@@ -2996,6 +3002,7 @@ show_footer()
 # ====== RUN APP ======
 if __name__ == "__main__":
     main()
+
 
 
 
