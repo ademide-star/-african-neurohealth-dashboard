@@ -244,43 +244,24 @@ def show_welcome_screen():
         5. **Save app for better experience**
         """)
 
-def render_sidebar():
-    """Render the sidebar navigation"""
-    with st.sidebar:
-        # Language selector - MUST be inside a function, not at module level
-        lang = set_language_selector(widget_key="app_language_selector")
-        
-        # Get translated text
-        title = get_translation("title")
-        subtitle = get_translation("subtitle")
-        
-        # Display logo
+# ====== PAGE RENDERING FUNCTIONS ======
+def render_dashboard():
+    """Main dashboard page"""
+    
+    # Create columns for logo and title
+    col1, col2 = st.columns([1, 4])
+    
+    with col1:
         display_logo()
-        
-        # Language selector at the top
-        st.markdown("---")
-        st.markdown("### 🌍 Language")
-        lang = set_language_selector(widget_key="app_language_selector")
-        st.session_state.current_language = lang  # Store in session state
-        
-        # Render title with RTL support
-        if lang == "ar":
-            st.markdown(f"""
-                <div style="text-align: right; direction: rtl;">
-                    <h2 style="margin-bottom:0;">{title}</h2>
-                    <p style="color: #6B7280;">{subtitle}</p>
-                </div>
-            """, unsafe_allow_html=True)
-        else:
-            st.markdown(f"""
-                <div style="text-align: center;">
-                    <h2 style="margin-bottom:0;">{title}</h2>
-                    <p style="color: #6B7280;">{subtitle}</p>
-                </div>
-            """, unsafe_allow_html=True)
-        
-        st.markdown("## 🧭 Navigation")
-
+    
+    with col2:
+        st.markdown("""
+        <div style="margin-top: 10px;">
+            <h1 style="margin: 0;">African NeuroHealth AI Dashboard</h1>
+            <p style="color: #6B7280; font-size: 1rem; margin: 0;">Stroke & Dementia Predictor</p>
+        </div>
+        """, unsafe_allow_html=True)
+ 
     st.markdown("---")
     
     st.markdown("""
@@ -379,6 +360,7 @@ def render_sidebar():
         if st.button("😌 Stress Assessment", use_container_width=True, key="dash_stress"):
             st.session_state.current_page = "Stress Assessment"
             st.rerun()
+
             
 def is_rtl_language():
     """Check if current language is RTL (Right-to-Left) with a safety default."""
@@ -2896,6 +2878,7 @@ def render_reports_page():
                             st.warning("Click again to confirm deletion")
                 
                 st.markdown("</div>", unsafe_allow_html=True)
+                
 def route_pages(current_page):
     """Route to different pages"""
     if current_page == "Dashboard":
@@ -2917,8 +2900,31 @@ def route_pages(current_page):
 def render_sidebar():
     """Render the sidebar navigation"""
     with st.sidebar:
-        # Display logo inside the sidebar
+        # Language selector - MUST be inside a function, not at module level
+        lang = set_language_selector(widget_key="app_language_selector")
+        
+        # Get translated text
+        title = get_translation("title")
+        subtitle = get_translation("subtitle")
+        
+        # Display logo
         display_logo()
+        
+        # Render title with RTL support
+        if lang == "ar":
+            st.markdown(f"""
+                <div style="text-align: right; direction: rtl;">
+                    <h2 style="margin-bottom:0;">{title}</h2>
+                    <p style="color: #6B7280;">{subtitle}</p>
+                </div>
+            """, unsafe_allow_html=True)
+        else:
+            st.markdown(f"""
+                <div style="text-align: center;">
+                    <h2 style="margin-bottom:0;">{title}</h2>
+                    <p style="color: #6B7280;">{subtitle}</p>
+                </div>
+            """, unsafe_allow_html=True)
         
         st.markdown("## 🧭 Navigation")
         
