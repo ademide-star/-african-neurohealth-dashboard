@@ -393,260 +393,222 @@ def prepare_alzheimers_input_numeric(raw_input):
         return None
 
 
-# ====== PDF REPORT CLASS ======
-class NeuroHealthReport(FPDF):
-    """
-    PDF report using fpdf2-compatible font handling.
-    Uses core fonts only (helvetica) when custom fonts are unavailable,
-    with style passed via keyword argument as required by fpdf2.
-    """
-    def __init__(self, report_type="Assessment Report"):
-        super().__init__()
-        self.report_type = report_type
-        self.font_ready = False
-        self._custom_font_name = "NotoSans"
-        self._custom_arabic_font = "NotoArabic"
-
-        if os.path.exists(FONT_REG):
-            try:
-                self.add_font(self._custom_font_name, fname=FONT_REG)
-                if os.path.exists(FONT_ARA):
-                    self.add_font(self._custom_arabic_font, fname=FONT_ARA)
-                self.font_ready = True
-            except Exception as e:
-                logger.warning(f"Custom font loading failed, using core fonts: {e}")
-                self.font_ready = False
-
-        self.set_auto_page_break(auto=True, margin=15)
-        self.add_page()
-
-    def _set_core_font(self, size=11, bold=False, italic=False):
-        """Set a core helvetica font safely for fpdf2."""
-        style = ""
-        if bold:
-            style += "B"
-        if italic:
-            style += "I"
-        self.set_font("helvetica", style=style, size=size)
-
-    def _set_content_font(self, size=11, bold=False):
-        """Set either custom or core font for content."""
-        if self.font_ready:
-            # fpdf2 custom fonts don't support style kwarg easily without bold variant
-            # Use size only; bold is simulated via custom font if bold variant registered
-            self.set_font(self._custom_font_name, size=size)
-        else:
-            self._set_core_font(size=size, bold=bold)
-
-    def header(self):
-        if os.path.exists(LOGO_PATH):
-            try:
-                self.image(LOGO_PATH, 10, 8, 25)
-            except Exception as e:
-                logger.warning(f"Logo loading error: {e}")
-
-        self._set_core_font(size=18, bold=True)
-        self.set_x(40)
-        self.cell(0, 10, "African NeuroHealth AI", new_x="LMARGIN", new_y="NEXT")
-        self._set_core_font(size=10)
-        self.set_x(40)
-        self.cell(0, 5, f"Clinical Analysis: {self.report_type}", new_x="LMARGIN", new_y="NEXT")
-        self.ln(10)
-
-    def footer(self):
-        self.set_y(-15)
-        self._set_core_font(size=8, italic=True)
-        self.cell(0, 10, f"Page {self.page_no()}", align="C")
-
-    def write_content(self, text, lang="en", is_bold=False):
-        """Write text content with appropriate font."""
-        text = str(text)
-        if lang == "ar" and ARABIC_SUPPORT:
-            try:
-                reshaped = reshape(text)
-                bidi_text = get_display(reshaped)
-                if self.font_ready:
-                    self.set_font(self._custom_arabic_font, size=12)
-                else:
-                    self._set_core_font(size=12)
-                self.multi_cell(0, 10, bidi_text, align="R")
-                return
-            except Exception as e:
-                logger.warning(f"Arabic rendering failed, falling back: {e}")
-
-        # Standard LTR content
-        self._set_core_font(size=11, bold=is_bold)
-        # Replace any characters that fpdf core fonts can't handle
-        safe_text = text.encode("latin-1", errors="replace").decode("latin-1")
-        self.multi_cell(0, 8, safe_text, align="L")
-
-    def add_section(self, title, content, lang="en"):
-        self.ln(4)
-        self.write_content(title, lang, is_bold=True)
-        if content:
-            self.write_content(content, lang)
-
-    def add_result_box(self, result_text, probability, lang="en"):
-        self.set_fill_color(240, 248, 255)
-        current_y = self.get_y()
-        box_height = 28
-        self.rect(10, current_y, 190, box_height, "F")
-        self.set_y(current_y + 4)
-        self.set_x(15)
-        self.write_content(f"AI Prediction Result: {result_text}", lang, is_bold=True)
-        self.set_x(15)
-        self.write_content(f"Confidence Level: {probability}%", "en")
-        self.set_y(current_y + box_height + 4)
-        self.set_x(10)
-
-    def add_risk_factors(self, risk_factors_list):
-        self.ln(4)
-        self.write_content("Key Risk Factors:", "en", is_bold=True)
-        if risk_factors_list:
-            for factor in risk_factors_list:
-                self.set_x(15)
-                self.write_content(f"  - {factor}", "en")
-        else:
-            self.set_x(15)
-            self.write_content("  - No major risk factors identified", "en")
-
-
 # ====== PDF GENERATION FUNCTIONS ======
+# Uses fpdf2 directly with no subclassing to avoid font-state issues.
+
+def _safe(text):
+    """Encode text to latin-1, replacing un-encodable chars."""
+    return str(text).encode("latin-1", errors="replace").decode("latin-1")
+
+def _pdf_heading(pdf, text, size=14):
+    pdf.set_font("helvetica", style="B", size=size)
+    pdf.multi_cell(0, 8, _safe(text), align="L")
+    pdf.ln(1)
+
+def _pdf_body(pdf, text, size=11):
+    pdf.set_font("helvetica", style="", size=size)
+    pdf.multi_cell(0, 7, _safe(text), align="L")
+
+def _pdf_line(pdf, label, value, size=10):
+    pdf.set_font("helvetica", style="B", size=size)
+    pdf.cell(60, 7, _safe(label + ":"))
+    pdf.set_font("helvetica", style="", size=size)
+    pdf.multi_cell(0, 7, _safe(str(value)))
+
+def _pdf_bullet(pdf, text, size=10):
+    pdf.set_font("helvetica", style="", size=size)
+    pdf.multi_cell(0, 7, _safe("  - " + text), align="L")
+
+def _pdf_divider(pdf):
+    pdf.ln(3)
+    pdf.set_draw_color(180, 180, 180)
+    pdf.line(10, pdf.get_y(), 200, pdf.get_y())
+    pdf.ln(4)
+
+def _pdf_header(pdf, title):
+    """Draw a simple page header."""
+    pdf.set_fill_color(30, 80, 160)
+    pdf.rect(0, 0, 210, 22, "F")
+    pdf.set_text_color(255, 255, 255)
+    pdf.set_font("helvetica", style="B", size=16)
+    pdf.set_xy(10, 5)
+    pdf.cell(0, 12, _safe("African NeuroHealth AI  |  " + title))
+    pdf.set_text_color(0, 0, 0)
+    pdf.ln(20)
+
+def _pdf_risk_box(pdf, risk_level, risk_score_pct):
+    colors = {
+        "HIGH":   (220, 53,  69),
+        "MEDIUM": (255, 193, 7),
+        "LOW":    (40,  167, 69),
+    }
+    r, g, b = colors.get(risk_level, (100, 100, 100))
+    pdf.set_fill_color(r, g, b)
+    pdf.set_text_color(255, 255, 255) if risk_level in ("HIGH", "LOW") else pdf.set_text_color(0, 0, 0)
+    pdf.set_font("helvetica", style="B", size=14)
+    pdf.multi_cell(0, 12,
+        _safe(f"  Risk Level: {risk_level}   |   Risk Score: {risk_score_pct}%"),
+        align="L", fill=True)
+    pdf.set_text_color(0, 0, 0)
+    pdf.ln(4)
+
+DISCLAIMER = (
+    "DISCLAIMER: This report is generated by the African NeuroHealth AI, a clinically "
+    "validated screening tool designed for African populations. While our models "
+    "demonstrated high accuracy (95-99%) in clinical studies, this result is a "
+    "statistical estimate of risk and does not constitute a medical diagnosis. "
+    "Please share this report with a qualified healthcare provider for formal "
+    "evaluation and personalized care planning."
+)
+
 def generate_stroke_pdf(patient_name, patient_data, risk_score, risk_level, risk_factors_list):
-    pdf = NeuroHealthReport(report_type="Stroke Risk Assessment")
+    """Generate a stroke risk PDF report using fpdf2."""
+    from fpdf import FPDF
+    pdf = FPDF()
+    pdf.set_auto_page_break(auto=True, margin=20)
+    pdf.add_page()
 
-    pdf.write_content(f"Patient Name: {patient_name}", "en", is_bold=True)
-    pdf.write_content(f"Assessment Date: {patient_data.get('assessment_date', datetime.now().strftime('%Y-%m-%d'))}", "en")
-    pdf.ln(10)
+    _pdf_header(pdf, "Stroke Risk Assessment")
 
-    pdf.add_result_box(risk_level, int(risk_score * 100))
+    # Patient info
+    _pdf_heading(pdf, "Patient Information")
+    _pdf_line(pdf, "Patient Name", patient_name)
+    _pdf_line(pdf, "Assessment Date",
+              patient_data.get("assessment_date", datetime.now().strftime("%Y-%m-%d")))
+    pdf.ln(2)
 
-    bmi_val = patient_data.get('bmi', 0)
+    # Risk result
+    _pdf_divider(pdf)
+    _pdf_heading(pdf, "Risk Assessment Result")
+    _pdf_risk_box(pdf, risk_level, int(risk_score * 100))
+
+    # Clinical details
+    _pdf_divider(pdf)
+    _pdf_heading(pdf, "Clinical Details")
+    bmi_val = patient_data.get("bmi", 0)
     bmi_str = f"{float(bmi_val):.1f}" if bmi_val else "N/A"
+    gender_str = "Male" if patient_data.get("gender") == 1 else "Female"
+    _pdf_line(pdf, "Age",     f"{patient_data.get('age', 'N/A')} years")
+    _pdf_line(pdf, "Gender",  gender_str)
+    _pdf_line(pdf, "BMI",     bmi_str)
+    _pdf_line(pdf, "Blood Pressure",
+              f"{patient_data.get('systolic_bp','N/A')}/{patient_data.get('diastolic_bp','N/A')} mmHg")
+    _pdf_line(pdf, "Avg Glucose",  f"{patient_data.get('avg_glucose_level','N/A')} mg/dL")
+    _pdf_line(pdf, "Heart Disease",
+              "Yes" if patient_data.get("heart_disease") == 1 else "No")
+    _pdf_line(pdf, "Hypertension",
+              "Yes" if patient_data.get("hypertension") == 1 else "No")
+    _pdf_line(pdf, "Diabetes Type", patient_data.get("diabetes_type", "None"))
+    _pdf_line(pdf, "Smoking",       patient_data.get("smoking_status", "N/A"))
 
-    pdf.add_section(
-        "Patient Details:",
-        f"Age: {patient_data.get('age', 'N/A')} years\n"
-        f"Gender: {'Male' if patient_data.get('gender') == 1 else 'Female'}\n"
-        f"BMI: {bmi_str}\n"
-        f"Blood Pressure: {patient_data.get('systolic_bp', 'N/A')}/{patient_data.get('diastolic_bp', 'N/A')} mmHg\n"
-        f"Average Glucose: {patient_data.get('avg_glucose_level', 'N/A')} mg/dL"
-    )
+    # Risk factors
+    _pdf_divider(pdf)
+    _pdf_heading(pdf, "Key Risk Factors Identified")
+    if risk_factors_list:
+        for f in risk_factors_list:
+            _pdf_bullet(pdf, f)
+    else:
+        _pdf_bullet(pdf, "No major risk factors identified")
 
-    pdf.add_section(
-        "Medical History:",
-        f"Heart Disease: {'Yes' if patient_data.get('heart_disease') == 1 else 'No'}\n"
-        f"Hypertension: {'Yes' if patient_data.get('hypertension') == 1 else 'No'}\n"
-        f"Diabetes Type: {patient_data.get('diabetes_type', 'None')}\n"
-        f"Smoking Status: {patient_data.get('smoking_status', 'N/A')}"
-    )
-
-    pdf.add_risk_factors(risk_factors_list)
-
-    pdf.ln(10)
-    pdf.write_content("Recommendations:", "en", is_bold=True)
-
+    # Recommendations
+    _pdf_divider(pdf)
+    _pdf_heading(pdf, "Recommendations")
     if risk_level == "HIGH":
-        recommendations = [
+        recs = [
             "Consult a healthcare provider immediately",
             "Regular blood pressure monitoring",
             "Adopt a heart-healthy diet (low sodium, high fiber)",
             "Engage in regular physical activity (30 mins/day)",
             "Medication adherence if prescribed",
-            "Stress management and adequate sleep"
+            "Stress management and adequate sleep",
         ]
     elif risk_level == "MEDIUM":
-        recommendations = [
+        recs = [
             "Schedule a check-up with your doctor",
             "Monitor blood pressure regularly",
             "Maintain a balanced diet",
             "Increase physical activity gradually",
-            "Reduce stress through relaxation techniques"
+            "Reduce stress through relaxation techniques",
         ]
     else:
-        recommendations = [
+        recs = [
             "Maintain current healthy habits",
             "Regular health check-ups",
             "Continue balanced diet and exercise",
-            "Monitor for any changes in health status"
+            "Monitor for any changes in health status",
         ]
+    for r in recs:
+        _pdf_bullet(pdf, r)
 
-    for rec in recommendations:
-        pdf.set_x(15)
-        pdf.write_content(f"• {rec}", "en")
-
-    pdf.ln(10)
-    pdf._set_core_font(size=9)
-    pdf.write_content(
-        "DISCLAIMER: This report is generated by the African NeuroHealth AI, a clinically validated "
-        "screening tool designed for African populations. While our models demonstrated high accuracy "
-        "(95-99%) in clinical studies, this result is a statistical estimate of risk and does not "
-        "constitute a medical diagnosis. Please share this report with a qualified healthcare provider "
-        "for formal evaluation and personalized care planning.",
-        "en"
-    )
+    # Disclaimer
+    _pdf_divider(pdf)
+    _pdf_body(pdf, DISCLAIMER, size=8)
 
     return bytes(pdf.output())
 
 
 def generate_alzheimer_pdf(patient_name, patient_data, risk_score, risk_level, risk_factors_list):
-    pdf = NeuroHealthReport(report_type="Dementia Risk Assessment")
+    """Generate an Alzheimer/Dementia risk PDF report using fpdf2."""
+    from fpdf import FPDF
+    pdf = FPDF()
+    pdf.set_auto_page_break(auto=True, margin=20)
+    pdf.add_page()
 
-    pdf.write_content(f"Patient Name: {patient_name}", "en", is_bold=True)
-    pdf.write_content(f"Assessment Date: {patient_data.get('assessment_date', datetime.now().strftime('%Y-%m-%d'))}", "en")
-    pdf.ln(10)
+    _pdf_header(pdf, "Dementia Risk Assessment")
 
-    pdf.add_result_box(risk_level, int(risk_score * 100))
+    # Patient info
+    _pdf_heading(pdf, "Patient Information")
+    _pdf_line(pdf, "Patient Name", patient_name)
+    _pdf_line(pdf, "Assessment Date",
+              patient_data.get("assessment_date", datetime.now().strftime("%Y-%m-%d")))
+    pdf.ln(2)
 
-    bmi_val = patient_data.get('BMI', 0)
+    # Risk result
+    _pdf_divider(pdf)
+    _pdf_heading(pdf, "Risk Assessment Result")
+    _pdf_risk_box(pdf, risk_level, int(risk_score * 100))
+
+    # Clinical details
+    _pdf_divider(pdf)
+    _pdf_heading(pdf, "Clinical Details")
+    bmi_val = patient_data.get("BMI", 0)
     bmi_str = f"{float(bmi_val):.1f}" if bmi_val else "N/A"
+    mmse = patient_data.get("MMSE", 0) or 0
+    if mmse >= 27:   cog = "Normal cognition"
+    elif mmse >= 24: cog = "Mild cognitive impairment"
+    elif mmse >= 19: cog = "Moderate cognitive impairment"
+    else:            cog = "Severe cognitive impairment"
 
-    pdf.add_section(
-        "Patient Details:",
-        f"Age: {patient_data.get('Age', 'N/A')} years\n"
-        f"Gender: {patient_data.get('Gender', 'N/A')}\n"
-        f"Education Level: {patient_data.get('EducationLevel', 'N/A')} years\n"
-        f"BMI: {bmi_str}\n"
-        f"MMSE Score: {patient_data.get('MMSE', 'N/A')}/30"
-    )
+    _pdf_line(pdf, "Age",             f"{patient_data.get('Age','N/A')} years")
+    _pdf_line(pdf, "Gender",          patient_data.get("Gender", "N/A"))
+    _pdf_line(pdf, "Education Level", f"{patient_data.get('EducationLevel','N/A')} years")
+    _pdf_line(pdf, "BMI",             bmi_str)
+    _pdf_line(pdf, "MMSE Score",      f"{mmse}/30  ({cog})")
+    _pdf_line(pdf, "Family History",  patient_data.get("FamilyHistoryAlzheimers", "N/A"))
+    _pdf_line(pdf, "Cardiovascular",  patient_data.get("CardiovascularDisease", "N/A"))
+    _pdf_line(pdf, "Diabetes",        patient_data.get("Diabetes", "N/A"))
+    _pdf_line(pdf, "Depression",      patient_data.get("Depression", "N/A"))
+    _pdf_line(pdf, "Hypertension",    patient_data.get("Hypertension", "N/A"))
+    _pdf_line(pdf, "Physical Activity",
+              f"{patient_data.get('PhysicalActivity','N/A')} hrs/week")
+    _pdf_line(pdf, "Sleep Quality",   f"{patient_data.get('SleepQuality','N/A')}/5")
+    _pdf_line(pdf, "Diet Quality",    f"{patient_data.get('DietQuality','N/A')}/5")
+    _pdf_line(pdf, "Smoking",         patient_data.get("Smoking", "N/A"))
 
-    mmse_score = patient_data.get('MMSE', 0) or 0
-    if mmse_score >= 27:
-        mmse_interpretation = "Normal cognition"
-    elif mmse_score >= 24:
-        mmse_interpretation = "Mild cognitive impairment"
-    elif mmse_score >= 19:
-        mmse_interpretation = "Moderate cognitive impairment"
+    # Risk factors
+    _pdf_divider(pdf)
+    _pdf_heading(pdf, "Key Risk Factors Identified")
+    if risk_factors_list:
+        for f in risk_factors_list:
+            _pdf_bullet(pdf, f)
     else:
-        mmse_interpretation = "Severe cognitive impairment"
+        _pdf_bullet(pdf, "No major risk factors identified")
 
-    pdf.write_content(f"Cognitive Status: {mmse_interpretation}", "en")
-    pdf.ln(5)
-
-    pdf.add_section(
-        "Medical History:",
-        f"Family History of Alzheimer's: {patient_data.get('FamilyHistoryAlzheimers', 'N/A')}\n"
-        f"Cardiovascular Disease: {patient_data.get('CardiovascularDisease', 'N/A')}\n"
-        f"Diabetes: {patient_data.get('Diabetes', 'N/A')}\n"
-        f"Depression: {patient_data.get('Depression', 'N/A')}\n"
-        f"Hypertension: {patient_data.get('Hypertension', 'N/A')}"
-    )
-
-    pdf.add_section(
-        "Lifestyle Factors:",
-        f"Physical Activity: {patient_data.get('PhysicalActivity', 'N/A')} hours/week\n"
-        f"Sleep Quality: {patient_data.get('SleepQuality', 'N/A')}/5\n"
-        f"Diet Quality: {patient_data.get('DietQuality', 'N/A')}/5\n"
-        f"Smoking: {patient_data.get('Smoking', 'N/A')}"
-    )
-
-    pdf.add_risk_factors(risk_factors_list)
-
-    pdf.ln(10)
-    pdf.write_content("Recommendations:", "en", is_bold=True)
-
+    # Recommendations
+    _pdf_divider(pdf)
+    _pdf_heading(pdf, "Recommendations")
     if risk_level == "HIGH":
-        recommendations = [
+        recs = [
             "Consult a neurologist or memory specialist urgently",
             "Comprehensive cognitive assessment recommended",
             "Brain imaging (MRI/CT) may be necessary",
@@ -654,41 +616,32 @@ def generate_alzheimer_pdf(patient_name, patient_data, risk_score, risk_level, r
             "Mediterranean or MIND diet recommended",
             "Regular physical exercise (150 mins/week)",
             "Social engagement and mental activities",
-            "Monitor and manage cardiovascular risk factors"
+            "Monitor and manage cardiovascular risk factors",
         ]
     elif risk_level == "MEDIUM":
-        recommendations = [
+        recs = [
             "Schedule a cognitive assessment with your doctor",
             "Increase mental stimulation (reading, puzzles, learning)",
             "Adopt brain-healthy diet rich in omega-3 and antioxidants",
             "Regular aerobic exercise",
             "Ensure adequate sleep (7-8 hours)",
             "Manage stress through meditation or relaxation",
-            "Stay socially active"
+            "Stay socially active",
         ]
     else:
-        recommendations = [
+        recs = [
             "Maintain current healthy lifestyle",
             "Continue cognitive activities",
             "Regular health check-ups",
             "Balanced diet and exercise routine",
-            "Monitor for any cognitive changes"
+            "Monitor for any cognitive changes",
         ]
+    for r in recs:
+        _pdf_bullet(pdf, r)
 
-    for rec in recommendations:
-        pdf.set_x(15)
-        pdf.write_content(f"• {rec}", "en")
-
-    pdf.ln(10)
-    pdf._set_core_font(size=9)
-    pdf.write_content(
-        "DISCLAIMER: This report is generated by the African NeuroHealth AI, a clinically validated "
-        "screening tool designed for African populations. While our models demonstrated high accuracy "
-        "(95-99%) in clinical studies, this result is a statistical estimate of risk and does not "
-        "constitute a medical diagnosis. Please share this report with a qualified healthcare provider "
-        "for formal evaluation and personalized care planning.",
-        "en"
-    )
+    # Disclaimer
+    _pdf_divider(pdf)
+    _pdf_body(pdf, DISCLAIMER, size=8)
 
     return bytes(pdf.output())
 
