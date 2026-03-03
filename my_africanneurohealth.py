@@ -42,6 +42,16 @@ from sklearn.pipeline import Pipeline
 from supabase import create_client, Client
 from translations import get_translation, set_language_selector
 from PIL import Image
+import logging
+
+# Set up logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+def predict(data):
+    logger.info("Starting prediction")
+    # ... your prediction code ...
+    return result
 
 # ====== PAGE CONFIG - MUST BE FIRST AND ONLY ONCE ======
 st.set_page_config(
@@ -3008,6 +3018,7 @@ show_footer()
 # ====== RUN APP ======
 if __name__ == "__main__":
     main()
+
 
 
 
