@@ -412,7 +412,7 @@ class NeuroHealthReport(FPDF):
         if self.font_ready:
             self.set_font("NotoSans", size=18)
         else:
-            self.set_font("Arial", 'B', 18)
+            self.set_font("Helvetica", 'B', 18)
 
         self.set_x(40)
         self.cell(0, 10, 'African NeuroHealth AI', ln=True)
@@ -426,7 +426,7 @@ class NeuroHealthReport(FPDF):
         if self.font_ready:
             self.set_font("NotoSans", size=8)
         else:
-            self.set_font("Arial", 'I', 8)
+            self.set_font("Helvetica", 'I', 8)
         self.cell(0, 10, f'Page {self.page_no()}', align='C')
 
     def write_content(self, text, lang="en", is_bold=False):
@@ -436,7 +436,7 @@ class NeuroHealthReport(FPDF):
             self.set_font("NotoArabic", size=12)
             self.multi_cell(0, 10, bidi_text, align='R')
         else:
-            font_to_use = "NotoSans" if self.font_ready else "Arial"
+            font_to_use = "NotoSans" if self.font_ready else "Helvetica"
             style = 'B' if is_bold else ''
             self.set_font(font_to_use, style, 11)
             self.multi_cell(0, 10, str(text), align='L')
@@ -928,13 +928,13 @@ def render_stroke_assessment():
             st.markdown("---")
             st.subheader(get_translation("Environmental & Dietary Factors"))
 
-            hypertension_treatment = st.selectbox(get_translation("Hypertension Treatment"),
+            hypertension_treatment = st.multiselect(get_translation("Hypertension Treatment"),
                                                   [get_translation("Select"), get_translation("None"),
                                                    get_translation("Herbal"), get_translation("Drugs")])
             salt_intake = st.selectbox(get_translation("Salt Intake"),
                                        [get_translation("Select"), get_translation("None"),
                                         get_translation("Little"), get_translation("Moderate"), get_translation("High")])
-            noise_sources = st.selectbox(get_translation("Noise Sources"),
+            noise_sources = st.multiselect(get_translation("Noise Sources"),
                                          [get_translation("Select"), get_translation("None"),
                                           get_translation("Mosque"), get_translation("Church"),
                                           get_translation("Market"), get_translation("Block-Industry"),
