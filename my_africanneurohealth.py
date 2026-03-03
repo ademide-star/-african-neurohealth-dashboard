@@ -332,7 +332,12 @@ def prepare_stroke_input_numeric(raw_input):
             final_input[col] = str(val) if val else "None"
 
         def to_bool(v):
-            return 1 if v in [1, '1', True, 'True', 'true', 'Yes', 'yes', 'Y', 'y'] else 0
+            try:
+                if isinstance(v, (list, dict, set)):
+                    return 0
+                return 1 if v in (1, '1', True, 'True', 'true', 'Yes', 'yes', 'Y', 'y') else 0
+            except TypeError:
+                return 0
 
         for col in boolean_features:
             final_input[col] = to_bool(raw_input.get(col, 0))
@@ -371,7 +376,12 @@ def prepare_alzheimers_input_numeric(raw_input):
             final_input[col] = str(val) if val else "None"
 
         def to_bool(v):
-            return 1 if v in [1, '1', True, 'True', 'true', 'Yes', 'yes', 'Y', 'y'] else 0
+            try:
+                if isinstance(v, (list, dict, set)):
+                    return 0
+                return 1 if v in (1, '1', True, 'True', 'true', 'Yes', 'yes', 'Y', 'y') else 0
+            except TypeError:
+                return 0
 
         for col in boolean_features:
             final_input[col] = to_bool(raw_input.get(col, 0))
@@ -928,13 +938,13 @@ def render_stroke_assessment():
             st.markdown("---")
             st.subheader(get_translation("Environmental & Dietary Factors"))
 
-            hypertension_treatment = st.multiselect(get_translation("Hypertension Treatment"),
+            hypertension_treatment = st.selectbox(get_translation("Hypertension Treatment"),
                                                   [get_translation("Select"), get_translation("None"),
                                                    get_translation("Herbal"), get_translation("Drugs")])
             salt_intake = st.selectbox(get_translation("Salt Intake"),
                                        [get_translation("Select"), get_translation("None"),
                                         get_translation("Little"), get_translation("Moderate"), get_translation("High")])
-            noise_sources = st.multiselect(get_translation("Noise Sources"),
+            noise_sources = st.selectbox(get_translation("Noise Sources"),
                                          [get_translation("Select"), get_translation("None"),
                                           get_translation("Mosque"), get_translation("Church"),
                                           get_translation("Market"), get_translation("Block-Industry"),
@@ -961,7 +971,13 @@ def render_stroke_assessment():
                         sleep_hours, hypertension_treatment, salt_intake, noise_sources,
                         pollution_level_air, pollution_level_water, pollution_level_environmental]
 
-            if any(x in select_values or x is None for x in required):
+            def is_unset(x):
+                try:
+                    return x is None or x in select_values
+                except TypeError:
+                    return False  # unhashable types (lists) are not "unset"
+
+            if any(is_unset(x) for x in required):
                 st.error(get_translation("⚠️ Please complete all fields before prediction."))
             else:
                 try:
@@ -1013,6 +1029,28 @@ def render_stroke_assessment():
                         'CustomStressScore': st.session_state.get('stress_score', 0)
                     }
 
+                    # One-hot encode chronic_pain
+                    cp_val = chronic_pain if chronic_pain else ""
+                    raw_inputs.update({
+                        'chronic_pain_None':          1 if get_translation("None")         in cp_val else 0,
+                        'chronic_pain_Rheumatism':    1 if get_translation("Rheumatism")   in cp_val else 0,
+                        'chronic_pain_Osteoarthritis':1 if get_translation("Osteoarthritis") in cp_val else 0,
+                        'chronic_pain_Others':        1 if get_translation("Others")       in cp_val else 0,
+                    })
+                    # One-hot encode hypertension_treatment
+                    ht_val = hypertension_treatment if hypertension_treatment else ""
+                    raw_inputs.update({
+                        'hypertension_treatment_None':  1 if get_translation("None")   in ht_val else 0,
+                        'hypertension_treatment_Herbal':1 if get_translation("Herbal") in ht_val else 0,
+                        'hypertension_treatment_Drugs': 1 if get_translation("Drugs")  in ht_val else 0,
+                    })
+                    # One-hot encode nutritional lifestyle (use session state score as proxy)
+                    raw_inputs.update({
+                        'nutritional_lifestyle_Fast Foods':           0,
+                        'nutritional_lifestyle_Homemade Food':        0,
+                        'nutritional_lifestyle_Junk Food':            0,
+                        'nutritional_lifestyle_Local Bukka/Street Food': 0,
+                    })
                     raw_inputs.update(map_salt_intake(salt_intake))
                     raw_inputs.update(map_noise_source(noise_sources))
 
@@ -1318,7 +1356,13 @@ def render_alzheimer_assessment():
                         confusion, disorientation, personality_changes, difficulty_tasks,
                         forgetfulness, memory_complaints]
 
-            if any(x in select_values for x in required):
+            def is_unset_alz(x):
+                try:
+                    return x is None or x in select_values
+                except TypeError:
+                    return False
+
+            if any(is_unset_alz(x) for x in required):
                 st.error(get_translation("⚠️ Please complete all fields before prediction."))
             else:
                 try:
