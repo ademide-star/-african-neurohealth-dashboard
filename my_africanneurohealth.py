@@ -395,22 +395,48 @@ def prepare_alzheimers_input_numeric(raw_input):
 
 # ====== PDF REPORT CLASS ======
 class NeuroHealthReport(FPDF):
+    """
+    PDF report using fpdf2-compatible font handling.
+    Uses core fonts only (helvetica) when custom fonts are unavailable,
+    with style passed via keyword argument as required by fpdf2.
+    """
     def __init__(self, report_type="Assessment Report"):
         super().__init__()
         self.report_type = report_type
         self.font_ready = False
+        self._custom_font_name = "NotoSans"
+        self._custom_arabic_font = "NotoArabic"
 
         if os.path.exists(FONT_REG):
             try:
-                self.add_font("NotoSans", style="", fname=FONT_REG)
+                self.add_font(self._custom_font_name, fname=FONT_REG)
                 if os.path.exists(FONT_ARA):
-                    self.add_font("NotoArabic", style="", fname=FONT_ARA)
+                    self.add_font(self._custom_arabic_font, fname=FONT_ARA)
                 self.font_ready = True
             except Exception as e:
-                logger.warning(f"Font loading error: {e}")
+                logger.warning(f"Custom font loading failed, using core fonts: {e}")
+                self.font_ready = False
 
         self.set_auto_page_break(auto=True, margin=15)
         self.add_page()
+
+    def _set_core_font(self, size=11, bold=False, italic=False):
+        """Set a core helvetica font safely for fpdf2."""
+        style = ""
+        if bold:
+            style += "B"
+        if italic:
+            style += "I"
+        self.set_font("helvetica", style=style, size=size)
+
+    def _set_content_font(self, size=11, bold=False):
+        """Set either custom or core font for content."""
+        if self.font_ready:
+            # fpdf2 custom fonts don't support style kwarg easily without bold variant
+            # Use size only; bold is simulated via custom font if bold variant registered
+            self.set_font(self._custom_font_name, size=size)
+        else:
+            self._set_core_font(size=size, bold=bold)
 
     def header(self):
         if os.path.exists(LOGO_PATH):
@@ -419,67 +445,70 @@ class NeuroHealthReport(FPDF):
             except Exception as e:
                 logger.warning(f"Logo loading error: {e}")
 
-        if self.font_ready:
-            self.set_font("NotoSans", size=18)
-        else:
-            self.set_font("Helvetica", 'B', 18)
-
+        self._set_core_font(size=18, bold=True)
         self.set_x(40)
-        self.cell(0, 10, 'African NeuroHealth AI', ln=True)
-        self.set_font_size(10)
+        self.cell(0, 10, "African NeuroHealth AI", new_x="LMARGIN", new_y="NEXT")
+        self._set_core_font(size=10)
         self.set_x(40)
-        self.cell(0, 5, f'Clinical Analysis: {self.report_type}', ln=True)
+        self.cell(0, 5, f"Clinical Analysis: {self.report_type}", new_x="LMARGIN", new_y="NEXT")
         self.ln(10)
 
     def footer(self):
         self.set_y(-15)
-        if self.font_ready:
-            self.set_font("NotoSans", size=8)
-        else:
-            self.set_font("Helvetica", 'I', 8)
-        self.cell(0, 10, f'Page {self.page_no()}', align='C')
+        self._set_core_font(size=8, italic=True)
+        self.cell(0, 10, f"Page {self.page_no()}", align="C")
 
     def write_content(self, text, lang="en", is_bold=False):
-        if lang == "ar" and self.font_ready and ARABIC_SUPPORT:
-            reshaped = reshape(text)
-            bidi_text = get_display(reshaped)
-            self.set_font("NotoArabic", size=12)
-            self.multi_cell(0, 10, bidi_text, align='R')
-        else:
-            font_to_use = "NotoSans" if self.font_ready else "Helvetica"
-            style = 'B' if is_bold else ''
-            self.set_font(font_to_use, style, 11)
-            self.multi_cell(0, 10, str(text), align='L')
+        """Write text content with appropriate font."""
+        text = str(text)
+        if lang == "ar" and ARABIC_SUPPORT:
+            try:
+                reshaped = reshape(text)
+                bidi_text = get_display(reshaped)
+                if self.font_ready:
+                    self.set_font(self._custom_arabic_font, size=12)
+                else:
+                    self._set_core_font(size=12)
+                self.multi_cell(0, 10, bidi_text, align="R")
+                return
+            except Exception as e:
+                logger.warning(f"Arabic rendering failed, falling back: {e}")
+
+        # Standard LTR content
+        self._set_core_font(size=11, bold=is_bold)
+        # Replace any characters that fpdf core fonts can't handle
+        safe_text = text.encode("latin-1", errors="replace").decode("latin-1")
+        self.multi_cell(0, 8, safe_text, align="L")
 
     def add_section(self, title, content, lang="en"):
-        self.ln(5)
+        self.ln(4)
         self.write_content(title, lang, is_bold=True)
         if content:
             self.write_content(content, lang)
 
     def add_result_box(self, result_text, probability, lang="en"):
-        self.set_fill_color(245, 247, 250)
+        self.set_fill_color(240, 248, 255)
         current_y = self.get_y()
-        box_height = 35
-        self.rect(10, current_y, 190, box_height, 'F')
-        self.set_y(current_y + 5)
+        box_height = 28
+        self.rect(10, current_y, 190, box_height, "F")
+        self.set_y(current_y + 4)
         self.set_x(15)
         self.write_content(f"AI Prediction Result: {result_text}", lang, is_bold=True)
         self.set_x(15)
         self.write_content(f"Confidence Level: {probability}%", "en")
-        self.set_y(current_y + box_height + 5)
+        self.set_y(current_y + box_height + 4)
         self.set_x(10)
 
     def add_risk_factors(self, risk_factors_list):
-        self.ln(5)
+        self.ln(4)
         self.write_content("Key Risk Factors:", "en", is_bold=True)
         if risk_factors_list:
             for factor in risk_factors_list:
                 self.set_x(15)
-                self.write_content(f"• {factor}", "en")
+                self.write_content(f"  - {factor}", "en")
         else:
             self.set_x(15)
-            self.write_content("• No major risk factors identified", "en")
+            self.write_content("  - No major risk factors identified", "en")
 
 
 # ====== PDF GENERATION FUNCTIONS ======
@@ -547,7 +576,7 @@ def generate_stroke_pdf(patient_name, patient_data, risk_score, risk_level, risk
         pdf.write_content(f"• {rec}", "en")
 
     pdf.ln(10)
-    pdf.set_font_size(9)
+    pdf._set_core_font(size=9)
     pdf.write_content(
         "DISCLAIMER: This report is generated by the African NeuroHealth AI, a clinically validated "
         "screening tool designed for African populations. While our models demonstrated high accuracy "
@@ -651,7 +680,7 @@ def generate_alzheimer_pdf(patient_name, patient_data, risk_score, risk_level, r
         pdf.write_content(f"• {rec}", "en")
 
     pdf.ln(10)
-    pdf.set_font_size(9)
+    pdf._set_core_font(size=9)
     pdf.write_content(
         "DISCLAIMER: This report is generated by the African NeuroHealth AI, a clinically validated "
         "screening tool designed for African populations. While our models demonstrated high accuracy "
