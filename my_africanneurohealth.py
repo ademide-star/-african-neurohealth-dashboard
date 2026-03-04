@@ -395,7 +395,14 @@ def prepare_alzheimers_input_numeric(raw_input):
 
 # ====== PDF GENERATION FUNCTIONS ======
 # Uses fpdf2 directly. Every text call sets its own font immediately before writing.
-
+def safe_multi_cell(pdf, w, h, txt, border=0, align='J', fill=False):
+    if not txt:
+        txt = " "
+    try:
+        pdf.multi_cell(w, h, txt, border, align, fill)
+    except FPDFException as e:
+        print(f"Error with text: {repr(txt)}")
+        raise e
 def _safe(text):
     """Encode text to latin-1, replacing un-encodable chars."""
     return str(text).encode("latin-1", errors="replace").decode("latin-1")
@@ -1979,3 +1986,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
