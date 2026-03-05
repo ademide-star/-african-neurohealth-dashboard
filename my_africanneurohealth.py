@@ -82,7 +82,7 @@ SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJ
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 # --- FILE PATHS ---
-LOGO_PATH = "Gemini_Generated_Image_rnqv02rnqv02rnqv.png"
+LOGO_PATH = "NEWLOGOANHRL.png"
 FONT_REG = "NotoSans-Regular.ttf"
 FONT_ARA = "NotoSansArabic-Regular.ttf"
 
@@ -180,9 +180,9 @@ def get_user_location():
 # ====== IMAGE HANDLING ======
 def load_image_for_deployment():
     possible_paths = [
-        "Gemini_Generated_Image_rnqv02rnqv02rnqv.png",
-        "./Gemini_Generated_Image_rnqv02rnqv02rnqv.png",
-        "app/Gemini_Generated_Image_rnqv02rnqv02rnqv.png",
+        "NEWLOGOANHRL.png",
+        "./NEWLOGOANHRL.png",
+        "app/NEWLOGOANHRL.png",
     ]
     for img_path in possible_paths:
         try:
@@ -1986,4 +1986,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
