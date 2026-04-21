@@ -2235,6 +2235,7 @@ def main():
     init_session_state()
     apply_rtl_logic()
     render_sidebar()
+    render_research_page()
 
     if not st.session_state.logged_in:
         show_welcome_screen()
