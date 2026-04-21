@@ -84,7 +84,6 @@ SUPABASE_URL = st.secrets["SUPABASE_URL"]
 SUPABASE_KEY = st.secrets["SUPABASE_KEY"]
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
-
 # --- FILE PATHS ---
 LOGO_PATH = "NEWLOGOANHRL.png"
 FONT_REG = "NotoSans-Regular.ttf"
