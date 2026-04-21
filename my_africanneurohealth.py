@@ -80,9 +80,14 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ====== SUPABASE CLIENT ======
-SUPABASE_URL = st.secrets["SUPABASE_URL"]
-SUPABASE_KEY = st.secrets["SUPABASE_KEY"]
-supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+SUPABASE_URL = st.secrets.get("SUPABASE_URL")
+SUPABASE_KEY = st.secrets.get("SUPABASE_KEY")
+
+if not SUPABASE_URL or not SUPABASE_KEY:
+    st.error("Missing Supabase credentials")
+    st.stop()
+
+supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 # --- FILE PATHS ---
 LOGO_PATH = "NEWLOGOANHRL.png"
