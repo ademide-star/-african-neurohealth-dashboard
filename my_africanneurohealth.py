@@ -26,6 +26,10 @@ from sklearn.pipeline import Pipeline
 from supabase import create_client, Client
 from translations import get_translation, set_language_selector
 from PIL import Image
+import csv
+from utils import export_csv, fetch_all_data, show_dashboard, show_spss_dashboard
+from utils import fetch_all_data,clean_dataframe,combine_all,export_csv,show_dashboard,show_spss_dashboard
+
 
 # Try to import Arabic/RTL support (optional)
 try:
@@ -76,9 +80,8 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ====== SUPABASE CLIENT ======
-SUPABASE_URL = "https://hmmcyiimykgsauqiiknb.supabase.co"
-SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhtbWN5aWlteWtnc2F1cWlpa25iIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzA1Njc3MDgsImV4cCI6MjA0NjE0MzcwOH0.-hTqCiw3slxBLCDiFOozdQXpxalwHCGOeRS4SmERgZc"
-
+SUPABASE_URL = st.secrets["SUPABASE_URL"]
+SUPABASE_KEY = st.secrets["SUPABASE_KEY"]
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 # --- FILE PATHS ---
@@ -191,6 +194,7 @@ def load_image_for_deployment():
         except Exception:
             continue
     return None
+
 
 
 def display_logo():
@@ -395,14 +399,7 @@ def prepare_alzheimers_input_numeric(raw_input):
 
 # ====== PDF GENERATION FUNCTIONS ======
 # Uses fpdf2 directly. Every text call sets its own font immediately before writing.
-def safe_multi_cell(pdf, w, h, txt, border=0, align='J', fill=False):
-    if not txt:
-        txt = " "
-    try:
-        pdf.multi_cell(w, h, txt, border, align, fill)
-    except FPDFException as e:
-        print(f"Error with text: {repr(txt)}")
-        raise e
+
 def _safe(text):
     """Encode text to latin-1, replacing un-encodable chars."""
     return str(text).encode("latin-1", errors="replace").decode("latin-1")
@@ -737,13 +734,11 @@ def show_welcome_screen():
         st.markdown("<h2>African NeuroHealth AI Dashboard</h2>", unsafe_allow_html=True)
         st.markdown("""
         ## Your Personal Health Assessment Platform
-
         **Assessments available:**
         - 🩺 **Stroke** Risk Assessment
         - 🧠 **Dementia** Risk Evaluation
         - 🥗 **Nutrition** Tracking
         - 😌 **Stress** Assessment
-
         ### Getting Started:
         1. Enter your name in the sidebar
         2. Click "Start Session"
@@ -770,7 +765,6 @@ def render_dashboard():
     Welcome to the **African NeuroHealth AI Dashboard** — an integrated platform for predicting
     **stroke** and **dementia** risks using advanced machine learning models. This platform is
     culturally attuned and context-aware, tailored for assessing neuro-health risks in African populations.
-
     ### Features:
     - **Stroke Risk Prediction**: Assess your risk factors and get personalized recommendations
     - **Dementia Risk Assessment**: Evaluate cognitive health and dementia risk
@@ -778,7 +772,6 @@ def render_dashboard():
     - **Nutrition Tracker**: Monitor dietary habits and get nutritional scores
     - **Stress Assessment**: Evaluate stress levels and coping mechanisms
     - **PDF Reports**: Download printable medical reports
-
     **Developed by Adebimpe-John Omolola E., with support from the GRASP / NIH / DSI Collaborative Program.**
     """)
 
@@ -1755,9 +1748,11 @@ def nutrition_tracker():
                 supabase.table("nutrition_tracker").insert(nutrition_data).execute()
                 st.success(get_translation("✅ Nutrition data saved!"))
             except Exception as e:
-                st.warning(get_translation(f"Could not save to database: {str(e)}"))
-
-
+                if "Name or service not known" in str(e):
+                    st.error("❌ Cannot reach Supabase – check your internet and API URL.")
+                else:
+                    st.error(f"❌ Database error: {e}")
+                    st.warning(get_translation(f"Could not save to database: {str(e)}"))
 # ====== STRESS ASSESSMENT ======
 def stress_assessment():
     st.markdown("<h1>😌 Stress Assessment</h1>", unsafe_allow_html=True)
@@ -1809,7 +1804,12 @@ def stress_assessment():
                 supabase.table("stress_assessments").insert(stress_data).execute()
                 st.success(get_translation("✅ Stress assessment saved successfully!"))
             except Exception as e:
-                st.error(get_translation(f"❌ Error: {str(e)}"))
+                if "Name or service not known" in str(e):
+                    st.error("❌ Cannot reach Supabase – check your internet and API URL.")
+                    
+                else:
+                    st.error(f"❌ Database error: {e}")
+                    st.warning(get_translation(f"Could not save to database: {str(e)}"))
 
 
 # ====== REPORTS PAGE ======
@@ -1830,16 +1830,16 @@ def render_reports_page():
     else:
         col1, col2, col3 = st.columns(3)
         col1.metric("Total Reports", len(st.session_state.reports))
-        col2.metric("Stroke Assessments", sum(1 for r in st.session_state.reports.values() if r['type'] == 'Stroke'))
-        col3.metric("Dementia Assessments", sum(1 for r in st.session_state.reports.values() if r['type'] == 'Dementia'))
-
+        col2.metric("Stroke Assessments", sum(1 for r in st.session_state.reports.values() if r["type"] == "Stroke"))
+        col3.metric("Dementia Assessments", sum(1 for r in st.session_state.reports.values() if r["type"] == "Dementia"))
         st.markdown("---")
+
         for report_id, report in st.session_state.reports.items():
             col1, col2, col3 = st.columns([3, 1, 1])
             with col1:
-                icon = "🩺" if report['type'] == "Stroke" else "🧠"
+                icon = "🩺" if report["type"] == "Stroke" else "🧠"
                 st.subheader(f"{icon} {report['type']} Assessment")
-                color_icon = "🔴" if report['risk_level'] == "HIGH" else "🟡" if report['risk_level'] == "MEDIUM" else "🟢"
+                color_icon = "🔴" if report["risk_level"] == "HIGH" else "🟡" if report["risk_level"] == "MEDIUM" else "🟢"
                 st.write(f"**Risk Level:** {color_icon} {report['risk_level']}")
                 st.write(f"**Risk Score:** {report['risk_score']:.1%}")
                 st.write(f"**Date:** {report['data'].get('assessment_date', 'N/A')}")
@@ -1847,27 +1847,281 @@ def render_reports_page():
                 if st.button("📥 Download", key=f"download_{report_id}", use_container_width=True):
                     with st.spinner("Generating PDF..."):
                         try:
-                            if report['type'] == "Stroke":
+                            if report["type"] == "Stroke":
                                 pdf_bytes = generate_stroke_pdf(st.session_state.user_name,
-                                                                report['data'], report['risk_score'],
-                                                                report['risk_level'], [])
+                                                                report["data"], report["risk_score"],
+                                                                report["risk_level"], [])
                             else:
                                 pdf_bytes = generate_alzheimer_pdf(st.session_state.user_name,
-                                                                   report['data'], report['risk_score'],
-                                                                   report['risk_level'], [])
-                            st.markdown(create_download_link(pdf_bytes, report['filename']), unsafe_allow_html=True)
+                                                                   report["data"], report["risk_score"],
+                                                                   report["risk_level"], [])
+                            st.markdown(create_download_link(pdf_bytes, report["filename"]), unsafe_allow_html=True)
                         except Exception as e:
                             st.error(f"Error generating PDF: {str(e)}")
             with col3:
                 if st.button("🗑️ Delete", key=f"del_{report_id}", use_container_width=True, type="secondary"):
-                    if st.session_state.get(f'confirm_delete_{report_id}'):
+                    if st.session_state.get(f"confirm_delete_{report_id}"):
                         del st.session_state.reports[report_id]
                         st.success("Report deleted!")
                         st.rerun()
                     else:
-                        st.session_state[f'confirm_delete_{report_id}'] = True
+                        st.session_state[f"confirm_delete_{report_id}"] = True
                         st.warning("Click again to confirm deletion")
             st.markdown("---")
+
+
+# ====== RESEARCH DASHBOARD (PASSWORD PROTECTED) ======
+
+def _fetch_table(supabase_client, table_name):
+    """Fetch a Supabase table into a DataFrame, return empty DF on error."""
+    try:
+        data = supabase_client.table(table_name).select("*").execute().data
+        df = pd.DataFrame(data) if data else pd.DataFrame()
+        if not df.empty and "created_at" in df.columns:
+            df["created_at"] = pd.to_datetime(df["created_at"], errors="coerce")
+        return df.fillna("N/A") if not df.empty else df
+    except Exception as e:
+        logger.warning(f"Could not fetch {table_name}: {e}")
+        return pd.DataFrame()
+
+
+def _csv_download_btn(df, label, filename):
+    """Render a Streamlit download button for a DataFrame as CSV."""
+    if df.empty:
+        st.info(f"No data available for {filename}.")
+        return
+    csv_bytes = df.to_csv(index=False).encode("utf-8")
+    st.download_button(
+        label=label,
+        data=csv_bytes,
+        file_name=filename,
+        mime="text/csv",
+        use_container_width=True,
+    )
+
+
+def render_research_page():
+    """Password-protected research dashboard."""
+
+    # ── Auth state ──────────────────────────────────────────────────────────
+    if "results_auth" not in st.session_state:
+        st.session_state.results_auth = False
+
+    if not st.session_state.results_auth:
+        st.markdown("## 🔐 Restricted Area — Official Use Only")
+        st.warning("This section contains raw research data. Authorised personnel only.")
+        pwd = st.text_input("Enter access password", type="password", key="research_pwd")
+        if st.button("🔓 Unlock", key="research_unlock"):
+            correct = st.secrets.get("RESULTS_PASSWORD", "admin1234")
+            if pwd == correct:
+                st.session_state.results_auth = True
+                st.rerun()
+            else:
+                st.error("❌ Incorrect password. Access denied.")
+        return
+
+    # ── Logout button ────────────────────────────────────────────────────────
+    if st.button("🔒 Lock Research Dashboard", key="research_lock"):
+        st.session_state.results_auth = False
+        st.rerun()
+
+    st.markdown("# 📊 Research Dashboard")
+    st.markdown("*Live data from Supabase. All records shown.*")
+
+    # ── Fetch all tables ──────────────────────────────────────────────────────
+    with st.spinner("Fetching data from database..."):
+        df_stroke    = _fetch_table(supabase, "stroke_predictions")
+        df_alz       = _fetch_table(supabase, "alzheimer_predictions")
+        df_stress    = _fetch_table(supabase, "stress_assessments")
+        df_nutrition = _fetch_table(supabase, "nutrition_tracker")
+
+    # ── Summary metrics ───────────────────────────────────────────────────────
+    st.markdown("### 📌 Record Counts")
+    c1, c2, c3, c4 = st.columns(4)
+    c1.metric("Stroke Records",    len(df_stroke))
+    c2.metric("Dementia Records",  len(df_alz))
+    c3.metric("Stress Records",    len(df_stress))
+    c4.metric("Nutrition Records", len(df_nutrition))
+
+    st.markdown("---")
+
+    # ── Tab layout ────────────────────────────────────────────────────────────
+    tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
+        "🩺 Stroke Data",
+        "🧠 Dementia Data",
+        "😌 Stress Data",
+        "🥗 Nutrition Data",
+        "📈 Analytics",
+        "📥 Export All",
+    ])
+
+    # ── TAB 1: Stroke ─────────────────────────────────────────────────────────
+    with tab1:
+        st.subheader("Stroke Predictions")
+        if not df_stroke.empty:
+            st.dataframe(df_stroke, use_container_width=True)
+            _csv_download_btn(df_stroke, "📥 Download Stroke CSV", "stroke_predictions.csv")
+
+            # Risk distribution
+            if "risk_level" in df_stroke.columns:
+                st.markdown("#### Risk Level Distribution")
+                vc = df_stroke["risk_level"].value_counts().reset_index()
+                vc.columns = ["Risk Level", "Count"]
+                fig = go.Figure(go.Bar(x=vc["Risk Level"], y=vc["Count"],
+                                       marker_color=["#DC2626","#CA8A04","#16A34A"]))
+                fig.update_layout(height=300, margin=dict(t=20))
+                st.plotly_chart(fig, use_container_width=True)
+
+            # Age distribution
+            if "age" in df_stroke.columns:
+                st.markdown("#### Age Distribution")
+                df_stroke["age"] = pd.to_numeric(df_stroke["age"], errors="coerce")
+                fig2 = go.Figure(go.Histogram(x=df_stroke["age"].dropna(), nbinsx=20,
+                                               marker_color="#3B82F6"))
+                fig2.update_layout(height=280, margin=dict(t=20),
+                                   xaxis_title="Age", yaxis_title="Count")
+                st.plotly_chart(fig2, use_container_width=True)
+        else:
+            st.info("No stroke prediction records yet.")
+
+    # ── TAB 2: Dementia ───────────────────────────────────────────────────────
+    with tab2:
+        st.subheader("Dementia / Alzheimer's Predictions")
+        if not df_alz.empty:
+            st.dataframe(df_alz, use_container_width=True)
+            _csv_download_btn(df_alz, "📥 Download Dementia CSV", "alzheimer_predictions.csv")
+
+            if "risk_level" in df_alz.columns:
+                st.markdown("#### Risk Level Distribution")
+                vc = df_alz["risk_level"].value_counts().reset_index()
+                vc.columns = ["Risk Level", "Count"]
+                fig = go.Figure(go.Bar(x=vc["Risk Level"], y=vc["Count"],
+                                       marker_color=["#DC2626","#CA8A04","#16A34A"]))
+                fig.update_layout(height=300, margin=dict(t=20))
+                st.plotly_chart(fig, use_container_width=True)
+
+            if "mmse" in df_alz.columns:
+                st.markdown("#### MMSE Score Distribution")
+                df_alz["mmse"] = pd.to_numeric(df_alz["mmse"], errors="coerce")
+                fig2 = go.Figure(go.Histogram(x=df_alz["mmse"].dropna(), nbinsx=15,
+                                               marker_color="#8B5CF6"))
+                fig2.update_layout(height=280, margin=dict(t=20),
+                                   xaxis_title="MMSE Score", yaxis_title="Count")
+                st.plotly_chart(fig2, use_container_width=True)
+        else:
+            st.info("No dementia prediction records yet.")
+
+    # ── TAB 3: Stress ─────────────────────────────────────────────────────────
+    with tab3:
+        st.subheader("Stress Assessments")
+        if not df_stress.empty:
+            st.dataframe(df_stress, use_container_width=True)
+            _csv_download_btn(df_stress, "📥 Download Stress CSV", "stress_assessments.csv")
+
+            if "total_score" in df_stress.columns:
+                st.markdown("#### Stress Score Distribution")
+                df_stress["total_score"] = pd.to_numeric(df_stress["total_score"], errors="coerce")
+                fig = go.Figure(go.Histogram(x=df_stress["total_score"].dropna(), nbinsx=16,
+                                              marker_color="#F59E0B"))
+                fig.update_layout(height=280, margin=dict(t=20),
+                                  xaxis_title="Total Stress Score", yaxis_title="Count")
+                st.plotly_chart(fig, use_container_width=True)
+        else:
+            st.info("No stress assessment records yet.")
+
+    # ── TAB 4: Nutrition ──────────────────────────────────────────────────────
+    with tab4:
+        st.subheader("Nutrition Tracker Records")
+        if not df_nutrition.empty:
+            st.dataframe(df_nutrition, use_container_width=True)
+            _csv_download_btn(df_nutrition, "📥 Download Nutrition CSV", "nutrition_tracker.csv")
+
+            if "nutritional_score" in df_nutrition.columns:
+                st.markdown("#### Nutritional Score Distribution")
+                df_nutrition["nutritional_score"] = pd.to_numeric(
+                    df_nutrition["nutritional_score"], errors="coerce")
+                vc = df_nutrition["nutritional_score"].value_counts().sort_index().reset_index()
+                vc.columns = ["Score", "Count"]
+                fig = go.Figure(go.Bar(x=vc["Score"].astype(str), y=vc["Count"],
+                                       marker_color="#10B981"))
+                fig.update_layout(height=280, margin=dict(t=20))
+                st.plotly_chart(fig, use_container_width=True)
+        else:
+            st.info("No nutrition records yet.")
+
+    # ── TAB 5: Analytics (SPSS-style) ─────────────────────────────────────────
+    with tab5:
+        st.subheader("📈 Descriptive Statistics")
+
+        def _desc(df, cols, label):
+            num_cols = [c for c in cols if c in df.columns]
+            if not num_cols or df.empty:
+                return
+            df_num = df[num_cols].apply(pd.to_numeric, errors="coerce")
+            stats = df_num.describe().T[["mean","std","min","max","50%"]].rename(
+                columns={"mean":"Mean","std":"Std Dev","min":"Min","max":"Max","50%":"Median"})
+            st.markdown(f"**{label}**")
+            st.dataframe(stats.round(2), use_container_width=True)
+
+        _desc(df_stroke,  ["age","bmi","avg_glucose_level","systolic_bp","diastolic_bp","risk_score"],
+              "Stroke Dataset")
+        _desc(df_alz,     ["Age","BMI","mmse","SystolicBP","DiastolicBP","risk_score"],
+              "Dementia Dataset")
+        _desc(df_stress,  ["total_score","financial_stress","work_stress","family_stress"],
+              "Stress Dataset")
+
+        st.markdown("---")
+        st.subheader("🔄 Cross-Tab: Stroke Risk × Age Group")
+        if not df_stroke.empty and "risk_level" in df_stroke.columns and "age" in df_stroke.columns:
+            df_stroke["age"] = pd.to_numeric(df_stroke["age"], errors="coerce")
+            df_stroke["age_group"] = pd.cut(df_stroke["age"],
+                                             bins=[0,30,45,60,75,120],
+                                             labels=["<30","30-45","45-60","60-75","75+"])
+            ctab = pd.crosstab(df_stroke["age_group"], df_stroke["risk_level"])
+            st.dataframe(ctab, use_container_width=True)
+        else:
+            st.info("Insufficient stroke data for cross-tab.")
+
+        st.subheader("🔄 Cross-Tab: Dementia Risk × Age Group")
+        if not df_alz.empty and "risk_level" in df_alz.columns and "age" in df_alz.columns:
+            df_alz["age"] = pd.to_numeric(df_alz["age"], errors="coerce")
+            df_alz["age_group"] = pd.cut(df_alz["age"],
+                                          bins=[0,30,45,60,75,120],
+                                          labels=["<30","30-45","45-60","60-75","75+"])
+            ctab2 = pd.crosstab(df_alz["age_group"], df_alz["risk_level"])
+            st.dataframe(ctab2, use_container_width=True)
+        else:
+            st.info("Insufficient dementia data for cross-tab.")
+
+    # ── TAB 6: Export All ─────────────────────────────────────────────────────
+    with tab6:
+        st.subheader("📥 Download Individual Tables")
+        col1, col2 = st.columns(2)
+        with col1:
+            _csv_download_btn(df_stroke,    "📥 Stroke CSV",    "stroke_predictions.csv")
+            _csv_download_btn(df_stress,    "📥 Stress CSV",    "stress_assessments.csv")
+        with col2:
+            _csv_download_btn(df_alz,       "📥 Dementia CSV",  "alzheimer_predictions.csv")
+            _csv_download_btn(df_nutrition, "📥 Nutrition CSV", "nutrition_tracker.csv")
+
+        st.markdown("---")
+        st.subheader("📦 Download Master Dataset (All Tables Combined)")
+
+        if st.button("🔄 Build Master CSV", use_container_width=True, key="build_master"):
+            frames = []
+            for df, src in [(df_stroke, "stroke"), (df_alz, "alzheimers"),
+                            (df_stress, "stress"), (df_nutrition, "nutrition")]:
+                if not df.empty:
+                    df = df.copy()
+                    df["_source"] = src
+                    frames.append(df)
+            if frames:
+                master = pd.concat(frames, ignore_index=True, sort=False)
+                _csv_download_btn(master, "📥 Download Master CSV",
+                                  f"african_neurohealth_master_{datetime.now().strftime('%Y%m%d_%H%M')}.csv")
+                st.success(f"Master dataset ready — {len(master)} total records across all tables.")
+            else:
+                st.warning("No data found in any table.")
 
 
 # ====== PAGE ROUTER ======
@@ -1886,31 +2140,31 @@ def route_pages(current_page):
         stress_assessment()
     elif current_page == "My Reports":
         render_reports_page()
+    elif current_page == "Research Dashboard":
+        render_research_page()
 
 
 # ====== SIDEBAR ======
 def render_sidebar():
     with st.sidebar:
         lang = set_language_selector(widget_key="app_language_selector")
-        title = get_translation("title")
+        title    = get_translation("title")
         subtitle = get_translation("subtitle")
 
         display_logo()
 
         if lang == "ar":
             st.markdown(f"""
-                <div style="text-align: right; direction: rtl;">
+                <div style="text-align:right;direction:rtl;">
                     <h2 style="margin-bottom:0;">{title}</h2>
-                    <p style="color: #6B7280;">{subtitle}</p>
-                </div>
-            """, unsafe_allow_html=True)
+                    <p style="color:#6B7280;">{subtitle}</p>
+                </div>""", unsafe_allow_html=True)
         else:
             st.markdown(f"""
-                <div style="text-align: center;">
+                <div style="text-align:center;">
                     <h2 style="margin-bottom:0;">{title}</h2>
-                    <p style="color: #6B7280;">{subtitle}</p>
-                </div>
-            """, unsafe_allow_html=True)
+                    <p style="color:#6B7280;">{subtitle}</p>
+                </div>""", unsafe_allow_html=True)
 
         st.markdown("## 🧭 Navigation")
 
@@ -1918,18 +2172,20 @@ def render_sidebar():
             st.markdown(f"**👤 Welcome, {st.session_state.user_name}!**")
 
         pages = [
-            ("🏠 Dashboard", "Dashboard"),
-            ("🩺 Stroke Assessment", "Stroke Assessment"),
-            ("🧠 Dementia Assessment", "Dementia Assessment"),
-            ("🎮 Memory Game", "Memory Game"),
-            ("🥗 Nutrition Tracker", "Nutrition Tracker"),
-            ("😌 Stress Assessment", "Stress Assessment"),
-            ("📄 My Reports", "My Reports")
+            ("🏠 Dashboard",            "Dashboard"),
+            ("🩺 Stroke Assessment",     "Stroke Assessment"),
+            ("🧠 Dementia Assessment",   "Dementia Assessment"),
+            ("🎮 Memory Game",           "Memory Game"),
+            ("🥗 Nutrition Tracker",     "Nutrition Tracker"),
+            ("😌 Stress Assessment",     "Stress Assessment"),
+            ("📄 My Reports",            "My Reports"),
+            ("🔒 Research Dashboard",    "Research Dashboard"),
         ]
 
         for label, page_name in pages:
             btn_type = "primary" if st.session_state.current_page == page_name else "secondary"
-            if st.button(label, key=f"nav_{page_name}", use_container_width=True, type=btn_type):
+            if st.button(label, key=f"nav_{page_name}",
+                         use_container_width=True, type=btn_type):
                 st.session_state.current_page = page_name
                 st.rerun()
 
@@ -1951,14 +2207,18 @@ def render_sidebar():
                 st.session_state.user_name = ""
                 st.rerun()
 
-        # Location filters — updates session state encoded values
         render_location_filters()
 
         st.markdown("---")
         st.markdown("### 📊 Quick Stats")
         if st.session_state.previous_stats:
-            st.metric("Stroke Predictions", st.session_state.previous_stats.get("stroke_predictions", 0))
-            st.metric("Dementia Predictions", st.session_state.previous_stats.get("dementia_predictions", 0))
+            st.metric("Stroke Predictions",
+                      st.session_state.previous_stats.get("stroke_predictions", 0))
+            st.metric("Dementia Predictions",
+                      st.session_state.previous_stats.get("dementia_predictions", 0))
+
+
+#
 
 
 # ====== FOOTER ======
@@ -1986,5 +2246,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
