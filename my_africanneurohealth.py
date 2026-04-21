@@ -2179,7 +2179,7 @@ def render_sidebar():
             ("🥗 Nutrition Tracker",     "Nutrition Tracker"),
             ("😌 Stress Assessment",     "Stress Assessment"),
             ("📄 My Reports",            "My Reports"),
-            ("🔒 Research Dashboard",    "Research Dashboard"),
+            ("🔒 Research Dashboard",    "Research Dashboard")
         ]
 
         for label, page_name in pages:
@@ -2235,7 +2235,7 @@ def main():
     init_session_state()
     apply_rtl_logic()
     render_sidebar()
-    render_research_page()
+
 
     if not st.session_state.logged_in:
         show_welcome_screen()
