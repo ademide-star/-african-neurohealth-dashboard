@@ -2986,7 +2986,10 @@ function showMemState(s) {
 function submitMemoryRecall() {
   const input = document.getElementById('mem-recall-input');
   if (!input || !input.value.trim()) { toast('Please type at least one word.'); return; }
-  const recalled = input.value.trim().toLowerCase().split(',').map(w => w.trim()).filter(Boolean);
+  const recalled = input.value.trim().toLowerCase()
+    .split(/[,\n;·]+/)
+    .map(w => w.trim().replace(/[.!?]+$/, ''))
+    .filter(Boolean);
   const correct  = new Set(memState.words.map(w => w.toLowerCase()));
   const correctCount = [...correct].filter(w => recalled.includes(w)).length;
   const score = Math.round((correctCount / memState.words.length) * 100);
@@ -3013,7 +3016,6 @@ function submitMemoryRecall() {
   }
   toast('Memory test complete! Score: ' + score + '%');
 }
-
 function nextMemoryLevel() {
   const sp = document.getElementById('mem-score-pct');
   const score = sp ? parseInt(sp.textContent) : 0;
@@ -3166,7 +3168,37 @@ function generateNutritionPDF() {
   doc.save('ANHRL_Nutrition_Report_' + (SESSION.user?SESSION.user.name.replace(/\s+/g,'_'):'') + '_' + Date.now() + '.pdf');
   toast('📄 Nutrition PDF downloaded!');
 }
+function doStrokePDF() {
+  const d = window._lastStroke;
+  if (!d) { toast('⚠️ Run the stroke assessment first.'); return; }
+  generatePDF('Stroke', {
+    patientName: SESSION.user ? SESSION.user.name : 'Anonymous',
+    userId: d.userId,
+    riskLevel: d.riskLevel,
+    riskPct: d.riskPct,
+    factors: d.factors,
+    recos: d.recos,
+    extras: d.extras
+  });
+}
 
+function doDementiaPDF() {
+  const d = window._lastDementia;
+  if (!d) { toast('⚠️ Run the dementia assessment first.'); return; }
+  generatePDF('Dementia', {
+    patientName: SESSION.user ? SESSION.user.name : 'Anonymous',
+    userId: d.userId,
+    riskLevel: d.riskLevel,
+    riskPct: d.riskPct,
+    factors: d.factors,
+    recos: d.recos,
+    extras: d.extras
+  });
+}
+
+function doNutritionPDF() {
+  generateNutritionPDF();
+}
 /* ══════════════════════════════════════════════
    CSV EXPORT FROM SUPABASE
 ══════════════════════════════════════════════ */
