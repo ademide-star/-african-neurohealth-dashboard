@@ -3016,6 +3016,7 @@ function submitMemoryRecall() {
   }
   toast('Memory test complete! Score: ' + score + '%');
 }
+
 function nextMemoryLevel() {
   const sp = document.getElementById('mem-score-pct');
   const score = sp ? parseInt(sp.textContent) : 0;
@@ -3038,7 +3039,6 @@ function resetMemoryGame() {
   const sh = document.getElementById('mem-score-history'); if(sh) sh.innerHTML='';
   showMemState('start');
 }
-
 /* ══════════════════════════════════════════════
    PDF GENERATOR
 ══════════════════════════════════════════════ */
