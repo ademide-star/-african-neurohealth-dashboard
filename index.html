@@ -970,7 +970,7 @@ Designed to support research, clinical decision-making, and community health scr
           </div>
         </div>
         <div class="form-row">
-          <div class="fg"><label>Education (years)</label><input type="number" id="d-edu" value="12" min="0" max="25"></div>
+          <div class="fg"><label>Education Level</label><select id="d-edu"><option value="">Select</option><option value="0">None</option><option value="6">Primary</option><option value="12" selected>Secondary</option><option value="18">Master's</option><option value="21">PhD</option></select></div>
           <div class="fg"><label>Blood Group</label><select id="d-blood"><option value="">Select</option><option>A+</option><option>A-</option><option>B+</option><option>B-</option><option>AB+</option><option>AB-</option><option>O+</option><option>O-</option></select></div>
         </div>
         <div class="fg"><label>Genotype</label><select id="d-geno"><option value="">Select</option><option>AA</option><option>AS</option><option>SS</option><option>AC</option><option>SC</option></select></div>
@@ -1017,7 +1017,24 @@ Designed to support research, clinical decision-making, and community health scr
         <div class="fg"><label>Sleep Quality (0-10): <span id="d-sleep-val" style="color:var(--gold);font-weight:700;">6</span></label><input type="range" id="d-sleep" min="0" max="10" value="6" oninput="document.getElementById('d-sleep-val').textContent=this.value"></div>
         <div class="fg"><label>Stress Level (0-10): <span id="d-stress-val" style="color:var(--gold);font-weight:700;">4</span></label><input type="range" id="d-stress" min="0" max="10" value="4" oninput="document.getElementById('d-stress-val').textContent=this.value"></div>
         <div class="fg"><label>Pollution Score (0-100): <span id="d-poll-val" style="color:var(--gold);font-weight:700;">20</span></label><input type="range" id="d-poll" min="0" max="100" value="20" oninput="document.getElementById('d-poll-val').textContent=this.value"></div>
-        <div class="fg"><label>MMSE Score (0-30)</label><input type="number" id="d-mmse" value="27" min="0" max="30"></div>
+        <!-- ===== CULTURALLY ADAPTED MMSE ASSESSMENT (African Context) ===== -->
+        <div id="mmse-cultural-section" class="fg" style="margin-top:.5rem;">
+          <label style="font-family:'Playfair Display',serif;font-size:.95rem;">MMSE Assessment (Adapted for African Context)</label>
+          <p style="font-size:.8rem;color:var(--mist);margin-bottom:.75rem;">Answer these culturally relevant questions to estimate cognitive score:</p>
+          <div class="form-row">
+            <div class="fg"><label>Forgets names of relatives/village members?</label><select id="q1"><option>Never</option><option>Sometimes</option><option>Often</option></select></div>
+            <div class="fg"><label>Recognizes people from the community?</label><select id="q4"><option>Always</option><option>Sometimes</option><option>Rarely</option></select></div>
+          </div>
+          <div class="form-row">
+            <div class="fg"><label>Misplaces important items (farming tools, keys)?</label><select id="q2"><option>Never</option><option>Sometimes</option><option>Often</option></select></div>
+            <div class="fg"><label>Navigates familiar paths/markets?</label><select id="q5"><option>Always</option><option>Sometimes</option><option>Rarely</option></select></div>
+          </div>
+          <div class="form-row">
+            <div class="fg"><label>Recalls traditional recipes/remedies?</label><select id="q3"><option>Always</option><option>Sometimes</option><option>Rarely</option></select></div>
+            <div class="fg"><label>Remembers important cultural events/dates?</label><select id="q6"><option>Always</option><option>Sometimes</option><option>Rarely</option></select></div>
+          </div>
+          <p id="mmse-preview" style="margin-top:.5rem; font-size:.85rem; color:var(--gold);"></p>
+        </div>
       </div>
       <div class="asmt-section">
         <h3>Cognitive Symptoms</h3>
@@ -1321,6 +1338,7 @@ Designed to support research, clinical decision-making, and community health scr
     <button class="tab-btn active" onclick="switchTab('atab','users',this)">Users</button>
     <button class="tab-btn" onclick="switchTab('atab','models',this)">AI Models</button>
     <button class="tab-btn" onclick="switchTab('atab','livedata',this)">Live Data</button>
+    <button class="tab-btn" onclick="switchTab('atab','import',this)">Import CSV</button>
     <button class="tab-btn" onclick="switchTab('atab','notifs',this)">Notifications</button>
   </div>
   <div id="atab-users" class="tab-panel active">
@@ -1348,6 +1366,38 @@ Designed to support research, clinical decision-making, and community health scr
   <div id="atab-livedata" class="tab-panel">
     <button class="btn btn-gold btn-sm" style="margin-bottom:1.5rem;" onclick="loadAdminData()">&#x1F504; Refresh Live Data</button>
     <div id="admin-live-data"><p style="color:var(--mist);">Click Refresh to load live Supabase records.</p></div>
+  </div>
+  <div id="atab-import" class="tab-panel">
+    <div class="card" style="margin-bottom:1.5rem;">
+      <h4 style="font-family:'Playfair Display',serif;margin-bottom:.75rem;">Upload CSV to Supabase</h4>
+      <p style="color:var(--mist);font-size:.83rem;margin-bottom:1rem;">Choose the destination table, select a .csv file, review the preview, then upload. Column headers in the CSV must match the table's column names in Supabase.</p>
+
+      <div class="fg" style="margin-bottom:1rem;">
+        <label>Destination table:</label>
+        <select id="import-table" onchange="document.getElementById('import-custom-wrap').style.display = this.value === '__custom__' ? 'block' : 'none';">
+          <option value="stroke_predictions">stroke_predictions</option>
+          <option value="alzheimer_predictions">alzheimer_predictions</option>
+          <option value="stress_assessments">stress_assessments</option>
+          <option value="nutrition_tracker">nutrition_tracker</option>
+          <option value="registered_users">registered_users</option>
+          <option value="__custom__">Custom table name...</option>
+        </select>
+      </div>
+      <div class="fg" id="import-custom-wrap" style="display:none;margin-bottom:1rem;">
+        <label>Custom table name:</label>
+        <input type="text" id="import-custom-table" placeholder="e.g. herbal_interventions">
+      </div>
+
+      <div class="fg" style="margin-bottom:1rem;">
+        <label>CSV or Excel file:</label>
+        <input type="file" id="import-file" accept=".csv,.xlsx,.xls,text/csv,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" onchange="handleImportFileSelect(event)">
+      </div>
+
+      <div id="import-preview" style="margin-bottom:1rem;"></div>
+
+      <button class="btn btn-gold btn-sm" id="import-upload-btn" style="display:none;" onclick="uploadImportedCSV()">Upload to Supabase</button>
+      <div id="import-status" style="margin-top:1rem;font-size:.85rem;color:var(--mist);"></div>
+    </div>
   </div>
   <div id="atab-notifs" class="tab-panel">
     <div style="background:var(--glass);border:1px solid rgba(78,203,130,.2);border-radius:10px;padding:1rem;margin-bottom:.75rem;display:flex;gap:1rem;">
@@ -1483,6 +1533,7 @@ Designed to support research, clinical decision-making, and community health scr
 <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdn.plot.ly/plotly-2.26.0.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 /* ══════════════════════════════════════════════
@@ -2655,6 +2706,36 @@ function runStrokeScoreOffline(payload, gender, bmi, sbp, dbp, glucose, smoke, h
 }
 
 
+// ===== CULTURALLY ADAPTED MMSE ESTIMATION (African Context) =====
+function estimateCulturalMMSE(age) {
+  const responseScores = {
+    "Never": 2, "Sometimes": 1, "Often": 0,
+    "Always": 2, "Rarely": 0
+  };
+  const weights = { q1: 2.0, q2: 1.5, q3: 1.0, q4: 1.7, q5: 2.0, q6: 1.3 };
+
+  const ids = ['q1','q2','q3','q4','q5','q6'];
+  const vals = {};
+  for (const id of ids) {
+    const el = document.getElementById(id);
+    vals[id] = el ? el.value : 'Sometimes';
+  }
+
+  let mmseScore = 20 + (
+    responseScores[vals.q1] * weights.q1 +
+    responseScores[vals.q2] * weights.q2 +
+    responseScores[vals.q3] * weights.q3 +
+    responseScores[vals.q4] * weights.q4 +
+    responseScores[vals.q5] * weights.q5 +
+    responseScores[vals.q6] * weights.q6
+  );
+
+  if (age > 70) mmseScore *= 0.95;
+  else if (age > 60) mmseScore *= 0.97;
+
+  return Math.max(0, Math.min(30, Math.round(mmseScore)));
+}
+
 function runDementiaAssessment() {
   const age = parseInt(document.getElementById('d-age').value) || 0;
   if (!age) { toast('⚠️ Please enter Age to continue.'); return; }
@@ -2674,7 +2755,7 @@ function runDementiaAssessment() {
   const trig   = parseFloat(document.getElementById('d-trig').value) || 150;
   const func   = parseInt(document.getElementById('d-func').value) || 8;
   const adl    = parseInt(document.getElementById('d-adl').value) || 8;
-  const mmse   = parseInt(document.getElementById('d-mmse').value) || 27;
+  const mmse   = estimateCulturalMMSE(age);
   const activity = parseInt(document.getElementById('d-activity').value) || 3;
   const diet   = parseInt(document.getElementById('d-diet').value) || 5;
   const sleep  = parseInt(document.getElementById('d-sleep').value) || 6;
@@ -2815,10 +2896,52 @@ function runDementiaAssessment() {
   })
   .catch(err => {
     console.error('Dementia API error:', err);
-    toast('⚠️ API offline — using offline scoring');
-    document.getElementById('dementia-risk-badge').textContent = 'Offline score computed';
-    document.getElementById('dementia-risk-factors').innerHTML = '<p style="color:var(--mist);font-size:.85rem;">API unavailable. Connect API for published model results.</p>';
+    toast('⚠️ API offline. Using offline scoring...');
+    runDementiaScoreOffline(age, bmi, edu, fam, cardio, dep, htn, head, sbp, dbp, mmse, activity, diet, sleep, stress, poll, country, province);
   });
+}
+
+// Fallback offline scoring (used if API is down) — mirrors runStrokeScoreOffline
+function runDementiaScoreOffline(age, bmi, edu, fam, cardio, dep, htn, head, sbp, dbp, mmse, activity, diet, sleep, stress, poll, country, province) {
+  let score = 0;
+  const factors = []; const recos = [];
+  if (age > 65)          { score += 1.3; factors.push('Age above 65'); }
+  if (fam === 'Yes')     { score += 1.2; factors.push('Family history of Alzheimer\'s'); }
+  if (mmse < 24)         { score += 1.4; factors.push('MMSE below normal range (' + mmse + '/30)'); recos.push('Full cognitive evaluation recommended'); }
+  if (htn === 'Yes')     { score += 0.7; factors.push('Hypertension'); recos.push('BP control <130/80 mmHg'); }
+  if (cardio === 'Yes')  { score += 0.7; factors.push('Cardiovascular disease'); }
+  if (dep === 'Yes')     { score += 0.6; factors.push('Depression'); recos.push('Mental health support'); }
+  if (head > 0)          { score += 0.5; factors.push('History of head injury'); }
+  if (edu < 8)           { score += 0.5; factors.push('Lower formal education (' + edu + ' yrs)'); }
+  if (activity < 2)      { score += 0.4; factors.push('Low physical activity'); recos.push('150 min/week moderate exercise'); }
+  if (diet < 4)          { score += 0.3; factors.push('Lower diet quality'); recos.push('Mediterranean-style diet'); }
+  if (sleep < 5)         { score += 0.3; factors.push('Poor sleep quality'); recos.push('Improve sleep hygiene'); }
+  if (stress >= 7)       { score += 0.3; factors.push('High stress'); }
+  if (poll >= 66)        { score += 0.2; factors.push('High pollution exposure'); }
+  recos.push('Cognitive stimulation activities (reading, puzzles, social engagement)');
+  const finalScore = Math.min(0.97, score * 0.11);
+  const pct = Math.round(finalScore * 100);
+  const level = pct > 65 ? 'HIGH' : pct > 30 ? 'MEDIUM' : 'LOW';
+  const mmseLabel = mmse >= 24 ? 'Normal range' : mmse >= 18 ? 'Mild impairment range' : 'Impaired range';
+  animateGauge('gauge-d-fill','gauge-d-pct', pct);
+  const badge = document.getElementById('dementia-risk-badge');
+  badge.textContent = level + ' RISK — ' + pct + '% (offline)';
+  badge.className = 'risk-badge ' + (level==='HIGH'?'risk-high':level==='MEDIUM'?'risk-medium':'risk-low');
+  document.getElementById('dementia-risk-factors').innerHTML =
+    '<h4 style="font-family:\'Playfair Display\',serif;font-size:.95rem;margin-bottom:.75rem;">⚠️ Risk Factors (Offline)</h4>' +
+    factors.map(f=>'<div class="rf-item"><div class="rf-dot"></div>'+f+'</div>').join('');
+  document.getElementById('dementia-recommendations').innerHTML =
+    '<h4 style="font-family:\'Playfair Display\',serif;font-size:.95rem;margin-bottom:.75rem;">✅ Recommendations</h4>' +
+    recos.map(r=>'<div class="reco-item">'+r+'</div>').join('');
+  document.getElementById('dementia-mmse-box').innerHTML =
+    '<div style="background:rgba(212,160,23,.08);border:1px solid rgba(212,160,23,.2);border-radius:10px;padding:1rem;">' +
+    '<div style="font-size:.72rem;color:var(--mist);margin-bottom:.35rem;text-transform:uppercase;letter-spacing:.06em;">MMSE Score</div>' +
+    '<div style="font-family:\'Space Mono\',monospace;font-size:1.8rem;color:var(--gold);">' + mmse + '<span style="font-size:.9rem;color:var(--mist)">/30</span></div>' +
+    '<div style="font-size:.78rem;color:var(--smoke);margin-top:.35rem;">' + mmseLabel + '</div>' +
+    '<div style="font-size:.72rem;color:var(--mist);margin-top:.25rem;">Mode: Offline scoring — connect API for published model</div>' +
+    '</div>';
+  window._lastDementia = { riskLevel:level, riskPct:pct, factors, recos, userId:'OFFLINE',
+    extras:[{label:'Mode',value:'Offline scoring — connect API for published model'}] };
 }
 
 
@@ -3250,6 +3373,184 @@ async function loadAdminData() {
   toast('✅ Live data loaded');
 }
 
+/* ══════════════════════════════════════════════
+   ADMIN CSV IMPORT → SUPABASE
+══════════════════════════════════════════════ */
+window._importParsed = null; // { headers, rows }
+
+// Minimal RFC4180-ish CSV parser: handles quoted fields, escaped quotes, commas/newlines inside quotes
+function parseCSV(text) {
+  const rows = [];
+  let row = [], field = '', inQuotes = false;
+  // Normalize line endings
+  text = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (inQuotes) {
+      if (c === '"') {
+        if (text[i + 1] === '"') { field += '"'; i++; }
+        else { inQuotes = false; }
+      } else { field += c; }
+    } else {
+      if (c === '"') { inQuotes = true; }
+      else if (c === ',') { row.push(field); field = ''; }
+      else if (c === '\n') { row.push(field); rows.push(row); row = []; field = ''; }
+      else { field += c; }
+    }
+  }
+  if (field.length || row.length) { row.push(field); rows.push(row); }
+  // Drop trailing empty rows
+  while (rows.length && rows[rows.length - 1].length === 1 && rows[rows.length - 1][0] === '') rows.pop();
+  if (!rows.length) return { headers: [], rows: [] };
+  const headers = rows[0].map(h => h.trim());
+  const dataRows = rows.slice(1).map(r => {
+    const obj = {};
+    headers.forEach((h, idx) => { obj[h] = castCSVValue(r[idx] !== undefined ? r[idx] : ''); });
+    return obj;
+  });
+  return { headers, rows: dataRows };
+}
+
+// Coerce obvious types so Supabase columns (numeric/bool) don't choke on plain strings
+function castCSVValue(v) {
+  if (v === '' || v === undefined) return null;
+  const trimmed = v.trim();
+  if (trimmed === '') return null;
+  if (/^-?\d+$/.test(trimmed)) return parseInt(trimmed, 10);
+  if (/^-?\d*\.\d+$/.test(trimmed)) return parseFloat(trimmed);
+  if (/^(true|false)$/i.test(trimmed)) return trimmed.toLowerCase() === 'true';
+  return trimmed;
+}
+
+function slugifyHeader(h) {
+  return String(h).trim().toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
+}
+
+function showImportPreview(parsed) {
+  const previewEl = document.getElementById('import-preview');
+  const uploadBtn = document.getElementById('import-upload-btn');
+  if (!parsed.rows.length) {
+    previewEl.innerHTML = '<p style="color:#EF4444;">No rows found in this file.</p>';
+    return;
+  }
+  window._importParsed = parsed;
+  const previewRows = parsed.rows.slice(0, 5);
+  let html = '<p style="color:var(--mist);font-size:.8rem;margin-bottom:.5rem;">' +
+    parsed.rows.length + ' row(s) detected · ' + parsed.headers.length + ' column(s). Showing first ' + previewRows.length + ':</p>';
+  html += '<div style="overflow-x:auto;"><table class="data-table"><thead><tr>' +
+    parsed.headers.map(h => '<th>' + h + '</th>').join('') + '</tr></thead><tbody>';
+  previewRows.forEach(r => {
+    html += '<tr>' + parsed.headers.map(h => '<td>' + (r[h] === null || r[h] === undefined ? '<em style="color:var(--mist);">null</em>' : r[h]) + '</td>').join('') + '</tr>';
+  });
+  html += '</tbody></table></div>';
+  previewEl.innerHTML = html;
+  uploadBtn.style.display = 'inline-block';
+  uploadBtn.textContent = 'Upload ' + parsed.rows.length + ' row(s) to Supabase';
+}
+
+function handleImportFileSelect(event) {
+  const file = event.target.files[0];
+  const previewEl = document.getElementById('import-preview');
+  const uploadBtn = document.getElementById('import-upload-btn');
+  window._importParsed = null;
+  uploadBtn.style.display = 'none';
+  if (!file) { previewEl.innerHTML = ''; return; }
+
+  const name = file.name.toLowerCase();
+  const isCSV = name.endsWith('.csv') || file.type === 'text/csv';
+  const isExcel = name.endsWith('.xlsx') || name.endsWith('.xls');
+
+  if (!isCSV && !isExcel) {
+    previewEl.innerHTML = '<p style="color:#EF4444;">Please choose a .csv or .xlsx file.</p>';
+    return;
+  }
+
+  if (isCSV) {
+    const reader = new FileReader();
+    reader.onload = (e) => showImportPreview(parseCSV(e.target.result));
+    reader.onerror = () => { previewEl.innerHTML = '<p style="color:#EF4444;">Could not read that file.</p>'; };
+    reader.readAsText(file);
+  } else {
+    if (typeof XLSX === 'undefined') {
+      previewEl.innerHTML = '<p style="color:#EF4444;">Excel support failed to load — try a .csv file instead, or reload the page.</p>';
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const wb = XLSX.read(new Uint8Array(e.target.result), { type: 'array', cellDates: true });
+        const sheetName = wb.SheetNames[0];
+        const sheet = wb.Sheets[sheetName];
+        const rowsRaw = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: null, raw: true });
+        if (!rowsRaw.length) { previewEl.innerHTML = '<p style="color:#EF4444;">No rows found in this file.</p>'; return; }
+        const headers = rowsRaw[0].map(h => slugifyHeader(h));
+        const dataRows = rowsRaw.slice(1)
+          .filter(r => r.some(v => v !== null && v !== ''))
+          .map(r => {
+            const obj = {};
+            headers.forEach((h, idx) => {
+              let v = r[idx];
+              if (v instanceof Date) v = v.toISOString();
+              obj[h] = (v === undefined || v === '') ? null : v;
+            });
+            return obj;
+          });
+        if (wb.SheetNames.length > 1) {
+          toast('ℹ️ Using first sheet: "' + sheetName + '" (' + wb.SheetNames.length + ' sheets found)');
+        }
+        showImportPreview({ headers, rows: dataRows });
+      } catch (err) {
+        previewEl.innerHTML = '<p style="color:#EF4444;">Could not parse this Excel file: ' + err.message + '</p>';
+      }
+    };
+    reader.onerror = () => { previewEl.innerHTML = '<p style="color:#EF4444;">Could not read that file.</p>'; };
+    reader.readAsArrayBuffer(file);
+  }
+}
+
+async function uploadImportedCSV() {
+  const statusEl = document.getElementById('import-status');
+  const uploadBtn = document.getElementById('import-upload-btn');
+  if (!supa) { statusEl.textContent = 'Supabase is not connected — check your network/connection and reload.'; return; }
+  if (!window._importParsed || !window._importParsed.rows.length) { statusEl.textContent = 'Choose a CSV file first.'; return; }
+
+  let table = document.getElementById('import-table').value;
+  if (table === '__custom__') {
+    table = (document.getElementById('import-custom-table').value || '').trim();
+    if (!table) { statusEl.textContent = 'Enter a custom table name.'; return; }
+  }
+
+  const rows = window._importParsed.rows;
+  const CHUNK = 500; // stay well under Supabase's request size limits
+  uploadBtn.disabled = true;
+  let uploaded = 0;
+
+  for (let i = 0; i < rows.length; i += CHUNK) {
+    const chunk = rows.slice(i, i + CHUNK);
+    statusEl.textContent = 'Uploading rows ' + (i + 1) + '–' + Math.min(i + CHUNK, rows.length) + ' of ' + rows.length + ' to "' + table + '"...';
+    try {
+      const { error } = await supa.from(table).insert(chunk);
+      if (error) {
+        statusEl.innerHTML = '<span style="color:#EF4444;">Upload failed at row ' + (i + 1) + ': ' + error.message +
+          '</span><br><span style="color:var(--mist);font-size:.78rem;">Check that "' + table + '" exists in Supabase and that its columns match your CSV headers exactly.</span>';
+        uploadBtn.disabled = false;
+        toast('⚠️ Import stopped — see status below');
+        return;
+      }
+      uploaded += chunk.length;
+    } catch (e) {
+      statusEl.innerHTML = '<span style="color:#EF4444;">Upload error: ' + e.message + '</span>';
+      uploadBtn.disabled = false;
+      toast('⚠️ Import error');
+      return;
+    }
+  }
+
+  uploadBtn.disabled = false;
+  statusEl.innerHTML = '<span style="color:var(--mint);">✅ Uploaded ' + uploaded + ' row(s) to "' + table + '" in Supabase.</span>';
+  toast('✅ ' + uploaded + ' row(s) imported to ' + table);
+}
+
 async function loadResearcherChart() {
   const el = document.getElementById('researcher-chart');
   if (!el || !window.Plotly) return;
@@ -3357,6 +3658,20 @@ window.addEventListener('load', () => {
   showMemState('start');
   const statsEl = document.getElementById('stats');
   if (statsEl) statsObs.observe(statsEl);
+
+  // Live MMSE preview as cultural questions are answered
+  ['q1','q2','q3','q4','q5','q6'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) {
+      el.addEventListener('change', () => {
+        const ageEl = document.getElementById('d-age');
+        const age = ageEl ? (parseInt(ageEl.value) || 0) : 0;
+        const est = estimateCulturalMMSE(age);
+        const preview = document.getElementById('mmse-preview');
+        if (preview) preview.textContent = 'Estimated MMSE: ' + est + '/30';
+      });
+    }
+  });
 });
 </script>
 <script defer src="https://static.cloudflareinsights.com/beacon.min.js/v833ccba57c9e4d2798f2e76cebdd09a11778172276447" integrity="sha512-57MDmcccJXYtNnH+ZiBwzC4jb2rvgVCEokYN+L/nLlmO8rfYT/gIpW2A569iJ/3b+0UEasghjuZH/ma3wIs/EQ==" data-cf-beacon='{"version":"2024.11.0","token":"4edd5f8ec12a48cfa682ab8261b80a79","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
