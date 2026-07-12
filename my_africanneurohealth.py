@@ -254,7 +254,7 @@ def load_stroke_model():
 @st.cache_resource
 def load_dementia_model():
     model_paths = [
-        'trained_dementia_models.pkl',
+        'african_neurohealth_hgb.pkl',
         'models/trained_alzheimers_models.pkl',
         'alzheimers_pipeline.joblib'
     ]
