@@ -312,11 +312,32 @@ def map_noise_source(val):
 
 def prepare_stroke_input_numeric(raw_input):
     try:
+        expected_columns = [
+            'gender', 'age', 'hypertension', 'heart_disease', 'ever_married',
+            'work_type', 'Residence_type', 'avg_glucose_level', 'bmi',
+            'smoking_status', 'stress_level', 'ptsd', 'depression_level',
+            'diabetes_type', 'sleep_hours',
+            'chronic_pain_None', 'chronic_pain_Osteoarthritis',
+            'chronic_pain_Others', 'chronic_pain_Rheumatism',
+            'salt_intake_High', 'salt_intake_Little',
+            'salt_intake_Moderate', 'salt_intake_None',
+            'hypertension_treatment_Drugs', 'hypertension_treatment_Herbal',
+            'hypertension_treatment_None',
+            'nutritional_lifestyle_Fast Foods',
+            'nutritional_lifestyle_Homemade Food',
+            'nutritional_lifestyle_Junk Food',
+            'nutritional_lifestyle_Local Bukka/Street Food',
+            'noise_sources_Block-Industry', 'noise_sources_Church',
+            'noise_sources_Club-House', 'noise_sources_Generator',
+            'noise_sources_Grinding-Machine', 'noise_sources_Market',
+            'noise_sources_Mosque', 'noise_sources_None', 'noise_sources_Welder'
+        ]
+
         numeric_features = ['age', 'avg_glucose_level', 'bmi', 'stress_level',
-                            'ptsd', 'depression_level', 'diabetes_type', 'sleep_hours',
-                            'height', 'weight', 'systolic_bp', 'diastolic_bp']
+                            'ptsd', 'depression_level', 'diabetes_type', 'sleep_hours']
         categorical_features = ['gender', 'ever_married', 'work_type', 'Residence_type',
-                                 'smoking_status', 'blood_group', 'genotype']
+                                 'smoking_status']
+        int_features = ['hypertension', 'heart_disease']
         boolean_features = ['chronic_pain_None', 'chronic_pain_Rheumatism',
                             'chronic_pain_Osteoarthritis', 'chronic_pain_Others',
                             'salt_intake_High', 'salt_intake_Little',
@@ -330,7 +351,6 @@ def prepare_stroke_input_numeric(raw_input):
                             'noise_sources_Grinding-Machine', 'noise_sources_Market',
                             'noise_sources_Mosque', 'noise_sources_None', 'noise_sources_Welder']
 
-        expected_columns = numeric_features + categorical_features + boolean_features
         final_input = {}
 
         for col in numeric_features:
@@ -339,6 +359,9 @@ def prepare_stroke_input_numeric(raw_input):
         for col in categorical_features:
             val = raw_input.get(col, "None")
             final_input[col] = str(val) if val else "None"
+
+        for col in int_features:
+            final_input[col] = int(raw_input.get(col, 0) or 0)
 
         def to_bool(v):
             try:
@@ -360,21 +383,28 @@ def prepare_stroke_input_numeric(raw_input):
 
 def prepare_alzheimers_input_numeric(raw_input):
     try:
+        expected_columns = [
+            'Age', 'Gender', 'EducationLevel', 'BMI', 'Smoking',
+            'AlcoholConsumption', 'PhysicalActivity', 'DietQuality', 'SleepQuality',
+            'FamilyHistoryAlzheimers', 'CardiovascularDisease', 'Diabetes', 'Depression',
+            'HeadInjury', 'Hypertension', 'SystolicBP', 'DiastolicBP',
+            'CholesterolTotal', 'CholesterolLDL', 'CholesterolHDL', 'CholesterolTriglycerides',
+            'MMSE', 'FunctionalAssessment', 'MemoryComplaints', 'BehavioralProblems', 'ADL',
+            'Confusion', 'Disorientation', 'PersonalityChanges',
+            'DifficultyCompletingTasks', 'Forgetfulness'
+        ]
+
         numeric_features = ['Age', 'BMI', 'EducationLevel', 'AlcoholConsumption',
                             'PhysicalActivity', 'DietQuality', 'SleepQuality',
                             'SystolicBP', 'DiastolicBP', 'CholesterolTotal',
                             'CholesterolLDL', 'CholesterolHDL', 'CholesterolTriglycerides',
-                            'FunctionalAssessment', 'ADL', 'HeadInjury', 'MMSE',
-                            'Height', 'Weight', 'PollutionScore', 'Ethnicity',
-                            'Country', 'Province_Option', 'MemoryScore', 'CustomStressScore']
+                            'FunctionalAssessment', 'ADL', 'HeadInjury', 'MMSE']
         categorical_features = ['Gender', 'Smoking', 'FamilyHistoryAlzheimers',
                                  'CardiovascularDisease', 'Diabetes', 'Depression',
-                                 'Hypertension', 'BehavioralProblems', 'Genotype', 'BloodGroup']
+                                 'Hypertension', 'BehavioralProblems']
         boolean_features = ['Confusion', 'Disorientation', 'PersonalityChanges',
-                            'DifficultyCompletingTasks', 'Forgetfulness', 'MemoryComplaints',
-                            'PollutionCategoryLow', 'PollutionCategoryModerate', 'PollutionCategoryHigh']
+                            'DifficultyCompletingTasks', 'Forgetfulness', 'MemoryComplaints']
 
-        expected_columns = numeric_features + categorical_features + boolean_features
         final_input = {}
 
         for col in numeric_features:
