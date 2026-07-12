@@ -255,7 +255,7 @@ def load_stroke_model():
 def load_dementia_model():
     model_paths = [
         'african_neurohealth_hgb.pkl',
-        'models/trained_alzheimers_models.pkl',
+        'best_model_HistGradientBoosting.pkl',
         'alzheimers_pipeline.joblib'
     ]
     for path in model_paths:
