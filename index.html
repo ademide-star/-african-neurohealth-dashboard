@@ -514,10 +514,10 @@ For researchers, the same platform doubles as live research infrastructure: uplo
     </div>
     <div id="map-el"></div>
     <div class="map-legend">
-      <div class="legend-item"><div class="legend-dot" style="background:#EF4444;"></div>High Risk</div>
-      <div class="legend-item"><div class="legend-dot" style="background:#F59E0B;"></div>Moderate Risk</div>
-      <div class="legend-item"><div class="legend-dot" style="background:#10B981;"></div>Low Risk</div>
-      <div class="legend-item"><div class="legend-dot" style="background:#3B82F6;"></div>Research Site</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#EF4444;"></div>Highest third of LGAs</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#F59E0B;"></div>Middle third</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#10B981;"></div>Lowest third</div>
+      <div class="legend-item"><div class="legend-dot" style="background:transparent;border:2px dashed #3B82F6;"></div>Field survey LGA (dashed outline)</div>
       <div class="legend-item"><div class="legend-dot" style="background:#c9a84c;border:1px solid #fff;"></div>Data Collection</div>
     </div>
   </div>
@@ -1822,12 +1822,38 @@ try {
   }
 } catch(e) { console.warn('Supabase init error:', e); }
 
+const CORE_FIELDS = {
+  stroke_predictions:    ['user_id','age','gender','risk_score','risk_level','country','province','region','ethnicity','assessment_date'],
+  alzheimer_predictions: ['user_id','age','gender','risk_score','risk_level','country','province','region','ethnicity','assessment_date']
+};
 async function saveRecord(table, payload) {
   try {
-    if (!supa) return; // silently skip if Supabase not loaded
-    const { error } = await supa.from(table).insert([payload]);
-    if (error) console.warn('Supabase save error:', error.message);
-  } catch(e) { console.warn('Supabase error:', e); }
+    if (!supa) { console.warn('saveRecord: Supabase not connected'); return false; }
+    let { error } = await supa.from(table).insert([payload]);
+    // If the full record is rejected (e.g. a column is missing), keep at least the core fields
+    if (error && CORE_FIELDS[table]) {
+      console.warn('Full save to ' + table + ' failed (' + error.message + ') — retrying with core fields only');
+      const core = {};
+      CORE_FIELDS[table].forEach(k => { if (payload[k] !== undefined && payload[k] !== null) core[k] = payload[k]; });
+      ({ error } = await supa.from(table).insert([core]));
+    }
+    if (error) {
+      console.warn('Supabase save error (' + table + '):', error.message);
+      toast('⚠️ Could not save record: ' + error.message);
+      return false;
+    }
+    onRecordSaved(table);
+    return true;
+  } catch (e) { console.warn('Supabase error:', e); return false; }
+}
+
+/* After any assessment is stored, refresh the public numbers and the map */
+function onRecordSaved(table) {
+  if (table !== 'stroke_predictions' && table !== 'alzheimer_predictions') return;
+  setTimeout(() => {
+    loadLiveStats();
+    if (typeof neuroMap !== 'undefined' && neuroMap) refreshMapMarkers(window._mapLayer || 'stroke', { silent:true, keepView:true });
+  }, 800);
 }
 
 /* ══════════════════════════════════════════════
@@ -2724,6 +2750,24 @@ const mapSectionObs = new IntersectionObserver(entries => {
    instead of hardcoded numbers.
 ══════════════════════════════════════════════ */
 async function loadLiveStats() {
+  if (!supa) return;
+  try {
+    const v = await supa.from('public_counts').select('*').maybeSingle();
+    if (!v.error && v.data) {
+      const d = v.data;
+      const set = (id, val) => { const el = document.getElementById(id); if (el && val !== null && val !== undefined) el.setAttribute('data-count', val); };
+      set('stat-stroke', d.stroke_count); set('stat-dementia', d.dementia_count);
+      if (d.states_count) set('stat-states', d.states_count);
+      set('rtab-stat-stroke', d.stroke_count); set('rtab-stat-dementia', d.dementia_count);
+      runCounters(document.getElementById('stats'));
+      runCounters(document.getElementById('rtab-overview'));
+      return;
+    }
+  } catch (e) { /* fall through to raw-table counts */ }
+  return loadLiveStatsRaw();
+}
+
+async function loadLiveStatsRaw() {
   if (!supa) return; // keep offline fallback numbers if not connected
   try {
     const [strokeRes, dementiaRes] = await Promise.all([
@@ -2999,7 +3043,15 @@ function runStrokeScoreOffline(payload, gender, bmi, sbp, dbp, glucose, smoke, h
   document.getElementById('stroke-recommendations').innerHTML =
     '<h4 style="font-family:\'Playfair Display\',serif;font-size:.95rem;margin-bottom:.75rem;">✅ Recommendations</h4>' +
     recos.map(r=>'<div class="reco-item">'+r+'</div>').join('');
-  window._lastStroke = { riskLevel:level, riskPct:pct, factors, recos, userId:'OFFLINE',
+  const uidOff = 'USR-' + Math.random().toString(36).substr(2,8).toUpperCase();
+  saveRecord('stroke_predictions', {
+    user_id: uidOff, age: payload.age, gender, bmi: parseFloat(Number(bmi).toFixed(1)),
+    hypertension: htn, heart_disease: heart, avg_glucose_level: glucose, smoking_status: smoke,
+    systolic_bp: sbp, diastolic_bp: dbp, risk_score: finalScore, risk_level: level,
+    prediction_result: level === 'HIGH' ? 1 : 0, country, province, region, ethnicity,
+    assessment_date: new Date().toISOString().split('T')[0]
+  });
+  window._lastStroke = { riskLevel:level, riskPct:pct, factors, recos, userId:uidOff,
     extras:[{label:'Mode',value:'Offline scoring — connect API for published model'}] };
 }
 
@@ -3253,7 +3305,13 @@ function runDementiaScoreOffline(age, bmi, edu, fam, cardio, dep, htn, head, sbp
     '<div style="font-size:.78rem;color:var(--smoke);margin-top:.35rem;">' + mmseLabel + '</div>' +
     '<div style="font-size:.72rem;color:var(--mist);margin-top:.25rem;">Mode: Offline scoring — connect API for published model</div>' +
     '</div>';
-  window._lastDementia = { riskLevel:level, riskPct:pct, factors, recos, userId:'OFFLINE',
+  const uidOffD = 'USR-' + Math.random().toString(36).substr(2,8).toUpperCase();
+  saveRecord('alzheimer_predictions', {
+    user_id: uidOffD, age, mmse, risk_score: finalScore, risk_level: level,
+    prediction_result: level === 'HIGH' ? 1 : 0, country, province,
+    assessment_date: new Date().toISOString().split('T')[0]
+  });
+  window._lastDementia = { riskLevel:level, riskPct:pct, factors, recos, userId:uidOffD,
     extras:[{label:'Mode',value:'Offline scoring — connect API for published model'}] };
 }
 
@@ -4374,6 +4432,8 @@ const LOCATION_COORDS = {
   'Rwanda':[-1.9403,29.8739], 'Algeria':[36.7538,3.0588]
 };
 
+/* ANHRL field survey (n=4,000, Ogun State) aggregated by LGA */
+const SURVEY_LGA = [{"lga": "Abeokuta North", "zone": "Egba Zone", "lat": 7.1667, "lng": 3.3167, "n": 500, "hyp": 26.4, "hbp": 28.8, "forget": 44.8, "herb": 57.6, "poll": 23.2, "hypM": 26.0, "hypF": 26.7, "nM": 242, "nF": 258}, {"lga": "Abeokuta South", "zone": "Egba Zone", "lat": 7.1475, "lng": 3.3619, "n": 500, "hyp": 27.2, "hbp": 31.6, "forget": 42.0, "herb": 61.0, "poll": 23.2, "hypM": 24.2, "hypF": 30.0, "nM": 240, "nF": 260}, {"lga": "Ewekoro", "zone": "Egba Zone", "lat": 6.9333, "lng": 3.2167, "n": 500, "hyp": 27.4, "hbp": 30.0, "forget": 40.8, "herb": 61.2, "poll": 67.8, "hypM": 25.7, "hypF": 29.3, "nM": 261, "nF": 239}, {"lga": "Ijebu North", "zone": "Ijebu Zone", "lat": 6.97, "lng": 4.01, "n": 500, "hyp": 27.2, "hbp": 30.6, "forget": 42.2, "herb": 59.4, "poll": 23.0, "hypM": 28.1, "hypF": 26.2, "nM": 260, "nF": 240}, {"lga": "Ijebu Ode", "zone": "Ijebu Zone", "lat": 6.82, "lng": 3.92, "n": 500, "hyp": 28.2, "hbp": 31.2, "forget": 44.0, "herb": 60.6, "poll": 19.4, "hypM": 30.5, "hypF": 26.1, "nM": 239, "nF": 261}, {"lga": "Ikenne", "zone": "Remo Zone", "lat": 6.8667, "lng": 3.7167, "n": 500, "hyp": 27.6, "hbp": 30.8, "forget": 42.0, "herb": 63.0, "poll": 20.6, "hypM": 29.4, "hypF": 25.7, "nM": 255, "nF": 245}, {"lga": "Odogbolu", "zone": "Ijebu Zone", "lat": 6.8333, "lng": 3.75, "n": 500, "hyp": 29.2, "hbp": 31.4, "forget": 44.0, "herb": 59.2, "poll": 20.6, "hypM": 28.1, "hypF": 30.1, "nM": 231, "nF": 269}, {"lga": "Sagamu", "zone": "Remo Zone", "lat": 6.8333, "lng": 3.65, "n": 500, "hyp": 30.4, "hbp": 32.0, "forget": 36.2, "herb": 59.8, "poll": 47.8, "hypM": 31.7, "hypF": 28.9, "nM": 268, "nF": 232}];
 let neuroMap = null;
 let mapMarkersLayer = null;
 
@@ -4429,57 +4489,86 @@ function initMap() {
    'herbal' / 'pollution' / 'sex' layers fall back to Stroke Hotspots with
    a toast, since those tables don't yet carry country/province columns.
    Wire them up the same way once location data is added to those tables. */
-async function refreshMapMarkers(layer) {
+function drawSurveyLayer(layer) {
+  const cfg = {
+    stroke:   { key:'hbp',    label:'with high blood pressure (≥140/90 measured)', hi:20, mid:12 },
+    dementia: { key:'forget', label:'reporting forgetfulness / misplacing items',   hi:45, mid:35 },
+    herbal:   { key:'herb',   label:'using herbal remedies',                        hi:65, mid:55 },
+    pollution:{ key:'poll',   label:'reporting HIGH pollution exposure',            hi:35, mid:28 },
+    sex:      { key:'hyp',    label:'reporting hypertension',                       hi:30, mid:26 }
+  }[layer] || { key:'hbp', label:'with high blood pressure', hi:20, mid:12 };
+  // Colour by rank among the 8 LGAs (top third red, middle amber, lowest green)
+  const sorted = SURVEY_LGA.map(d => d[cfg.key]).sort((a, b) => a - b);
+  cfg.mid = sorted[Math.floor(sorted.length / 3)];
+  cfg.hi  = sorted[Math.floor(sorted.length * 2 / 3)];
+  SURVEY_LGA.forEach(d => {
+    const v = d[cfg.key];
+    const color = v >= cfg.hi ? '#EF4444' : v >= cfg.mid ? '#F59E0B' : '#10B981';
+    const sexLine = layer === 'sex'
+      ? '<br>♂ hypertension: ' + d.hypM + '% (n=' + d.nM + ') · ♀ ' + d.hypF + '% (n=' + d.nF + ')' : '';
+    L.circleMarker([d.lat, d.lng], {
+      radius: 16, fillColor: color, color: '#3B82F6', weight: 2, dashArray: '4 3', opacity: .9, fillOpacity: .55
+    }).addTo(mapMarkersLayer).bindPopup(
+      '<div style="font-family:Outfit,sans-serif;min-width:200px;"><strong>' + d.lga + '</strong>' +
+      ' <span style="font-size:.7rem;color:#888;">(' + d.zone + ')</span><br>' +
+      '<span style="font-size:.8rem;"><b>' + v + '%</b> ' + cfg.label + '</span>' + sexLine +
+      '<br><span style="font-size:.72rem;color:#888;">ANHRL field survey · n=' + d.n + ' · Ogun State</span></div>'
+    );
+  });
+}
+
+/* All layers show the field-survey sites (always available).
+   'stroke' and 'dementia' also add live Supabase assessment locations. */
+async function refreshMapMarkers(layer, opts) {
   if (!neuroMap || !mapMarkersLayer) return;
+  const silent = !!(opts && opts.silent), keepView = !!(opts && opts.keepView);
+  window._mapLayer = layer;
   mapMarkersLayer.clearLayers();
-
-  if (!supa) { toast('⚠️ Map data unavailable — not connected to database.'); return; }
-
-  const supportedTables = { stroke: 'stroke_predictions', dementia: 'alzheimer_predictions' };
-  const table = supportedTables[layer];
-  if (!table) {
-    toast('🚧 This map layer isn\'t live yet — showing Stroke Hotspots instead.');
-    document.querySelectorAll('.map-btn').forEach(b => b.classList.remove('active'));
-    const strokeBtn = document.querySelector('.map-btn[data-layer="stroke"]');
-    if (strokeBtn) strokeBtn.classList.add('active');
-    return refreshMapMarkers('stroke');
+  drawSurveyLayer(layer);
+  if (!keepView) {
+    const bounds = SURVEY_LGA.map(d => [d.lat, d.lng]);
+    if (bounds.length) neuroMap.fitBounds(bounds, { padding:[60,60], maxZoom:9 });
   }
+  const say = m => { if (!silent) toast(m); };
 
-  toast('📡 Loading live ' + layer + ' data...');
+  const sources = { stroke: ['stroke_map','stroke_predictions'], dementia: ['dementia_map','alzheimer_predictions'] };
+  const src = sources[layer];
+  if (!src || !supa) { say('✅ ' + SURVEY_LGA.length + ' field-survey sites (Ogun State, n=4,000)'); return; }
+
   try {
-    const { data, error } = await supa.from(table).select('country,province,risk_level');
-    if (error) throw error;
-    if (!data || !data.length) { toast('No ' + layer + ' records yet.'); return; }
-
+    // Prefer the aggregate view (no personal data); fall back to the raw table
+    let res = await supa.from(src[0]).select('country,province,risk_level,n');
+    if (res.error) res = await supa.from(src[1]).select('country,province,risk_level');
+    if (res.error) throw res.error;
     const agg = {};
-    data.forEach(r => {
-      const key = r.province || r.country || 'Unknown';
+    (res.data || []).forEach(r => {
+      const key = r.province || r.country;
+      if (!key) return;
+      const w = r.n || 1;
       if (!agg[key]) agg[key] = { count: 0, high: 0, country: r.country, province: r.province };
-      agg[key].count++;
-      if (r.risk_level === 'HIGH') agg[key].high++;
+      agg[key].count += w;
+      if (r.risk_level === 'HIGH') agg[key].high += w;
     });
-
-    const cMap = { high:'#EF4444', medium:'#F59E0B', low:'#10B981' };
     let plotted = 0;
     Object.entries(agg).forEach(([key, d]) => {
       const coords = LOCATION_COORDS[d.province] || LOCATION_COORDS[d.country];
-      if (!coords) return; // no coordinate mapping for this location yet
+      if (!coords) return;
       const highPct = d.count ? d.high / d.count : 0;
-      const color = highPct >= 0.4 ? cMap.high : highPct >= 0.2 ? cMap.medium : cMap.low;
+      const color = highPct >= 0.4 ? '#EF4444' : highPct >= 0.2 ? '#F59E0B' : '#10B981';
       L.circleMarker(coords, {
         radius: Math.max(8, Math.min(26, 6 + d.count / 3)),
-        fillColor: color, color, weight:1, opacity:.9, fillOpacity:.55
+        fillColor: color, color: '#c9a84c', weight:2, opacity:.9, fillOpacity:.55
       }).addTo(mapMarkersLayer).bindPopup(
         '<div style="font-family:Outfit,sans-serif;min-width:180px;"><strong>' + key + '</strong><br>' +
-        '<span style="font-size:.73rem;color:#888;">' + d.count + ' ' + layer + ' assessments · ' +
+        '<span style="font-size:.73rem;color:#888;">' + d.count + ' online ' + layer + ' assessments · ' +
         Math.round(highPct*100) + '% high risk</span></div>'
       );
       plotted++;
     });
-    toast('✅ Live ' + layer + ' map updated — ' + plotted + ' location(s), ' + data.length + ' records');
+    say('✅ ' + SURVEY_LGA.length + ' survey sites + ' + plotted + ' live assessment location(s)');
   } catch (e) {
-    console.warn('refreshMapMarkers error:', e);
-    toast('⚠️ Could not load live map data.');
+    console.warn('refreshMapMarkers (Supabase) error:', e);
+    say('✅ Field-survey sites shown (live assessment data unavailable)');
   }
 }
 
@@ -4534,6 +4623,7 @@ window.addEventListener('load', () => {
   loadLiveStats();
   showMemState('start');
   loadAccessPasswords();
+  setInterval(() => { if (appState.page === 'home' && neuroMap) refreshMapMarkers(window._mapLayer || 'stroke', { silent:true, keepView:true }); }, 90000);
   const statsEl = document.getElementById('stats');
   if (statsEl) statsObs.observe(statsEl);
   const mapSectionEl = document.getElementById('neuromap');
