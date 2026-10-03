@@ -138,6 +138,8 @@ body::before{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
 .map-controls{display:flex;gap:.75rem;flex-wrap:wrap;margin-bottom:1.25rem;}
 .map-btn{background:var(--glass);border:1px solid var(--border);color:var(--smoke);padding:7px 16px;border-radius:8px;font-family:'Outfit',sans-serif;font-size:.78rem;font-weight:500;cursor:pointer;transition:all .25s;}
 .map-btn:hover,.map-btn.active{background:var(--glow);border-color:var(--gold);color:var(--gold);}
+/* dark look for standard OSM tiles */
+.dark-tiles{filter:invert(1) hue-rotate(180deg) brightness(.85) contrast(.9) saturate(.5);}
 #map-el{height:460px;border-radius:16px;border:1px solid var(--border);overflow:hidden;}
 .map-legend{display:flex;gap:1.5rem;margin-top:1.25rem;flex-wrap:wrap;}
 .legend-item{display:flex;align-items:center;gap:8px;font-size:.78rem;color:var(--mist);}
@@ -4407,8 +4409,8 @@ function initMap() {
   }
 
   neuroMap = L.map('map-el', { zoomControl:true, scrollWheelZoom:false }).setView([9.5, 8.5], 5);
-  const tileLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
-    { attribution:'© OpenStreetMap © CartoDB', subdomains:'abcd', maxZoom:19 });
+  const tileLayer = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+    { attribution:'© OpenStreetMap contributors', maxZoom:19, className:'dark-tiles' });
   tileLayer.on('tileerror', () => {
     console.warn('NeuroMap: map tiles failed to load — likely a blocked network in this preview.');
   });
