@@ -4433,7 +4433,8 @@ const LOCATION_COORDS = {
 };
 
 /* ANHRL field survey (n=4,000, Ogun State) aggregated by LGA */
-const SURVEY_LGA = [{"lga": "Abeokuta North", "zone": "Egba Zone", "lat": 7.1667, "lng": 3.3167, "n": 500, "hyp": 26.4, "hbp": 28.8, "forget": 44.8, "herb": 57.6, "poll": 23.2, "hypM": 26.0, "hypF": 26.7, "nM": 242, "nF": 258}, {"lga": "Abeokuta South", "zone": "Egba Zone", "lat": 7.1475, "lng": 3.3619, "n": 500, "hyp": 27.2, "hbp": 31.6, "forget": 42.0, "herb": 61.0, "poll": 23.2, "hypM": 24.2, "hypF": 30.0, "nM": 240, "nF": 260}, {"lga": "Ewekoro", "zone": "Egba Zone", "lat": 6.9333, "lng": 3.2167, "n": 500, "hyp": 27.4, "hbp": 30.0, "forget": 40.8, "herb": 61.2, "poll": 67.8, "hypM": 25.7, "hypF": 29.3, "nM": 261, "nF": 239}, {"lga": "Ijebu North", "zone": "Ijebu Zone", "lat": 6.97, "lng": 4.01, "n": 500, "hyp": 27.2, "hbp": 30.6, "forget": 42.2, "herb": 59.4, "poll": 23.0, "hypM": 28.1, "hypF": 26.2, "nM": 260, "nF": 240}, {"lga": "Ijebu Ode", "zone": "Ijebu Zone", "lat": 6.82, "lng": 3.92, "n": 500, "hyp": 28.2, "hbp": 31.2, "forget": 44.0, "herb": 60.6, "poll": 19.4, "hypM": 30.5, "hypF": 26.1, "nM": 239, "nF": 261}, {"lga": "Ikenne", "zone": "Remo Zone", "lat": 6.8667, "lng": 3.7167, "n": 500, "hyp": 27.6, "hbp": 30.8, "forget": 42.0, "herb": 63.0, "poll": 20.6, "hypM": 29.4, "hypF": 25.7, "nM": 255, "nF": 245}, {"lga": "Odogbolu", "zone": "Ijebu Zone", "lat": 6.8333, "lng": 3.75, "n": 500, "hyp": 29.2, "hbp": 31.4, "forget": 44.0, "herb": 59.2, "poll": 20.6, "hypM": 28.1, "hypF": 30.1, "nM": 231, "nF": 269}, {"lga": "Sagamu", "zone": "Remo Zone", "lat": 6.8333, "lng": 3.65, "n": 500, "hyp": 30.4, "hbp": 32.0, "forget": 36.2, "herb": 59.8, "poll": 47.8, "hypM": 31.7, "hypF": 28.9, "nM": 268, "nF": 232}];
+let SURVEY_LGA = [{"lga": "Abeokuta North", "zone": "Egba Zone", "lat": 7.1667, "lng": 3.3167, "n": 500, "hyp": 26.4, "hbp": 28.8, "forget": 44.8, "herb": 57.6, "poll": 23.2, "hypM": 26.0, "hypF": 26.7, "nM": 242, "nF": 258}, {"lga": "Abeokuta South", "zone": "Egba Zone", "lat": 7.1475, "lng": 3.3619, "n": 500, "hyp": 27.2, "hbp": 31.6, "forget": 42.0, "herb": 61.0, "poll": 23.2, "hypM": 24.2, "hypF": 30.0, "nM": 240, "nF": 260}, {"lga": "Ewekoro", "zone": "Egba Zone", "lat": 6.9333, "lng": 3.2167, "n": 500, "hyp": 27.4, "hbp": 30.0, "forget": 40.8, "herb": 61.2, "poll": 67.8, "hypM": 25.7, "hypF": 29.3, "nM": 261, "nF": 239}, {"lga": "Ijebu North", "zone": "Ijebu Zone", "lat": 6.97, "lng": 4.01, "n": 500, "hyp": 27.2, "hbp": 30.6, "forget": 42.2, "herb": 59.4, "poll": 23.0, "hypM": 28.1, "hypF": 26.2, "nM": 260, "nF": 240}, {"lga": "Ijebu Ode", "zone": "Ijebu Zone", "lat": 6.82, "lng": 3.92, "n": 500, "hyp": 28.2, "hbp": 31.2, "forget": 44.0, "herb": 60.6, "poll": 19.4, "hypM": 30.5, "hypF": 26.1, "nM": 239, "nF": 261}, {"lga": "Ikenne", "zone": "Remo Zone", "lat": 6.8667, "lng": 3.7167, "n": 500, "hyp": 27.6, "hbp": 30.8, "forget": 42.0, "herb": 63.0, "poll": 20.6, "hypM": 29.4, "hypF": 25.7, "nM": 255, "nF": 245}, {"lga": "Odogbolu", "zone": "Ijebu Zone", "lat": 6.8333, "lng": 3.75, "n": 500, "hyp": 29.2, "hbp": 31.4, "forget": 44.0, "herb": 59.2, "poll": 20.6, "hypM": 28.1, "hypF": 30.1, "nM": 231, "nF": 269}, {"lga": "Sagamu", "zone": "Remo Zone", "lat": 6.8333, "lng": 3.65, "n": 500, "hyp": 30.4, "hbp": 32.0, "forget": 36.2, "herb": 59.8, "poll": 47.8, "hypM": 31.7, "hypF": 28.9, "nM": 268, "nF": 232}];
+const SURVEY_LGA_DEFAULT = SURVEY_LGA.slice();
 let neuroMap = null;
 let mapMarkersLayer = null;
 
@@ -4489,6 +4490,26 @@ function initMap() {
    'herbal' / 'pollution' / 'sex' layers fall back to Stroke Hotspots with
    a toast, since those tables don't yet carry country/province columns.
    Wire them up the same way once location data is added to those tables. */
+let _surveyLoadedAt = 0;
+/* Use live survey aggregates from Supabase when available (view survey_lga_summary);
+   otherwise the numbers built into the page are used. */
+async function loadSurveyData() {
+  if (!supa || Date.now() - _surveyLoadedAt < 60000) return;
+  _surveyLoadedAt = Date.now();
+  try {
+    const { data, error } = await supa.from('survey_lga_summary').select('*');
+    if (error || !data || !data.length) return;
+    const fb = {}; SURVEY_LGA_DEFAULT.forEach(d => { fb[d.lga] = d; });
+    const rows = data.map(r => {
+      const f = fb[r.lga] || {};
+      return { lga:r.lga, zone:r.zone || f.zone || '', lat:(r.lat ?? f.lat), lng:(r.lng ?? f.lng),
+        n:+r.n, hyp:+r.hyp, hbp:+r.hbp, forget:+r.forget, herb:+r.herb, poll:+r.poll,
+        hypM:+r.hyp_m, hypF:+r.hyp_f, nM:+r.n_m, nF:+r.n_f };
+    }).filter(r => r.lat != null && r.lng != null);
+    if (rows.length) SURVEY_LGA = rows;
+  } catch (e) { console.warn('loadSurveyData:', e); }
+}
+
 function drawSurveyLayer(layer) {
   const cfg = {
     stroke:   { key:'hbp',    label:'with high blood pressure (≥140/90 measured)', hi:20, mid:12 },
@@ -4512,7 +4533,7 @@ function drawSurveyLayer(layer) {
       '<div style="font-family:Outfit,sans-serif;min-width:200px;"><strong>' + d.lga + '</strong>' +
       ' <span style="font-size:.7rem;color:#888;">(' + d.zone + ')</span><br>' +
       '<span style="font-size:.8rem;"><b>' + v + '%</b> ' + cfg.label + '</span>' + sexLine +
-      '<br><span style="font-size:.72rem;color:#888;">ANHRL field survey · n=' + d.n + ' · Ogun State</span></div>'
+      '<br><span style="font-size:.72rem;color:#888;">ANHRL field survey · n=' + d.n + '</span></div>'
     );
   });
 }
@@ -4522,6 +4543,8 @@ function drawSurveyLayer(layer) {
 async function refreshMapMarkers(layer, opts) {
   if (!neuroMap || !mapMarkersLayer) return;
   const silent = !!(opts && opts.silent), keepView = !!(opts && opts.keepView);
+  await loadSurveyData();
+  const surveyTotal = SURVEY_LGA.reduce((t, d) => t + d.n, 0).toLocaleString();
   window._mapLayer = layer;
   mapMarkersLayer.clearLayers();
   drawSurveyLayer(layer);
@@ -4533,7 +4556,7 @@ async function refreshMapMarkers(layer, opts) {
 
   const sources = { stroke: ['stroke_map','stroke_predictions'], dementia: ['dementia_map','alzheimer_predictions'] };
   const src = sources[layer];
-  if (!src || !supa) { say('✅ ' + SURVEY_LGA.length + ' field-survey sites (Ogun State, n=4,000)'); return; }
+  if (!src || !supa) { say('✅ ' + SURVEY_LGA.length + ' field-survey sites (n=' + surveyTotal + ')'); return; }
 
   try {
     // Prefer the aggregate view (no personal data); fall back to the raw table
@@ -4565,7 +4588,7 @@ async function refreshMapMarkers(layer, opts) {
       );
       plotted++;
     });
-    say('✅ ' + SURVEY_LGA.length + ' survey sites + ' + plotted + ' live assessment location(s)');
+    say('✅ ' + SURVEY_LGA.length + ' survey sites (n=' + surveyTotal + ') + ' + plotted + ' live assessment location(s)');
   } catch (e) {
     console.warn('refreshMapMarkers (Supabase) error:', e);
     say('✅ Field-survey sites shown (live assessment data unavailable)');
