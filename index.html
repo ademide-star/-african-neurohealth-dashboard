@@ -6,7 +6,7 @@
 <meta name="description" content="African NeuroHealth Intelligence — AI stroke & dementia risk prediction for Africa">
 <title>African NeuroHealth Intelligence</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Outfit:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
 <style>
 :root{
   --forest:#070b16;--deep:#0d1428;--emerald:#1A6B3C;--jade:#2D9B5A;--mint:#4ECB82;
@@ -49,9 +49,9 @@ body::before{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
 .tag-blue{background:rgba(59,130,246,.12);color:#60A5FA;border:1px solid rgba(59,130,246,.2);}
 .tag-purple{background:rgba(139,92,246,.12);color:#A78BFA;border:1px solid rgba(139,92,246,.2);}
 /* TYPOGRAPHY */
-.headline{font-family:\'Playfair Display\',serif;font-weight:900;line-height:1.08;}
-.mono{font-family:\'Space Mono\',monospace;}
-.section-label{display:block;font-family:\'Space Mono\',monospace;font-size:.68rem;letter-spacing:.16em;text-transform:uppercase;color:var(--gold);margin-bottom:.6rem;}
+.headline{font-family:'Playfair Display',serif;font-weight:900;line-height:1.08;}
+.mono{font-family:'Space Mono',monospace;}
+.section-label{display:block;font-family:'Space Mono',monospace;font-size:.68rem;letter-spacing:.16em;text-transform:uppercase;color:var(--gold);margin-bottom:.6rem;}
 .text-muted{color:var(--mist);}
 .text-gold{color:var(--gold);}
 .text-mint{color:var(--mint);}
@@ -60,7 +60,7 @@ body::before{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
   background:rgba(7,11,22,.9);backdrop-filter:blur(24px);border-bottom:1px solid var(--border);}
 .nav-brand{display:flex;align-items:center;gap:12px;cursor:pointer;text-decoration:none;}
 .nav-logo-img{width:42px;height:42px;border-radius:50%;object-fit:cover;border:2px solid var(--gold);box-shadow:0 0 14px rgba(201,168,76,.35);}
-.nav-brand-text{font-family:\'Playfair Display\',serif;font-size:.95rem;font-weight:700;line-height:1.2;}
+.nav-brand-text{font-family:'Playfair Display',serif;font-size:.95rem;font-weight:700;line-height:1.2;}
 .nav-brand-text em{color:var(--gold);font-style:normal;}
 .nav-links{display:flex;align-items:center;gap:1.75rem;list-style:none;}
 .nav-links a{color:rgba(255,255,255,.65);text-decoration:none;font-size:.84rem;font-weight:500;transition:color .2s;cursor:pointer;}
@@ -79,7 +79,7 @@ body::before{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
 .hero-desc{font-size:1.05rem;color:var(--smoke);max-width:500px;margin-bottom:2.5rem;line-height:1.85;}
 .hero-ctas{display:flex;gap:1rem;flex-wrap:wrap;margin-bottom:3rem;}
 .hero-stats{display:flex;gap:2.5rem;}
-.hero-stat-num{font-family:\'Space Mono\',monospace;font-size:1.8rem;font-weight:700;color:var(--gold);display:block;}
+.hero-stat-num{font-family:'Space Mono',monospace;font-size:1.8rem;font-weight:700;color:var(--gold);display:block;}
 .hero-stat-lbl{font-size:.72rem;color:var(--mist);text-transform:uppercase;letter-spacing:.06em;}
 /* Hero visual */
 .hero-visual{position:relative;}
@@ -90,14 +90,14 @@ body::before{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
 .brain-logo-img{width:100px;height:100px;border-radius:50%;object-fit:cover;animation:rotateSlow 22s linear infinite reverse;}
 .mini-metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:.75rem;}
 .mini-m{background:rgba(7,11,22,.65);border:1px solid rgba(78,203,130,.15);border-radius:10px;padding:.85rem;text-align:center;}
-.mini-m-val{font-family:\'Space Mono\',monospace;font-size:1.15rem;color:var(--mint);display:block;font-weight:700;}
+.mini-m-val{font-family:'Space Mono',monospace;font-size:1.15rem;color:var(--mint);display:block;font-weight:700;}
 .mini-m-lbl{font-size:.65rem;color:var(--mist);text-transform:uppercase;letter-spacing:.05em;}
 .float-pill{position:absolute;background:linear-gradient(135deg,var(--emerald),var(--deep));border:1px solid var(--border);border-radius:8px;padding:7px 14px;font-size:.73rem;font-weight:700;color:var(--gold);white-space:nowrap;animation:floatUp 4s ease-in-out infinite;}
 .fp1{top:-18px;right:24px;animation-delay:0s;}.fp2{bottom:24px;left:-16px;animation-delay:1.8s;}
 @keyframes floatUp{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
 /* SECTION */
 .section{padding:100px 0;}
-.section-title{font-family:\'Playfair Display\',serif;font-size:clamp(1.9rem,3.2vw,2.8rem);font-weight:700;line-height:1.15;margin-bottom:.75rem;}
+.section-title{font-family:'Playfair Display',serif;font-size:clamp(1.9rem,3.2vw,2.8rem);font-weight:700;line-height:1.15;margin-bottom:.75rem;}
 .section-sub{font-size:1rem;color:var(--smoke);line-height:1.8;max-width:580px;}
 .divider{height:1px;background:linear-gradient(90deg,transparent,rgba(201,168,76,.2),transparent);}
 /* PILLARS */
@@ -111,13 +111,13 @@ body::before{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
 .pillar:hover::after{transform:scaleX(1);}
 .pillar:hover{border-color:rgba(201,168,76,.4);transform:translateY(-6px);}
 .pillar-icon{width:60px;height:60px;border-radius:15px;display:flex;align-items:center;justify-content:center;font-size:1.7rem;margin:0 auto 1.25rem;}
-.pillar h3{font-family:\'Playfair Display\',serif;font-size:1.1rem;margin-bottom:.65rem;}
+.pillar h3{font-family:'Playfair Display',serif;font-size:1.1rem;margin-bottom:.65rem;}
 .pillar p{font-size:.82rem;color:var(--mist);line-height:1.7;}
 /* STATS */
 .stats-cards{display:grid;grid-template-columns:repeat(4,1fr);gap:1.5rem;margin-bottom:3rem;}
 .stat-card{background:var(--glass);border:1px solid var(--border);border-radius:16px;padding:2rem;text-align:center;position:relative;overflow:hidden;}
 .stat-card::after{content:'';position:absolute;top:0;left:50%;transform:translateX(-50%);width:55%;height:2px;background:linear-gradient(90deg,transparent,var(--gold),transparent);}
-.stat-num{font-family:\'Space Mono\',monospace;font-size:2.6rem;font-weight:700;color:var(--gold);display:block;}
+.stat-num{font-family:'Space Mono',monospace;font-size:2.6rem;font-weight:700;color:var(--gold);display:block;}
 .stat-lbl{font-size:.76rem;color:var(--mist);text-transform:uppercase;letter-spacing:.08em;}
 /* PORTALS */
 .portals-wrap{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;}
@@ -127,7 +127,7 @@ body::before{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
 .portal-icon{width:54px;height:54px;border-radius:13px;display:flex;align-items:center;justify-content:center;font-size:1.5rem;flex-shrink:0;}
 .portal-card.wide .portal-icon{width:70px;height:70px;font-size:2rem;}
 .p-label{font-size:.68rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--mint);display:block;margin-bottom:.45rem;}
-.portal-card h3{font-family:\'Playfair Display\',serif;font-size:1.25rem;margin-bottom:.65rem;}
+.portal-card h3{font-family:'Playfair Display',serif;font-size:1.25rem;margin-bottom:.65rem;}
 .portal-card.wide h3{font-size:1.5rem;}
 .portal-card p{font-size:.84rem;color:var(--smoke);line-height:1.7;margin-bottom:1.25rem;}
 .portal-tags{display:flex;flex-wrap:wrap;gap:.5rem;}
@@ -156,7 +156,7 @@ body::before{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
 .contact-item{display:flex;align-items:center;gap:1rem;font-size:.88rem;color:var(--smoke);}
 .c-icon{width:36px;height:36px;background:var(--glow);border:1px solid var(--border);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:1rem;flex-shrink:0;}
 .contact-form{background:var(--glass);border:1px solid var(--border);border-radius:20px;padding:2.5rem;}
-.contact-form h3{font-family:\'Playfair Display\',serif;font-size:1.3rem;margin-bottom:1.75rem;}
+.contact-form h3{font-family:'Playfair Display',serif;font-size:1.3rem;margin-bottom:1.75rem;}
 /* FORM ELEMENTS */
 .form-row{display:grid;grid-template-columns:1fr 1fr;gap:1rem;}
 .fg{margin-bottom:1.25rem;}
@@ -169,14 +169,14 @@ input[type=range]{-webkit-appearance:none;width:100%;height:6px;background:rgba(
 input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;border-radius:50%;background:var(--gold);cursor:pointer;box-shadow:0 0 8px rgba(201,168,76,.5);}
 /* ASSESSMENT PAGES */
 .asmt-section{background:var(--glass);border:1px solid var(--border);border-radius:16px;padding:2rem;margin-bottom:1.5rem;}
-.asmt-section h3{font-family:\'Playfair Display\',serif;font-size:1.15rem;margin-bottom:1.25rem;padding-bottom:.75rem;border-bottom:1px solid rgba(255,255,255,.07);}
+.asmt-section h3{font-family:'Playfair Display',serif;font-size:1.15rem;margin-bottom:1.25rem;padding-bottom:.75rem;border-bottom:1px solid rgba(255,255,255,.07);}
 .risk-badge{border-radius:10px;padding:1rem 1.5rem;text-align:center;font-weight:700;font-size:1.1rem;margin-bottom:1.25rem;}
 .risk-high{background:rgba(239,68,68,.15);color:#EF4444;border:1px solid rgba(239,68,68,.3);}
 .risk-medium{background:rgba(245,158,11,.15);color:#F59E0B;border:1px solid rgba(245,158,11,.3);}
 .risk-low{background:rgba(78,203,130,.15);color:var(--mint);border:1px solid rgba(78,203,130,.3);}
 .result-panel{position:sticky;top:88px;}
 .result-card{background:var(--glass);border:1px solid var(--border);border-radius:18px;padding:1.75rem;margin-bottom:1rem;}
-.result-card h4{font-family:\'Playfair Display\',serif;font-size:1.05rem;margin-bottom:1.25rem;}
+.result-card h4{font-family:'Playfair Display',serif;font-size:1.05rem;margin-bottom:1.25rem;}
 .gauge-wrap{width:100%;max-width:280px;margin:0 auto;}
 .gauge-svg{width:100%;}
 .rf-item{display:flex;align-items:center;gap:.75rem;font-size:.82rem;color:var(--smoke);margin-bottom:.6rem;}
@@ -203,7 +203,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;heigh
 /* WORD GAME */
 .word-display{background:linear-gradient(135deg,rgba(201,168,76,.15),rgba(45,155,90,.1));border:1px solid var(--gold);border-radius:16px;padding:2.5rem;text-align:center;margin:1.5rem 0;}
 .word-display .words{font-size:1.8rem;font-weight:700;color:var(--amber);letter-spacing:.1em;line-height:1.6;}
-.countdown{font-family:\'Space Mono\',monospace;font-size:3rem;color:var(--mint);margin-top:1rem;}
+.countdown{font-family:'Space Mono',monospace;font-size:3rem;color:var(--mint);margin-top:1rem;}
 /* TABS */
 .tabs{display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:2rem;border-bottom:1px solid rgba(255,255,255,.08);padding-bottom:0;}
 .tab-btn{background:none;border:none;color:var(--mist);font-family:'Outfit',sans-serif;font-size:.88rem;font-weight:500;padding:.75rem 1.25rem;cursor:pointer;border-bottom:2px solid transparent;transition:all .2s;margin-bottom:-1px;}
@@ -216,7 +216,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;heigh
 .data-table tr:hover td{background:rgba(255,255,255,.025);}
 /* ADMIN */
 .admin-stat{background:var(--glass);border:1px solid var(--border);border-radius:12px;padding:1.25rem;}
-.admin-stat-num{font-family:\'Space Mono\',monospace;font-size:1.8rem;color:var(--gold);font-weight:700;}
+.admin-stat-num{font-family:'Space Mono',monospace;font-size:1.8rem;color:var(--gold);font-weight:700;}
 .admin-stat-lbl{font-size:.75rem;color:var(--mist);margin-top:.25rem;}
 /* MODALS */
 .modal-bg{position:fixed;inset:0;background:rgba(7,11,22,.88);backdrop-filter:blur(18px);z-index:1100;display:none;align-items:center;justify-content:center;padding:1rem;}
@@ -225,7 +225,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;heigh
 @keyframes scaleIn{from{transform:scale(.9);opacity:0}to{transform:scale(1);opacity:1}}
 .modal-close{position:absolute;top:1.25rem;right:1.25rem;background:var(--ghost);border:none;color:var(--smoke);width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:1rem;display:flex;align-items:center;justify-content:center;transition:all .2s;}
 .modal-close:hover{background:var(--glow);color:var(--gold);}
-.modal h2{font-family:\'Playfair Display\',serif;font-size:1.7rem;margin-bottom:.75rem;}
+.modal h2{font-family:'Playfair Display',serif;font-size:1.7rem;margin-bottom:.75rem;}
 .modal p{font-size:.9rem;color:var(--smoke);line-height:1.7;margin-bottom:2rem;}
 .modal-opts{display:flex;flex-direction:column;gap:.75rem;}
 .modal-opt{background:var(--glass);border:1px solid var(--border);border-radius:12px;padding:1rem 1.25rem;display:flex;align-items:center;gap:1rem;cursor:pointer;text-align:left;transition:all .25s;color:var(--white);font-family:'Outfit',sans-serif;width:100%;}
@@ -548,7 +548,7 @@ For researchers, the same platform doubles as live research infrastructure: uplo
         <p class="section-sub" data-i18n="contactDesc">Whether you're a funder, collaborator, healthcare institution, or community partner — we welcome conversations that advance African brain health.</p>
         <div class="contact-items">
           <div class="contact-item"><div class="c-icon">🏛️</div>African NeuroHealth Lab (ANHRL)</div>
-          <div class="contact-item"><div class="c-icon">📧</div><a href="africanneurohealth@gmail.com">africanneurohealth@gmail.com</a></div>
+          <div class="contact-item"><div class="c-icon">📧</div><a href="mailto:africanneurohealth@gmail.com">africanneurohealth@gmail.com</a></div>
           <div class="contact-item"><div class="c-icon">🌐</div>neuromatrixbiosystems.com</div>
           <div class="contact-item"><div class="c-icon">🤝</div>GRASP · NIH · DSI Africa.</div>
         </div>
@@ -1098,7 +1098,7 @@ For researchers, the same platform doubles as live research infrastructure: uplo
       <div class="result-card" id="nutrition-result" style="display:none;">
         <h4>&#x1F957; Nutritional Profile</h4>
         <div style="text-align:center;margin:1.5rem 0;">
-          <div style="font-family:\'Space Mono\',monospace;font-size:3rem;font-weight:700;color:var(--gold);" id="nutri-score-num">0</div>
+          <div style="font-family:'Space Mono',monospace;font-size:3rem;font-weight:700;color:var(--gold);" id="nutri-score-num">0</div>
           <div style="font-size:.8rem;color:var(--mist);">/ 13 Dietary Score</div>
         </div>
         <div class="progress-track" style="margin-bottom:1.5rem;"><div class="progress-fill" id="nutri-progress" style="width:0%;background:linear-gradient(90deg,var(--jade),var(--mint));"></div></div>
@@ -1144,7 +1144,7 @@ For researchers, the same platform doubles as live research infrastructure: uplo
       <div class="result-card" id="stress-result" style="display:none;">
         <h4>&#x1F60C; Stress Profile</h4>
         <div style="text-align:center;margin:1.5rem 0;">
-          <div style="font-family:\'Space Mono\',monospace;font-size:3rem;font-weight:700;color:var(--gold);" id="stress-score-num">0</div>
+          <div style="font-family:'Space Mono',monospace;font-size:3rem;font-weight:700;color:var(--gold);" id="stress-score-num">0</div>
           <div style="font-size:.8rem;color:var(--mist);">/ 32 Total Stress Score</div>
         </div>
         <div class="progress-track" style="margin-bottom:1.5rem;"><div class="progress-fill" id="stress-progress" style="width:0%;background:linear-gradient(90deg,var(--mint),#F59E0B,#EF4444);"></div></div>
@@ -1320,7 +1320,7 @@ For researchers, the same platform doubles as live research infrastructure: uplo
   </div>
   <div id="mem-state-start">
     <div class="card card-gold" style="text-align:center;padding:2.5rem;">
-      <h3 style="font-family:\'Playfair Display\',serif;margin-bottom:.75rem;">Level <span id="mem-level-disp">1</span></h3>
+      <h3 style="font-family:'Playfair Display',serif;margin-bottom:.75rem;">Level <span id="mem-level-disp">1</span></h3>
       <p style="color:var(--mist);margin-bottom:1.5rem;">You will see <strong id="mem-word-count">5</strong> words for 5 seconds. Type as many as you remember!</p>
       <button class="btn btn-gold" onclick="startMemoryGame()">&#x1F3AF; Start Memory Exercise</button>
     </div>
@@ -1329,13 +1329,13 @@ For researchers, the same platform doubles as live research infrastructure: uplo
     <div style="background:linear-gradient(135deg,rgba(201,168,76,.15),rgba(45,155,90,.1));border:1px solid var(--gold);border-radius:16px;padding:2.5rem;text-align:center;margin:1rem 0;">
       <div style="font-size:.8rem;color:var(--mist);margin-bottom:1rem;text-transform:uppercase;letter-spacing:.1em;">Memorise these words!</div>
       <div id="mem-words-display" style="font-size:1.7rem;font-weight:700;color:var(--amber);letter-spacing:.1em;line-height:1.7;"></div>
-      <div id="mem-countdown" style="font-family:\'Space Mono\',monospace;font-size:3rem;color:var(--mint);margin-top:1rem;font-weight:700;">5</div>
+      <div id="mem-countdown" style="font-family:'Space Mono',monospace;font-size:3rem;color:var(--mint);margin-top:1rem;font-weight:700;">5</div>
     </div>
     <div class="progress-track"><div class="progress-fill" id="mem-progress" style="width:100%;background:var(--gold);transition:width 1s linear;"></div></div>
   </div>
   <div id="mem-state-recall" style="display:none;">
     <div class="card" style="padding:2rem;">
-      <h3 style="font-family:\'Playfair Display\',serif;margin-bottom:.75rem;text-align:center;">&#x1F914; Time to Recall!</h3>
+      <h3 style="font-family:'Playfair Display',serif;margin-bottom:.75rem;text-align:center;">&#x1F914; Time to Recall!</h3>
       <p style="color:var(--mist);margin-bottom:1.25rem;text-align:center;">Type the words you remember, separated by commas</p>
       <div class="fg"><label>Your recalled words:</label><textarea id="mem-recall-input" placeholder="word1, word2, word3..." style="min-height:80px;"></textarea></div>
       <button class="btn btn-gold btn-full" onclick="submitMemoryRecall()">&#x2705; Submit Answer</button>
@@ -1343,8 +1343,8 @@ For researchers, the same platform doubles as live research infrastructure: uplo
   </div>
   <div id="mem-state-result" style="display:none;">
     <div class="card card-gold" style="text-align:center;padding:2rem;margin-bottom:1.5rem;">
-      <h3 style="font-family:\'Playfair Display\',serif;margin-bottom:1rem;">Result</h3>
-      <div style="font-family:\'Space Mono\',monospace;font-size:3rem;font-weight:700;color:var(--gold);" id="mem-score-pct">0%</div>
+      <h3 style="font-family:'Playfair Display',serif;margin-bottom:1rem;">Result</h3>
+      <div style="font-family:'Space Mono',monospace;font-size:3rem;font-weight:700;color:var(--gold);" id="mem-score-pct">0%</div>
       <div id="mem-result-detail" style="margin-top:1rem;font-size:.88rem;color:var(--smoke);line-height:1.7;"></div>
       <div id="mem-words-reveal" style="margin-top:1rem;background:rgba(7,11,22,.5);border-radius:8px;padding:1rem;font-size:.85rem;color:var(--smoke);text-align:left;"></div>
       <div style="display:flex;gap:1rem;justify-content:center;margin-top:1.5rem;flex-wrap:wrap;">
@@ -1500,16 +1500,16 @@ For researchers, the same platform doubles as live research infrastructure: uplo
   </div>
   <div id="rtab-analysis" class="tab-panel">
     <div class="grid2" style="gap:2rem;">
-      <div class="card"><h4 style="font-family:\'Playfair Display\',serif;margin-bottom:.75rem;">Risk Distribution</h4><button class="btn btn-green btn-sm" onclick="loadResearcherChart()">Load Chart</button></div>
-      <div class="card"><h4 style="font-family:\'Playfair Display\',serif;margin-bottom:.75rem;">Geospatial Analysis</h4><button class="btn btn-green btn-sm" onclick="showPage('home');setTimeout(function(){gotoSection('neuromap')},400)">Open NeuroMap</button></div>
+      <div class="card"><h4 style="font-family:'Playfair Display',serif;margin-bottom:.75rem;">Risk Distribution</h4><button class="btn btn-green btn-sm" onclick="loadResearcherChart()">Load Chart</button></div>
+      <div class="card"><h4 style="font-family:'Playfair Display',serif;margin-bottom:.75rem;">Geospatial Analysis</h4><button class="btn btn-green btn-sm" onclick="showPage('home');setTimeout(function(){gotoSection('neuromap')},400)">Open NeuroMap</button></div>
     </div>
   </div>
   <div id="rtab-export" class="tab-panel">
     <div class="grid2" style="gap:1.5rem;">
-      <div class="card"><h4 style="font-family:\'Playfair Display\',serif;margin-bottom:.5rem;">Stroke Data</h4><button class="btn btn-green btn-sm" style="margin-top:.5rem;" onclick="exportSupabaseCSV('stroke_predictions')">Export CSV</button></div>
-      <div class="card"><h4 style="font-family:\'Playfair Display\',serif;margin-bottom:.5rem;">Dementia Data</h4><button class="btn btn-green btn-sm" style="margin-top:.5rem;" onclick="exportSupabaseCSV('alzheimer_predictions')">Export CSV</button></div>
-      <div class="card"><h4 style="font-family:\'Playfair Display\',serif;margin-bottom:.5rem;">Stress Data</h4><button class="btn btn-green btn-sm" style="margin-top:.5rem;" onclick="exportSupabaseCSV('stress_assessments')">Export CSV</button></div>
-      <div class="card"><h4 style="font-family:\'Playfair Display\',serif;margin-bottom:.5rem;">Nutrition Data</h4><button class="btn btn-green btn-sm" style="margin-top:.5rem;" onclick="exportSupabaseCSV('nutrition_tracker')">Export CSV</button></div>
+      <div class="card"><h4 style="font-family:'Playfair Display',serif;margin-bottom:.5rem;">Stroke Data</h4><button class="btn btn-green btn-sm" style="margin-top:.5rem;" onclick="exportSupabaseCSV('stroke_predictions')">Export CSV</button></div>
+      <div class="card"><h4 style="font-family:'Playfair Display',serif;margin-bottom:.5rem;">Dementia Data</h4><button class="btn btn-green btn-sm" style="margin-top:.5rem;" onclick="exportSupabaseCSV('alzheimer_predictions')">Export CSV</button></div>
+      <div class="card"><h4 style="font-family:'Playfair Display',serif;margin-bottom:.5rem;">Stress Data</h4><button class="btn btn-green btn-sm" style="margin-top:.5rem;" onclick="exportSupabaseCSV('stress_assessments')">Export CSV</button></div>
+      <div class="card"><h4 style="font-family:'Playfair Display',serif;margin-bottom:.5rem;">Nutrition Data</h4><button class="btn btn-green btn-sm" style="margin-top:.5rem;" onclick="exportSupabaseCSV('nutrition_tracker')">Export CSV</button></div>
     </div>
   </div>
 </div>
@@ -1549,8 +1549,8 @@ For researchers, the same platform doubles as live research infrastructure: uplo
   </div>
   <div id="atab-models" class="tab-panel">
     <div class="grid2" style="gap:1.5rem;">
-      <div class="card"><div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:1rem;"><h4 style="font-family:\'Playfair Display\',serif;">Stroke Model</h4><span class="tag tag-green">v2.1</span></div><p style="color:var(--mist);font-size:.83rem;margin-bottom:1rem;">Gradient Boosting · 24 features · 94.2%</p><div class="progress-track"><div class="progress-fill" style="width:94%;background:linear-gradient(90deg,var(--jade),var(--mint));"></div></div></div>
-      <div class="card"><div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:1rem;"><h4 style="font-family:\'Playfair Display\',serif;">Dementia Model</h4><span class="tag tag-green">v1.8</span></div><p style="color:var(--mist);font-size:.83rem;margin-bottom:1rem;">Random Forest · 35 features · 91.6%</p><div class="progress-track"><div class="progress-fill" style="width:91%;background:linear-gradient(90deg,var(--jade),var(--mint));"></div></div></div>
+      <div class="card"><div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:1rem;"><h4 style="font-family:'Playfair Display',serif;">Stroke Model</h4><span class="tag tag-green">v2.1</span></div><p style="color:var(--mist);font-size:.83rem;margin-bottom:1rem;">Gradient Boosting · 24 features · 94.2%</p><div class="progress-track"><div class="progress-fill" style="width:94%;background:linear-gradient(90deg,var(--jade),var(--mint));"></div></div></div>
+      <div class="card"><div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:1rem;"><h4 style="font-family:'Playfair Display',serif;">Dementia Model</h4><span class="tag tag-green">v1.8</span></div><p style="color:var(--mist);font-size:.83rem;margin-bottom:1rem;">Random Forest · 35 features · 91.6%</p><div class="progress-track"><div class="progress-fill" style="width:91%;background:linear-gradient(90deg,var(--jade),var(--mint));"></div></div></div>
     </div>
   </div>
   <div id="atab-livedata" class="tab-panel">
@@ -1791,7 +1791,7 @@ For researchers, the same platform doubles as live research infrastructure: uplo
 
 
 <!-- ══ SCRIPTS ══ -->
-<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script src="https://cdn.plot.ly/plotly-2.26.0.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -1924,7 +1924,6 @@ const LANG = {
     // NAV
     navResearcher:'Researcher Login', navAssess:'🩺 Start Assessment',
     // HERO
-    heroPill:'African NeuroHealth Research Lab · SACEST · GRASP/NIH/DSI',
     heroDesc:'AI-powered stroke and dementia risk prediction, community health intelligence, and translational neuroscience research — built for Africa, by Africa.',
     heroStartBtn:'🩺 Start Assessment', heroAboutBtn:'📖 What This App Does',
     statLang:'Languages', statBio:'Biomarkers', statStates:'States Mapped',
@@ -1947,15 +1946,11 @@ const LANG = {
     pubsLabel:'// Selected Publications', pubsTitle:'From the Lab',
     // CONTACT
     contactLabel:'// Get in Touch', contactTitle:'Connect With Our Lab',
-    footerCopy:'© 2026 African NeuroHealth Research Lab · SACEST/SACOTECH · NeuroMatrix Biosystems',
     // ASSESSMENT
     navAbout:'What We Do', navResearch:'Research', navMap:'NeuroMap', navPubs:'Publications', navContact:'Contact',
     statsLabel:'// Platform Statistics',
     aboutP1:'The African NeuroHealth Dashboard is a free, AI-driven platform that predicts your risk of stroke and dementia in minutes, combining biomedical, lifestyle, environmental, and cognitive data into a personalised risk score.',
     aboutP2:'It also includes a nutrition tracker, a stress assessment, a memory game, and an instant PDF report in your language — no login required to get started.',
-    aboutQuote:'"From spice to science — our research investigates natural herbal compounds alongside computational modelling to deliver real-world neuroprotective insights for African populations." — Adebimpe-John O.E., PhD · SACEST &amp; SACEST/SACOTECH, Omu-Ijebu',
-    feat1Title:'SACEST/SACOTECH, Omu-Ijebu · Nigeria',
-    feat1Desc:'Biological Science Dept. — Sikiru Adetona College of Education, Science & Technology. TETFund AST&D & GRASP/NIH/DSI Africa.',
     feat2Title:'Ethnopharmacology & Herbal Therapeutics',
     feat2Desc:'Systematic investigation of African botanicals — Saigon cinnamon, Aframomum melegueta, and more.',
     feat3Title:'AI Health Intelligence Platform',
@@ -2009,7 +2004,6 @@ stroke_title:'🫀 Stroke Risk Assessment', dementia_title:'🧬 Dementia Risk A
   },
   yo: {
     navResearcher:'Wọle Oluwadi', navAssess:'🩺 Bẹrẹ Igbelewọn',
-    heroPill:'Yara Iwadi Ilera Ọpọlọ Afirika · UNILORIN · GRASP/NIH/DSI',
     heroDesc:'Asọtẹlẹ ewu ẹjẹ ọpọlọ ati àìsàn ìrántí tí AI ṣe, ìmọ ilera àwùjọ, àti iwadi neuroscience — a kọ fún Afirika, nípasẹ Afirika.',
     heroStartBtn:'🩺 Bẹrẹ Igbelewọn', heroAboutBtn:'📖 Nípa Yara Iwadi',
     statLang:'Àwọn Èdè', statBio:'Àwọn Ami-ara', statStates:'Àwọn Ìpínlẹ̀',
@@ -2024,7 +2018,6 @@ stroke_title:'🫀 Stroke Risk Assessment', dementia_title:'🧬 Dementia Risk A
     mapLabel:'// NeuroMap Afirika', mapTitle:'Maapu Ilera Ọpọlọ tí a Ṣe ní Àgbáyé',
     pubsLabel:'// Àwọn Ìtẹ̀jáde Aṣayan', pubsTitle:'Láti Inú Yara Iwadi',
     contactLabel:'// Kàn sí Wa', contactTitle:'Sopọ Pẹlu Yara Iwadi Wa',
-    footerCopy:'© 2026 Yara Iwadi Ilera Ọpọlọ Afirika · Yunifásítì Ìlọrin · NeuroMatrix Biosystems',
         navAbout:'Ohun Tí A Ń Ṣe',
     navResearch:'Iwadi',
     navMap:'NeuroMap',
@@ -2033,9 +2026,6 @@ stroke_title:'🫀 Stroke Risk Assessment', dementia_title:'🧬 Dementia Risk A
     statsLabel:'// Awon Isiro Pepe',
     aboutP1:'Dasibodu African NeuroHealth je pepele ti AI n dari, ti o n sotele ewu eje opolo ati aisan iranti re laarin isejua. Awon awose eko ero wa — ti a ti fowosi ni ode — n so awon ayewo ara, iwa ise emi, ayika, ati imo ori po lati fun o ni ami ewu ti o ba o mu pelu awon igbese ti o tele.',
     aboutP2:'Yato si asotele ewu, pepele naa tun ni olutopase ounje, ayewo masunmayo, ere iranti, ati ijabo PDF lojukanna ni ede re — ko si aini lati wole lati bere.',
-    aboutQuote:'"Lati turari si imo-jinle — iwadi wa se iwadii awon akojopo egbogi ogbin adayeba pelu awosei isiro lati pese awon oye aabo opolo fun awon eniyan Afirika." — Adebimpe-John O.E.',
-    feat1Title:'SACEST · Omu-Ijebu, Ipinle Ogun, Naijiria',
-    feat1Desc:'Eka Fisioloji — Eka Ijinle Opolo ati Iredodo. Ti o se atileyin nipase TETFund ati GRASP/NIH/DSI Africa.',
     feat2Title:'Ethnopharmacology ati Itoju Egbogi Ogbin',
     feat2Desc:'Iwadii eto ti awon ogbin Afirika — igi eso cinnamon Saigon, Aframomum melegueta, ati diesi ii.',
     feat3Title:'Pepe Imo Ilera AI',
@@ -2084,7 +2074,6 @@ stroke_title:'🫀 Igbelewọn Ewu Ẹjẹ Ọpọlọ',
   },
   ha: {
     navResearcher:'Shiga Mai Bincike', navAssess:'🩺 Fara Kimanta',
-    heroPill:'Dakin Bincike na Lafiyar Kwakwalwa ta Afirka · UNILORIN · GRASP/NIH/DSI',
     heroDesc:'Hasashen haɗarin bugun jini da cutar hauka ta AI, hankali na lafiyar al\'umma, da binciken neuroscience — an gina don Afirka, daga Afirka.',
     heroStartBtn:'🩺 Fara Kimanta', heroAboutBtn:'📖 Game da Dakin Bincike',
     statLang:'Harsunan', statBio:'Alaman Jiki', statStates:'Jihohin da aka Taswirar',
@@ -2098,7 +2087,6 @@ stroke_title:'🫀 Igbelewọn Ewu Ẹjẹ Ọpọlọ',
     mapLabel:'// NeuroMap Afirka', mapTitle:'Taswira Mai Hulɗa ta Lafiyar Kwakwalwa ta Afirka',
     pubsLabel:'// Wallafe-wallafe da aka Zaɓa', pubsTitle:'Daga Dakin Bincike',
     contactLabel:'// Tuntubi Mu', contactTitle:'Haɗa Kai da Dakin Bincike Namu',
-    footerCopy:'© 2026 Dakin Bincike na Lafiyar Kwakwalwa ta Afirka · Jami\'ar Ilorin · NeuroMatrix Biosystems',
         navAbout:'Abin Da Muke Yi',
     navResearch:'Bincike',
     navMap:'NeuroMap',
@@ -2107,9 +2095,6 @@ stroke_title:'🫀 Igbelewọn Ewu Ẹjẹ Ọpọlọ',
     statsLabel:'// Kididdigar Dandalin',
     aboutP1:'Dandalin African NeuroHealth wani dandali ne na kyauta wanda AI ke tafiyar da shi, wanda ke hasashen hadarin bugun jini da cutar hauka a cikin mintuna. Tsarin koyon injin mu — wanda aka tabbatar a waje — yana hada bayanan jiki, salon rayuwa, muhalli, da gwajin tunani domin baka sakamakon hadari na musamman tare da matakan gaba bayyanannu.',
     aboutP2:'Bayan hasashen hadari, dandalin ya kunshi na\'urar bin diddigin abinci, kimanta damuwa, wasan tunani, da rahoton PDF na gaggawa a harshenka — babu bukatar shiga don farawa.',
-    aboutQuote:'"Daga kayan yaji zuwa kimiyya — binciken mu yana bincika mahadi na shuke-shuke na magani tare da tsarawa na lissafi don ba da fahimtar kariyar jijiya ga al\'ummomin Afirka." — Adebimpe-John O.E.',
-    feat1Title:'SACEST · Omu-Ijebu, Jihar Ogun, Najeriya',
-    feat1Desc:'Sashen Ilimin Jiki — Sashen Jijiya da Kumburi. Tare da goyon bayan TETFund da GRASP/NIH/DSI Africa.',
     feat2Title:'Ethnopharmacology da Magungunan Gargajiya',
     feat2Desc:'Bincike na tsarin shuke-shuke na Afirka — cinnamon Saigon, Aframomum melegueta, da sauransu.',
     feat3Title:'Dandalin Hankali na Lafiya na AI',
@@ -2157,7 +2142,6 @@ stroke_title:'🫀 Kimanta Hadarin Bugun Jini', dementia_title:'🧬 Kimanta Had
   },
   ig: {
     navResearcher:'Banye Onye Nyocha', navAssess:'🩺 Malite Nyocha',
-    heroPill:'Ụlọ Nyocha Ahụike Ọpọlọ Afrika · UNILORIN · GRASP/NIH/DSI',
     heroDesc:'Ntọala ihe ize ndụ ọbara ọpọlọ na ọrịa icheta nke AI mere, ọgụgụ ihe banyere ahụike obodo, na nyocha neuroscience — wulitere maka Afrika, site n\'Afrika.',
     heroStartBtn:'🩺 Malite Nyocha', heroAboutBtn:'📖 Maka Ụlọ Nyocha',
     statLang:'Asụsụ', statBio:'Ihe Ngosi Ahụ', statStates:'Steeti E Zoro Maapụ',
@@ -2171,7 +2155,6 @@ stroke_title:'🫀 Kimanta Hadarin Bugun Jini', dementia_title:'🧬 Kimanta Had
     mapLabel:'// NeuroMap Afrika', mapTitle:'Maapụ Ndị Na-arụ Ọrụ nke Ahụike Ọpọlọ Afrika',
     pubsLabel:'// Akwụkwọ Emepụtara A Họọrọ', pubsTitle:'Site n\'Ụlọ Nyocha',
     contactLabel:'// Kpọtụrụ Anyị', contactTitle:'Soro Ụlọ Nyocha Anyị',
-    footerCopy:'© 2026 Ụlọ Nyocha Ahụike Ọpọlọ Afrika · Mahadum Ilorin · NeuroMatrix Biosystems',
         navAbout:'Ihe Anyị Na-eme',
     navResearch:'Nyocha',
     navMap:'NeuroMap',
@@ -2180,9 +2163,6 @@ stroke_title:'🫀 Kimanta Hadarin Bugun Jini', dementia_title:'🧬 Kimanta Had
     statsLabel:'// Onuogu Ikpo Okwu',
     aboutP1:'African NeuroHealth Dashboard bu ikpo okwu efu, nke AI na-akwado, nke na-ako amuma ihe ize ndu obara opolo na oria icheta gi n\'ime nkeji ole na ole. Udi mmuta igwe anyi — nke enyochara na mba ozo — na-ejikota nyocha ahu, omume ndu, gburugburu ebe obibi, na ule uche iji nye gi akara ihe ize ndu nke ahaziri gi yana usoro na-esote doro anya.',
     aboutP2:'Ewezuga amuma ihe ize ndu, ikpo okwu ahu nwekwara ihe na-eleba anya na nri, nyocha nchekasi, egwuregwu ncheta, na akuko PDF ozugbo n\'asusu gi — a choghi ibanye iji malite.',
-    aboutQuote:'"Site na oja ruo sayensi — nyocha anyi na-enyocha ogige osisi ogwu ohaneze n\'akuko ihe mejuputa udi onuogu ka o wetara ihe omuma nchedo opolo maka ndi Afrika." — Adebimpe-John O.E.',
-    feat1Title:'SACEST · Omu-Ijebu, Steeti Ogun, Naijiriya',
-    feat1Desc:'Ngalaba Fizioloji — Ngalaba Opolo na Mbufuo. Nkwado site na TETFund na GRASP/NIH/DSI Africa.',
     feat2Title:'Ethnopharmacology na Ogwu Osisi',
     feat2Desc:'Nyocha usoro nke osisi Afrika — cinnamon Saigon, Aframomum melegueta, na ndi ozo.',
     feat3Title:'Ikpo Okwu Otuta Ahuike AI',
@@ -2230,7 +2210,6 @@ stroke_title:'🫀 Nyocha Ihe Egwu Ọbara Ọpọlọ', dementia_title:'🧬 Ny
   },
   fr: {
     navResearcher:'Connexion Chercheur', navAssess:'🩺 Commencer l\'Évaluation',
-    heroPill:'Laboratoire de Recherche AfriNeuroSanté · UNILORIN · GRASP/NIH/DSI',
     heroDesc:'Prédiction du risque d\'AVC et de démence par IA, intelligence en santé communautaire, et recherche en neurosciences translationnelles — conçu pour l\'Afrique, par l\'Afrique.',
     heroStartBtn:'🩺 Commencer l\'Évaluation', heroAboutBtn:'📖 À Propos du Labo',
     statLang:'Langues', statBio:'Biomarqueurs', statStates:'États Cartographiés',
@@ -2244,7 +2223,6 @@ stroke_title:'🫀 Nyocha Ihe Egwu Ọbara Ọpọlọ', dementia_title:'🧬 Ny
     mapLabel:'// NeuroMap Afrique', mapTitle:'Géographie Interactive de la Santé Cérébrale en Afrique',
     pubsLabel:'// Publications Sélectionnées', pubsTitle:'Du Laboratoire',
     contactLabel:'// Nous Contacter', contactTitle:'Rejoignez Notre Laboratoire',
-    footerCopy:'© 2026 Laboratoire de Recherche AfriNeuroSanté · Université d\'Ilorin · NeuroMatrix Biosystems',
         navAbout:'Ce Que Nous Faisons',
     navResearch:'Recherche',
     navMap:'NeuroMap',
@@ -2253,9 +2231,6 @@ stroke_title:'🫀 Nyocha Ihe Egwu Ọbara Ọpọlọ', dementia_title:'🧬 Ny
     statsLabel:'// Statistiques de la Plateforme',
     aboutP1:'Le tableau de bord AfriNeuroSante est une plateforme gratuite pilotee par IA qui predit votre risque d\'AVC et de demence en quelques minutes. Nos modeles d\'apprentissage automatique — valides en externe — combinent mesures biomedicales, habitudes de vie, expositions environnementales et tests cognitifs pour vous donner un score de risque personnalise et des recommandations claires.',
     aboutP2:'Au-dela de la prediction du risque, la plateforme comprend un suivi nutritionnel, une evaluation du stress, un jeu de memoire, et un rapport PDF instantane dans votre langue — aucune connexion requise pour commencer.',
-    aboutQuote:'"De l\'epice a la science — notre recherche explore des composes vegetaux medicinaux aux cotes de la modelisation computationnelle pour fournir des insights neuroprotecteurs concrets aux populations africaines." — Adebimpe-John O.E.',
-    feat1Title:'SACEST · Omu-Ijebu, État d\'Ogun, Nigéria',
-    feat1Desc:'Dept. de Physiologie — Unite Neurosciences et Inflammation. Soutenu par TETFund et GRASP/NIH/DSI Africa.',
     feat2Title:'Ethnopharmacologie et Therapeutiques a Base de Plantes',
     feat2Desc:'Investigation systematique des plantes africaines — cannelle de Saigon, Aframomum melegueta, et plus encore.',
     feat3Title:'Plateforme d\'Intelligence Sanitaire IA',
@@ -2303,7 +2278,6 @@ stroke_title:'🫀 Évaluation du Risque d\'AVC', dementia_title:'🧬 Évaluati
   },
   ar: {
     navResearcher:'تسجيل دخول الباحث', navAssess:'🩺 ابدأ التقييم',
-    heroPill:'مختبر أبحاث الصحة العصبية الأفريقية · جامعة إلورين · GRASP/NIH/DSI',
     heroDesc:'التنبؤ بمخاطر السكتة الدماغية والخرف بالذكاء الاصطناعي، ذكاء الصحة المجتمعية، وأبحاث علم الأعصاب الانتقالي — مبني لأفريقيا، من أفريقيا.',
     heroStartBtn:'🩺 ابدأ التقييم', heroAboutBtn:'📖 عن المختبر',
     statLang:'اللغات', statBio:'المؤشرات الحيوية', statStates:'الولايات المُعينة',
@@ -2317,7 +2291,6 @@ stroke_title:'🫀 Évaluation du Risque d\'AVC', dementia_title:'🧬 Évaluati
     mapLabel:'// خريطة الأعصاب أفريقيا', mapTitle:'الجغرافيا التفاعلية لصحة الدماغ في أفريقيا',
     pubsLabel:'// منشورات مختارة', pubsTitle:'من المختبر',
     contactLabel:'// تواصل معنا', contactTitle:'تواصل مع مختبرنا',
-    footerCopy:'© 2026 مختبر أبحاث الصحة العصبية الأفريقية · جامعة إلورين · NeuroMatrix Biosystems',
         navAbout:'ما نقوم به',
     navResearch:'البحث',
     navMap:'خريطة الأعصاب',
@@ -2326,9 +2299,6 @@ stroke_title:'🫀 Évaluation du Risque d\'AVC', dementia_title:'🧬 Évaluati
     statsLabel:'// احصاءات المنصة',
     aboutP1:'لوحة معلومات الصحة العصبية الافريقية هي منصة مجانية مدعومة بالذكاء الاصطناعي تتنبأ بخطر اصابتك بالسكتة الدماغية والخرف في دقائق. تجمع نماذج التعلم الالي لدينا — التي تم التحقق من صحتها خارجيا — بين القياسات الحيوية وعادات نمط الحياة والتعرضات البيئية والاختبارات المعرفية لاعطائك درجة خطر مخصصة مع خطوات واضحة قابلة للتنفيذ.',
     aboutP2:'بالاضافة الى التنبؤ بالمخاطر، تشمل المنصة متتبع التغذية وتقييم الاجهاد ولعبة الذاكرة وتقرير PDF فوري بلغتك — لا حاجة لتسجيل الدخول للبدء.',
-    aboutQuote:'"من التوابل الى العلم — يستقصي بحثنا المركبات النباتية الطبية جنبا الى جنب مع النمذجة الحسابية لتقديم رؤى واقعية للحماية العصبية للسكان الافارقة." — اديبيمبي-جون',
-    feat1Title:'SACEST · أومو-إيجيبو، ولاية أوغون، نيجيريا',
-    feat1Desc:'قسم الفسيولوجيا — وحدة علم الاعصاب والالتهابات. بدعم من TETFund وGRASP/NIH/DSI افريقيا.',
     feat2Title:'الصيدلة الاثنية والعلاجات العشبية',
     feat2Desc:'استقصاء منهجي للنباتات الافريقية — قرفة سايغون وAframomum melegueta والمزيد.',
     feat3Title:'منصة ذكاء الصحة الاصطناعي',
@@ -2376,7 +2346,6 @@ stroke_title:'🫀 تقييم خطر السكتة الدماغية', dementia_ti
   },
   sw: {
     navResearcher:'Ingia kwa Mtafiti', navAssess:'🩺 Anza Tathmini',
-    heroPill:'Maabara ya Utafiti wa Afya ya Neva Afrika · UNILORIN · GRASP/NIH/DSI',
     heroDesc:'Utabiri wa hatari ya kiharusi na shida ya akili kwa AI, akili ya afya ya jamii, na utafiti wa neurosayensi wa kitafsiri — uliojengwa kwa Afrika, na Afrika.',
     heroStartBtn:'🩺 Anza Tathmini', heroAboutBtn:'📖 Kuhusu Maabara',
     statLang:'Lugha', statBio:'Vialama vya Kibiolojia', statStates:'Majimbo Yaliyopigwa Ramani',
@@ -2389,7 +2358,6 @@ stroke_title:'🫀 تقييم خطر السكتة الدماغية', dementia_ti
     mapLabel:'// NeuroMap Afrika', mapTitle:'Jiografia ya Maingiliano ya Afya ya Ubongo Afrika',
     pubsLabel:'// Machapisho Yaliyochaguliwa', pubsTitle:'Kutoka Maabara',
     contactLabel:'// Wasiliana Nasi', contactTitle:'Ungana na Maabara Yetu',
-    footerCopy:'© 2026 Maabara ya Utafiti wa Afya ya Neva Afrika · Chuo Kikuu cha Ilorin · NeuroMatrix Biosystems',
         navAbout:'Tunachofanya',
     navResearch:'Utafiti',
     navMap:'NeuroMap',
@@ -2398,9 +2366,6 @@ stroke_title:'🫀 تقييم خطر السكتة الدماغية', dementia_ti
     statsLabel:'// Takwimu za Jukwaa',
     aboutP1:'Dashibodi ya Afya ya Neva Afrika ni jukwaa la bure linaloendeshwa na AI ambalo linatabiri hatari yako ya kiharusi na shida ya akili ndani ya dakika. Mifano yetu ya kujifunza mashine — iliyothibitishwa nje — inachanganya vipimo vya kibiolojia, tabia za maisha, mfiduo wa mazingira, na vipimo vya utambuzi kukupa alama ya hatari ya kibinafsi pamoja na hatua wazi za kufuata.',
     aboutP2:'Zaidi ya utabiri wa hatari, jukwaa hilo linajumuisha kifuatilia lishe, tathmini ya msongo, mchezo wa kumbukumbu, na ripoti ya PDF ya papo hapo kwa lugha yako — hakuna kuingia kunahitajika kuanza.',
-    aboutQuote:'"Kutoka kwa viungo hadi sayansi — utafiti wetu unachunguza misombo ya mimea ya dawa pamoja na umodeli wa kompyuta ili kutoa maarifa ya ulinzi wa neva kwa watu wa Afrika." — Adebimpe-John O.E.',
-    feat1Title:'SACEST · Omu-Ijebu, Jimbo la Ogun, Nigeria',
-    feat1Desc:'Idara ya Fiziolojia — Kitengo cha Neurosayensi na Uchochezi. Inayosaidiwa na TETFund na GRASP/NIH/DSI Africa.',
     feat2Title:'Ethnofamasia na Matibabu ya Mimea',
     feat2Desc:'Uchunguzi wa kimfumo wa mimea ya Afrika — mdalasini wa Saigon, Aframomum melegueta, na zaidi.',
     feat3Title:'Jukwaa la Akili ya Afya ya AI',
@@ -3317,9 +3282,9 @@ function runNutrition() {
   const junk    = parseInt(gv('n-junk','0'))   || 0;
   const vegfreq = parseInt(gv('n-vegfreq','0'))|| 0;
 
-  const suppChecks = [...document.querySelectorAll('#supp-list input[type=checkbox]:checked')].map(c => c.value).filter(v => v !== 'None');
-  const herbChecks = [...document.querySelectorAll('#herb-list input[type=checkbox]:checked')].map(c => c.value).filter(v => v !== 'None');
-  const lifestyleChecks = [...document.querySelectorAll('#lifestyle-list input[type=checkbox]')];
+  const suppChecks = [...document.querySelectorAll('.supp-cb:checked')].map(c => c.value).filter(v => v !== 'None');
+  const herbChecks = [...document.querySelectorAll('.herb-cb:checked')].map(c => c.value).filter(v => v !== 'None');
+  const lifestyleChecks = [...document.querySelectorAll('.life-cb')];
   const lifestylePos = lifestyleChecks.filter(c => c.checked && c.dataset.positive).length;
   const lifestyleNeg = lifestyleChecks.filter(c => c.checked && c.dataset.negative).length;
   const lifestyleList = lifestyleChecks.filter(c => c.checked).map(c => c.value).join(', ');
@@ -3603,7 +3568,7 @@ function generatePDF(type, data) {
 
   doc.setFillColor(7,11,22); doc.rect(0,286,W,11,'F');
   doc.setFontSize(7); doc.setFont('helvetica','normal'); doc.setTextColor(160,210,180);
-  doc.text('African NeuroHealth Research Lab · SACEST/SACOTECH, Omu-Ijebu, Nigeria · NeuroMatrix Biosystems · © 2026', M, 293);
+  doc.text('African NeuroHealth Research Lab · NeuroMatrix Biosystems · © 2026', M, 293);
 
   doc.save('ANHRL_' + type + '_Report_' + data.patientName.replace(/\s+/g,'_') + '_' + Date.now() + '.pdf');
   toast('📄 PDF report downloaded!');
@@ -3657,7 +3622,7 @@ function generateNutritionPDF() {
   });
   doc.setFillColor(7,11,22);doc.rect(0,286,W,11,'F');
   doc.setFontSize(7);doc.setFont('helvetica','normal');doc.setTextColor(160,210,180);
-  doc.text('African NeuroHealth Research Lab · SACEST/SACOTECH, Omu-Ijebu · NeuroMatrix Biosystems · © 2026',M,293);
+  doc.text('African NeuroHealth Research Lab · NeuroMatrix Biosystems · © 2026',M,293);
   doc.save('ANHRL_Nutrition_Report_' + (SESSION.user?SESSION.user.name.replace(/\s+/g,'_'):'') + '_' + Date.now() + '.pdf');
   toast('📄 Nutrition PDF downloaded!');
 }
@@ -4418,6 +4383,20 @@ function initMap() {
   // blocked, e.g. in some sandboxed preview tools), show a clear
   // fallback instead of a silent blank box. Works normally once the
   // page is opened with a real internet connection (e.g. on Vercel).
+  if (!window.L && !window._leafletRetry) {
+    // Primary CDN failed: try a second one, then re-run initMap
+    window._leafletRetry = true;
+    const css = document.createElement('link');
+    css.rel = 'stylesheet';
+    css.href = 'https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css';
+    document.head.appendChild(css);
+    const s = document.createElement('script');
+    s.src = 'https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js';
+    s.onload = initMap;
+    s.onerror = initMap;
+    document.head.appendChild(s);
+    return;
+  }
   if (!window.L) {
     console.warn('NeuroMap: Leaflet (window.L) did not load — likely an external script was blocked. Showing fallback.');
     mapEl.innerHTML = '<div style="height:100%;min-height:460px;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:.75rem;color:var(--mist);text-align:center;padding:2rem;">'
@@ -4922,6 +4901,6 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 </script>
-<script defer src="https://static.cloudflareinsights.com/beacon.min.js/v833ccba57c9e4d2798f2e76cebdd09a11778172276447" integrity="sha512-57MDmcccJXYtNnH+ZiBwzC4jb2rvgVCEokYN+L/nLlmO8rfYT/gIpW2A569iJ/3b+0UEasghjuZH/ma3wIs/EQ==" data-cf-beacon='{"version":"2024.11.0","token":"4edd5f8ec12a48cfa682ab8261b80a79","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
+
 </body>
 </html>
