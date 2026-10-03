@@ -1816,7 +1816,7 @@ const SUPA_KEY = 'sb_publishable_DxJHpIzuw_b1BKQy-ljQwQ_hWI5bRgY';
 let supa = null;
 try {
   if (window.supabase) {
-    supa = window.supabase.createClient(SUPA_URL, SUPA_KEY);
+    supa = window.supabase.createClient(SUPA_URL, SUPA_KEY, { db: { schema: 'public' } });
   }
 } catch(e) { console.warn('Supabase init error:', e); }
 
