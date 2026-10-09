@@ -337,7 +337,7 @@ footer{background:rgba(7,11,22,.8);border-top:1px solid rgba(201,168,76,.15);pad
     <div>
       <div class="hero-pill fade-up"><div class="hero-dot"></div><span data-i18n="heroPill">African NeuroHealth Research Lab ·GRASP/NIH/DSI</span></div>
       <h1 class="headline hero-title fade-up fade-up-1">African<br><span class="g">NeuroHealth</span><br><span class="m">Intelligence</span></h1>
-      <p class="hero-desc fade-up fade-up-2"><span data-i18n="heroDesc">AI-powered stroke and dementia risk prediction, community health intelligence, and translational neuroscience research — built for Africa, by Africa.</span></p>
+      <p class="hero-desc fade-up fade-up-2"><span data-i18n="heroDesc">AI-powered stroke and cognitive-symptom screening, community health intelligence, and translational neuroscience research — built for Africa, by Africa.</span></p>
       <div class="hero-ctas fade-up fade-up-3">
         <button class="btn btn-gold" onclick="openAssessModal()" data-i18n="heroStartBtn">🩺 Start Assessment</button>
         <button class="btn btn-outline" onclick="gotoSection('about')" data-i18n="heroAboutBtn">📖 What This App Does</button>
@@ -374,7 +374,7 @@ footer{background:rgba(7,11,22,.8);border-top:1px solid rgba(201,168,76,.15);pad
         <span class="section-label" data-i18n="aboutLabel">// What This App Does</span>
         <h2 class="section-title" data-i18n="aboutTitle">AI-Powered Brain Health Screening,<br>Built for African Communities</h2>
         <p class="section-sub" style="margin-bottom:1.25rem;" data-i18n="aboutP1">
-The <strong>African NeuroHealth Dashboard</strong> is a free, AI-driven platform that predicts your risk of stroke and dementia in minutes. Our machine learning models — externally validated on an independent African cohort — combine biomedical measurements, lifestyle habits, environmental exposures, and cognitive testing to give you a personalised risk score with clear, actionable next steps.
+The <strong>African NeuroHealth Dashboard</strong> is a free, AI-driven platform that estimates stroke risk and screens for self-reported cognitive symptoms in minutes. Our machine learning models — externally validated on an independent African cohort — combine biomedical measurements, lifestyle habits, environmental exposures, and cognitive testing to give you a personalised risk score with clear, actionable next steps.
 </p>
 
 <p class="section-sub" style="margin-bottom:1.25rem;" data-i18n="aboutP2">
@@ -916,6 +916,35 @@ For researchers, the same platform doubles as live research infrastructure: uplo
         <div class="fg"><label>Sleep Quality (0-10): <span id="d-sleep-val" style="color:var(--gold);font-weight:700;">6</span></label><input type="range" id="d-sleep" min="0" max="10" value="6" oninput="document.getElementById('d-sleep-val').textContent=this.value"></div>
         <div class="fg"><label>Stress Level (0-10): <span id="d-stress-val" style="color:var(--gold);font-weight:700;">4</span></label><input type="range" id="d-stress" min="0" max="10" value="4" oninput="document.getElementById('d-stress-val').textContent=this.value"></div>
         <div class="fg"><label>Pollution Score (0-100): <span id="d-poll-val" style="color:var(--gold);font-weight:700;">20</span></label><input type="range" id="d-poll" min="0" max="100" value="20" oninput="document.getElementById('d-poll-val').textContent=this.value"></div>
+      <div class="asmt-section">
+        <h3>Community &amp; Lifestyle Predictors</h3>
+        <p style="font-size:.8rem;color:var(--mist);margin-bottom:1rem;">These additional fields are used by the self-reported cognitive-symptom model. Choose the closest accurate response.</p>
+        <div class="form-row">
+          <div class="fg"><label>Sleep Hours per Night</label><input type="number" id="d-cog-sleep-hours" min="0" max="24" step="0.5" value="7"></div>
+          <div class="fg"><label>Resting Heart Rate (bpm)</label><input type="number" id="d-cog-heart-rate" min="30" max="220" value="72"></div>
+        </div>
+        <div class="form-row">
+          <div class="fg"><label>Chronic Pain Level</label><select id="d-cog-chronic-pain"><option value="NO">No chronic pain</option><option value="L">Low</option><option value="M">Moderate</option><option value="H">High</option></select></div>
+          <div class="fg"><label>Occupational Hazard Exposure</label><select id="d-cog-occupation-hazard"><option value="NO">No</option><option value="YES">Yes</option></select></div>
+        </div>
+        <div class="form-row">
+          <div class="fg"><label>Access to Healthcare</label><select id="d-cog-health-access"><option value="YES">Yes</option><option value="NO">No</option></select></div>
+          <div class="fg"><label>Hypertension Treatment</label><select id="d-cog-htn-treatment"><option value="Not applicable">Not applicable</option><option value="Combined herbal + drugs">Combined herbal + drugs</option></select></div>
+        </div>
+        <div class="form-row">
+          <div class="fg"><label>Fruit Intake Score (0-5)</label><select id="d-cog-fruit"><option value="0">0</option><option value="1">1</option><option value="2" selected>2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option></select></div>
+          <div class="fg"><label>Vegetable Intake Score (1-5)</label><select id="d-cog-vegetable"><option value="1">1</option><option value="2" selected>2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option></select></div>
+        </div>
+        <div class="form-row">
+          <div class="fg"><label>Daily Hydration (litres)</label><input type="number" id="d-cog-hydration" min="0" max="10" step="0.25" value="2"></div>
+          <div class="fg"><label>Total Salt Intake Score (0-22)</label><input type="number" id="d-cog-salt-score" min="0" max="22" value="8"></div>
+        </div>
+        <div class="form-row">
+          <div class="fg"><label>Usual Lifestyle / Food Choice</label><select id="d-cog-lifestyle"><option>Balanced Diet</option><option>Fast Food</option><option selected>Homemade Food</option><option>Homemade Food, Local Street Food</option><option>Homemade Food, Organic Food</option><option>Local Street Food</option><option>Organic Food</option></select></div>
+          <div class="fg"><label>Ogun Study Zone</label><select id="d-cog-zone"><option>Egba Zone</option><option selected>Ijebu Zone</option><option>Remo Zone</option></select></div>
+        </div>
+      </div>
+
         <!-- ===== CULTURALLY ADAPTED MMSE ASSESSMENT (African Context) ===== -->
         <div id="mmse-cultural-section" class="fg" style="margin-top:.5rem;">
           <label style="font-family:'Playfair Display',serif;font-size:.95rem;">MMSE Assessment (Adapted for African Context)</label>
@@ -951,11 +980,11 @@ For researchers, the same platform doubles as live research infrastructure: uplo
         </div>
         <div class="fg"><label>Behavioral Problems</label><select id="d-behav"><option value="0">No</option><option value="1">Yes</option></select></div>
       </div>
-      <button class="btn btn-gold btn-full" style="font-size:1rem;padding:16px;" id="btn-run-dementia" onclick="runDementiaAssessment()">&#x1F9EC; Run Dementia Risk Assessment</button>
+      <button class="btn btn-gold btn-full" style="font-size:1rem;padding:16px;" id="btn-run-dementia" onclick="runDementiaAssessment()">&#x1F9EC; Run Cognitive Symptom Screening</button>
     </div>
     <div style="position:sticky;top:88px;">
       <div class="result-card" id="dementia-result-card" style="display:none;">
-        <h4>&#x1F9EC; Dementia Risk Analysis</h4>
+        <h4>&#x1F9EC; Cognitive Symptom Screening Result</h4>
         <div style="max-width:260px;margin:0 auto;">
           <svg viewBox="0 0 200 120" style="width:100%;">
             <path d="M 20 100 A 80 80 0 0 1 180 100" fill="none" stroke="rgba(255,255,255,.08)" stroke-width="18" stroke-linecap="round"/>
@@ -974,7 +1003,7 @@ For researchers, the same platform doubles as live research infrastructure: uplo
       </div>
       <div id="dementia-placeholder" class="result-card" style="text-align:center;padding:2.5rem 1.5rem;">
         <div style="font-size:3rem;margin-bottom:1rem;">&#x1F9EC;</div>
-        <p style="color:var(--mist);font-size:.88rem;line-height:1.7;">Complete the form and click Run Assessment to see your dementia risk profile.</p>
+        <p style="color:var(--mist);font-size:.88rem;line-height:1.7;">Complete the form and click Run Assessment to receive a self-reported cognitive-symptom screening estimate. This is not a dementia or Alzheimer’s diagnosis.</p>
       </div>
     </div>
   </div>
@@ -1952,7 +1981,7 @@ const LANG = {
     // NAV
     navResearcher:'Researcher Login', navAssess:'🩺 Start Assessment',
     // HERO
-    heroDesc:'AI-powered stroke and dementia risk prediction, community health intelligence, and translational neuroscience research — built for Africa, by Africa.',
+    heroDesc:'AI-powered stroke and cognitive-symptom screening, community health intelligence, and translational neuroscience research — built for Africa, by Africa.',
     heroStartBtn:'🩺 Start Assessment', heroAboutBtn:'📖 What This App Does',
     statLang:'Languages', statBio:'Biomarkers', statStates:'States Mapped',
     // ABOUT
@@ -1977,7 +2006,7 @@ const LANG = {
     // ASSESSMENT
     navAbout:'What We Do', navResearch:'Research', navMap:'NeuroMap', navPubs:'Publications', navContact:'Contact',
     statsLabel:'// Platform Statistics',
-    aboutP1:'The African NeuroHealth Dashboard is a free, AI-driven platform that predicts your risk of stroke and dementia in minutes, combining biomedical, lifestyle, environmental, and cognitive data into a personalised risk score.',
+    aboutP1:'The African NeuroHealth Dashboard is a free, AI-driven platform that estimates stroke risk and screens for self-reported cognitive symptoms in minutes, combining biomedical, lifestyle, environmental, and cognitive data into a personalised risk score.',
     aboutP2:'It also includes a nutrition tracker, a stress assessment, a memory game, and an instant PDF report in your language — no login required to get started.',
     feat2Title:'Ethnopharmacology & Herbal Therapeutics',
     feat2Desc:'Systematic investigation of African botanicals — Saigon cinnamon, Aframomum melegueta, and more.',
@@ -2014,7 +2043,7 @@ const LANG = {
     footerResearch:'Research',
     footerLegal:'Legal',
 stroke_title:'🫀 Stroke Risk Assessment', dementia_title:'🧬 Dementia Risk Assessment',
-    runStroke:'🧠 Run Stroke Risk Assessment', runDementia:'🧬 Run Dementia Risk Assessment',
+    runStroke:'🧠 Run Stroke Risk Assessment', runDementia:'🧬 Run Cognitive Symptom Screening',
     riskFactors:'⚠️ Risk Factors Identified', recommendations:'✅ Recommendations',
     low:'LOW RISK', medium:'MEDIUM RISK', high:'HIGH RISK',
     downloadPDF:'📄 Download PDF Report',
@@ -3091,7 +3120,8 @@ function runDementiaAssessment() {
   if (!age) { toast('⚠️ Please enter Age to continue.'); return; }
 
   const bmi    = parseFloat(document.getElementById('d-bmi').value) || 25;
-  const edu    = parseInt(document.getElementById('d-edu').value) || 12;
+  const eduRaw = document.getElementById('d-edu').value;
+  const edu    = eduRaw === '' ? 1 : Number(eduRaw);
   const fam    = document.getElementById('d-fam').value || 'No';
   const cardio = document.getElementById('d-cardio').value || 'No';
   const dep    = document.getElementById('d-dep').value || 'No';
@@ -3106,11 +3136,16 @@ function runDementiaAssessment() {
   const func   = parseInt(document.getElementById('d-func').value) || 8;
   const adl    = parseInt(document.getElementById('d-adl').value) || 8;
   const mmse   = estimateCulturalMMSE(age);
-  const activity = parseInt(document.getElementById('d-activity').value) || 3;
-  const diet   = parseInt(document.getElementById('d-diet').value) || 5;
-  const sleep  = parseInt(document.getElementById('d-sleep').value) || 6;
-  const stress = parseInt(document.getElementById('d-stress').value) || 4;
-  const poll   = parseInt(document.getElementById('d-poll').value) || 20;
+  const activityRaw = document.getElementById('d-activity').value;
+  const activity = activityRaw === '' ? 3 : Number(activityRaw);
+  const dietRaw = document.getElementById('d-diet').value;
+  const diet   = dietRaw === '' ? 5 : Number(dietRaw);
+  const sleepRaw = document.getElementById('d-sleep').value;
+  const sleep  = sleepRaw === '' ? 6 : Number(sleepRaw);
+  const stressRaw = document.getElementById('d-stress').value;
+  const stress = stressRaw === '' ? 4 : Number(stressRaw);
+  const pollRaw = document.getElementById('d-poll').value;
+  const poll   = pollRaw === '' ? 20 : Number(pollRaw);
   const height = parseFloat(document.getElementById('d-height').value) || 170;
   const weight = parseFloat(document.getElementById('d-weight').value) || 70;
   const gender = document.getElementById('d-gender').value || 'Male';
@@ -3139,83 +3174,95 @@ function runDementiaAssessment() {
   const pollMod = (poll >= 33 && poll < 66) ? 1 : 0;
   const pollHigh= poll >= 66 ? 1 : 0;
 
+  const nutritionScoreForModel = nutritionScore !== null && nutritionScore !== undefined ? nutritionScore : diet;
+  const saltInput = document.getElementById('d-cog-salt-score').value;
+  const saltScoreForModel = saltRiskScore !== null && saltRiskScore !== undefined ? saltRiskScore : (saltInput === '' ? 8 : Number(saltInput));
+  const educationCategory = edu === 0 ? 'PRY EDUCATION' : edu === 1 ? 'SECONDARY' : edu === 2 ? 'MASTERS' : edu === 3 ? 'PHD' : 'SECONDARY';
+  const stressCategory = stress >= 7 ? 'H' : stress >= 4 ? 'M' : 'L';
+  const pollutionCategory = poll >= 66 ? 'H' : poll >= 33 ? 'M' : 'L';
+  const lifestyleChoice = document.getElementById('d-cog-lifestyle').value;
   const payload = {
-    Age: age, BMI: bmi, EducationLevel: edu,
-    AlcoholConsumption: alc, PhysicalActivity: activity,
-    DietQuality: diet, SleepQuality: sleep,
-    SystolicBP: sbp, DiastolicBP: dbp,
-    CholesterolTotal: chol, CholesterolLDL: ldl,
-    CholesterolHDL: hdl, CholesterolTriglycerides: trig,
-    FunctionalAssessment: func, ADL: adl,
-    HeadInjury: head, MMSE: mmse,
-    Height: height, Weight: weight,
-    PollutionScore: poll, Ethnicity: 0,
-    Country: 0, Province_Option: 0,
-    MemoryScore: 0, CustomStressScore: stress,
-    Gender: gender, Smoking: smoke,
-    FamilyHistoryAlzheimers: fam,
-    CardiovascularDisease: cardio,
-    Diabetes: diab, Depression: dep,
-    Hypertension: htn,
-    BehavioralProblems: behav ? 'Yes' : 'No',
-    Genotype: geno, BloodGroup: blood,
-    Confusion: conf > 0.5 ? 1 : 0,
-    Disorientation: 0,
-    PersonalityChanges: pers > 0.5 ? 1 : 0,
-    DifficultyCompletingTasks: tasks > 0.5 ? 1 : 0,
-    Forgetfulness: forget > 0.5 ? 1 : 0,
-    MemoryComplaints: memcx > 0.5 ? 1 : 0,
-    PollutionCategoryLow: pollLow,
-    PollutionCategoryModerate: pollMod,
-    PollutionCategoryHigh: pollHigh,
-    country_name: country, province_name: province,
-    region_name: region, ethnicity_name: ethnicity,
-    NutritionalScore: nutritionScore, SaltRiskScore: saltRiskScore
+    'AGE': age,
+    'SEX': gender.toLowerCase() === 'female' ? 'F' : 'M',
+    'EDU- L': educationCategory,
+    'S- BP': sbp,
+    'D-BP': dbp,
+    'DIABETES': diab.toUpperCase(),
+    'HYPERTENSION': htn.toUpperCase(),
+    'HEART- D': cardio.toUpperCase(),
+    'STRESS- L': stressCategory,
+    'SLEEP HOURS': numericOr('d-cog-sleep-hours', 7),
+    'CHRONIC- PAIN': document.getElementById('d-cog-chronic-pain').value,
+    'NUTRITION SCORE': nutritionScoreForModel,
+    'HEART RATE': numericOr('d-cog-heart-rate', 72),
+    'POLLUTION': pollutionCategory,
+    'OCCUPATION HAZZARD': document.getElementById('d-cog-occupation-hazard').value,
+    'ACCESS TO HEALTH CARE': document.getElementById('d-cog-health-access').value,
+    'SMOKING STATUS (CORRECTED)': smoke.toLowerCase() === 'yes' ? 'Smoker' : 'Non-smoker / not reported',
+    'HYPERTENSION TREATMENT (CORRECTED)': document.getElementById('d-cog-htn-treatment').value,
+    'FRUIT_INTAKE': parseInt(document.getElementById('d-cog-fruit').value, 10),
+    'VEGETABLE_INTAKE': parseInt(document.getElementById('d-cog-vegetable').value, 10),
+    'HYDRATION_LITERS': numericOr('d-cog-hydration', 2),
+    'LIFESTYLE_CHOICES': lifestyleChoice,
+    'Total_Salt Intake Score': saltScoreForModel,
+    'ZONE': document.getElementById('d-cog-zone').value
   };
 
-  // Show loading
+  // Show loading while the Render API evaluates the cognitive-symptom model.
   document.getElementById('dementia-placeholder').style.display = 'none';
   document.getElementById('dementia-result-card').style.display = 'block';
-  document.getElementById('dementia-risk-badge').textContent = 'Running AI Model...';
+  document.getElementById('dementia-risk-badge').textContent = 'Running cognitive-symptom model...';
   document.getElementById('dementia-risk-badge').className = 'risk-badge risk-medium';
-  document.getElementById('dementia-risk-factors').innerHTML = '<p style="color:var(--mist);text-align:center;padding:1rem;">⏳ Calling published AI model...</p>';
+  document.getElementById('dementia-risk-factors').innerHTML = '<p style="color:var(--mist);text-align:center;padding:1rem;">⏳ Contacting the Render API...</p>';
+  document.getElementById('dementia-recommendations').innerHTML = '';
+  document.getElementById('dementia-mmse-box').innerHTML = '';
+  toast('🧠 Sending assessment to the cognitive-symptom model...');
 
-  toast('🤖 Sending data to your published dementia model...');
-
-  fetch(API_BASE + '/predict/dementia', {
+  fetch(API_BASE + '/predict/cognitive-symptoms', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload)
   })
-  .then(r => { if (!r.ok) throw new Error('API error: ' + r.status); return r.json(); })
+  .then(async r => {
+    if (!r.ok) {
+      let detail = 'API error: ' + r.status;
+      try { const body = await r.json(); if (body.detail) detail = body.detail; } catch (_) {}
+      throw new Error(detail);
+    }
+    return r.json();
+  })
   .then(result => {
-    const { risk_pct, risk_level, mmse_label, risk_factors, recommendations, model_used } = result;
+    const risk_pct = Number(result.cognitive_symptom_risk_pct ?? result.risk_pct ?? (Number(result.risk_score) * 100));
+    const risk_level = result.risk_level || (risk_pct >= 60 ? 'HIGH' : risk_pct >= 30 ? 'MEDIUM' : 'LOW');
+    const recommendations = Array.isArray(result.recommendations) ? result.recommendations : [];
+    const model_used = result.model_used || 'trained';
+    const note = result.note || 'Screening estimate for self-reported cognitive symptoms, not a diagnosis.';
     animateGauge('gauge-d-fill','gauge-d-pct', risk_pct);
 
     const badge = document.getElementById('dementia-risk-badge');
-    badge.textContent = risk_level + ' RISK — ' + risk_pct + '%' + (model_used === 'trained' ? ' 🤖' : ' (demo)');
-    badge.className = 'risk-badge ' + (risk_level==='HIGH'?'risk-high':risk_level==='MEDIUM'?'risk-medium':'risk-low');
+    badge.textContent = 'COGNITIVE-SYMPTOM ESTIMATE — ' + risk_pct.toFixed(1) + '%';
+    badge.className = 'risk-badge ' + (risk_level === 'HIGH' ? 'risk-high' : risk_level === 'MEDIUM' ? 'risk-medium' : 'risk-low');
 
     document.getElementById('dementia-risk-factors').innerHTML =
-      '<h4 style="font-family:\'Playfair Display\',serif;font-size:.95rem;margin-bottom:.75rem;">⚠️ Risk Factors</h4>' +
-      risk_factors.map(f=>'<div class="rf-item"><div class="rf-dot"></div>'+f+'</div>').join('');
+      '<h4 style="font-family:\'Playfair Display\',serif;font-size:.95rem;margin-bottom:.75rem;">ℹ️ Screening Note</h4>' +
+      '<p style="font-size:.82rem;color:var(--smoke);line-height:1.7;">' + note + '</p>';
 
     document.getElementById('dementia-recommendations').innerHTML =
-      '<h4 style="font-family:\'Playfair Display\',serif;font-size:.95rem;margin-bottom:.75rem;">✅ Recommendations</h4>' +
-      recommendations.map(r=>'<div class="reco-item">'+r+'</div>').join('');
+      '<h4 style="font-family:\'Playfair Display\',serif;font-size:.95rem;margin-bottom:.75rem;">✅ Suggested Next Steps</h4>' +
+      recommendations.map(r => '<div class="reco-item">' + r + '</div>').join('');
 
     document.getElementById('dementia-mmse-box').innerHTML =
-      '<div style="background:rgba(201,168,76,.08);border:1px solid rgba(201,168,76,.2);border-radius:10px;padding:1rem;">' +
-      '<div style="font-size:.72rem;color:var(--mist);margin-bottom:.35rem;text-transform:uppercase;letter-spacing:.06em;">MMSE Score</div>' +
-      '<div style="font-family:\'Space Mono\',monospace;font-size:1.8rem;color:var(--gold);">' + mmse + '<span style="font-size:.9rem;color:var(--mist)">/30</span></div>' +
-      '<div style="font-size:.78rem;color:var(--smoke);margin-top:.35rem;">' + mmse_label + '</div>' +
-      '<div style="font-size:.72rem;color:var(--mist);margin-top:.25rem;">Model: ' + (model_used === 'trained' ? '✅ Published Random Forest (91.6% accuracy)' : '⚡ Demo scoring') + '</div>' +
+      '<div style="background:rgba(212,160,23,.08);border:1px solid rgba(212,160,23,.2);border-radius:10px;padding:1rem;">' +
+      '<div style="font-size:.72rem;color:var(--mist);margin-bottom:.35rem;text-transform:uppercase;letter-spacing:.06em;">Model</div>' +
+      '<div style="font-family:\'Space Mono\',monospace;font-size:1rem;color:var(--gold);">' + (result.model_name || 'African Cognitive Symptom Risk Model') + '</div>' +
+      '<div style="font-size:.75rem;color:var(--mist);margin-top:.5rem;">This is not a dementia or Alzheimer\'s diagnosis. Fields not supplied to the model may use defaults.</div>' +
       '</div>';
 
     const uid = 'USR-' + Math.random().toString(36).substr(2,8).toUpperCase();
+    // Keep the existing table for backwards compatibility; assessment_type distinguishes these records.
     saveRecord('alzheimer_predictions', {
-      user_id: uid, age, gender, bmi: parseFloat(bmi.toFixed(1)),
-      mmse, education_years: edu,
+      user_id: uid, age, gender,
+      bmi: parseFloat(bmi.toFixed(1)), mmse, education_years: edu,
       family_history_alzheimers: fam, cardiovascular_disease: cardio,
       depression: dep, hypertension: htn, head_injury: head,
       systolic_bp: sbp, diastolic_bp: dbp,
@@ -3224,37 +3271,37 @@ function runDementiaAssessment() {
       physical_activity: activity, diet_quality: diet,
       sleep_quality: sleep, stress_level: stress, pollution_score: poll,
       functional_assessment: func, adl,
-      risk_score: parseFloat(result.risk_score.toFixed(3)),
+      risk_score: Number(result.risk_score ?? risk_pct / 100),
       risk_level, prediction_result: risk_level === 'HIGH' ? 1 : 0,
+      cognitive_symptom_risk_pct: risk_pct,
       country, province, region, ethnicity,
       assessment_date: new Date().toISOString().split('T')[0]
     });
 
-    window._lastDementia = { riskLevel: risk_level, riskPct: risk_pct,
-      factors: risk_factors, recos: recommendations, userId: uid,
+    window._lastDementia = {
+      riskLevel: risk_level, riskPct: risk_pct, factors: [], recos: recommendations, userId: uid,
       extras: [
-        { label: 'Model', value: model_used === 'trained' ? 'Published Random Forest (91.6% accuracy)' : 'Demo scoring' },
-        { label: 'MMSE Score', value: mmse + '/30 — ' + mmse_label },
-        { label: 'Education', value: edu + ' years' },
+        { label: 'Assessment', value: 'Self-reported cognitive-symptom screening' },
+        { label: 'Model', value: result.model_name || 'African Cognitive Symptom Risk Model' },
+        { label: 'Estimate', value: risk_pct.toFixed(1) + '%' },
         { label: 'Blood Pressure', value: sbp + '/' + dbp + ' mmHg' },
-        { label: 'Total Cholesterol', value: chol + ' mg/dL | LDL: ' + ldl + ' | HDL: ' + hdl + ' | Trig: ' + trig },
-        { label: 'Activity', value: activity + ' hrs/week' },
-        { label: 'Diet Quality', value: diet + '/10' },
-        { label: 'Sleep Quality', value: sleep + '/10' },
-        { label: 'Pollution', value: poll + '/100' },
-        { label: 'Nutrition Tracker', value: nutritionScore !== null ? (nutritionScore + '/13, Salt Risk ' + saltRiskScore + '/22') : 'Not completed' },
-        { label: 'Location', value: (province||'—') + ', ' + (country||'—') }
+        { label: 'Nutrition Tracker', value: nutritionScore !== null ? (nutritionScore + '/13, Salt Score ' + saltScoreForModel + '/22') : 'Supplemented with form values' },
+        { label: 'Location', value: (province || '—') + ', ' + (country || '—') },
+        { label: 'Interpretation', value: note }
       ]
     };
-
-    toast(risk_level==='HIGH' ? '⚠️ HIGH dementia risk. See a neurologist.' :
-          risk_level==='MEDIUM' ? '⚡ Moderate risk. Lifestyle changes recommended.' :
-          '✅ Low dementia risk. Maintain healthy habits!');
+    toast('✅ Cognitive-symptom estimate received. This is not a diagnosis.');
   })
   .catch(err => {
-    console.error('Dementia API error:', err);
-    toast('⚠️ API offline. Using offline scoring...');
-    runDementiaScoreOffline(age, bmi, edu, fam, cardio, dep, htn, head, sbp, dbp, mmse, activity, diet, sleep, stress, poll, country, province, nutritionScore, saltRiskScore);
+    console.error('Cognitive-symptom API error:', err);
+    const badge = document.getElementById('dementia-risk-badge');
+    badge.textContent = 'ASSESSMENT UNAVAILABLE';
+    badge.className = 'risk-badge risk-medium';
+    document.getElementById('dementia-risk-factors').innerHTML =
+      '<p style="color:#FCA5A5;font-size:.85rem;line-height:1.6;">No estimate was produced because the prediction API could not complete the request. Please try again later. Details: ' + String(err.message || err) + '</p>';
+    document.getElementById('dementia-recommendations').innerHTML = '';
+    document.getElementById('dementia-mmse-box').innerHTML = '';
+    toast('⚠️ Cognitive-symptom API unavailable. No fallback estimate was generated.');
   });
 }
 
