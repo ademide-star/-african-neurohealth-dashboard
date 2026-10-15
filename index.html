@@ -1768,7 +1768,8 @@ For researchers, the same platform doubles as live research infrastructure: uplo
     <button class="modal-close" onclick="closeModal('modal-assess')">&#x2715;</button>
 <svg viewBox="0 0 64 64" style="width:64px;height:64px;border-radius:50%;display:block;margin:0 auto 1rem;border:2px solid var(--gold);background:#0a2418;" xmlns="http://www.w3.org/2000/svg" aria-label="ANHRL"><defs><linearGradient id="anhrlG3" x1="0" x2="1" y1="0" y2="1"><stop offset="0%" stop-color="#c9a84c"/><stop offset="100%" stop-color="#4ECB82"/></linearGradient></defs><path d="M22 22c0-4 3-7 7-7s7 3 7 7v3c2 0 4 2 4 4s-2 4-4 4v3c0 4-3 7-7 7s-7-3-7-7c-3 0-5-2-5-5s2-5 5-5v-4z" fill="none" stroke="url(#anhrlG3)" stroke-width="2.2" stroke-linejoin="round"/></svg>
     <h2>Start Your Assessment</h2>
-    <p>Free, confidential, 7 languages. No login required. All records saved securely.</p>
+    <p>Free screening and synthetic testing. Research records are not saved while study approval is pending.</p>
+    <div id="assessment-test-mode-note" style="display:none;background:rgba(240,207,114,.08);border:1px solid rgba(240,207,114,.3);border-radius:8px;padding:.75rem;margin:.75rem 0 1rem;color:var(--amber);font-size:.8rem;line-height:1.5;">Protocol gate is closed. Use synthetic test values only. Do not enter real participant data; predictions will not be saved as research records.</div>
     <div class="modal-opts">
       <button class="modal-opt" onclick="closeModal('modal-assess');showPage('stroke')"><span style="font-size:1.5rem;">&#x1FA7A;</span><div><strong>Stroke Risk Assessment</strong><span>BP, BMI, lifestyle, environment · AI scoring · PDF report · ~5 min</span></div></button>
       <button class="modal-opt" onclick="closeModal('modal-assess');showPage('dementia')"><span style="font-size:1.5rem;">&#x1F9EC;</span><div><strong>Dementia Risk Screening</strong><span>MMSE, metabolic, cognitive symptoms · AI scoring · PDF · ~7 min</span></div></button>
@@ -1788,6 +1789,7 @@ For researchers, the same platform doubles as live research infrastructure: uplo
     <p id="login-desc" style="font-size:.88rem;">Researcher &amp; Admin access is restricted. Enter your <strong>name</strong> and the <strong>access password</strong>.<br><span style="color:var(--gold);">Contact Adebimpe-John O.E. to be assigned a password.</span></p>
     <div class="fg"><label>Your Full Name</label><input type="text" id="login-name" placeholder="Prof. / Dr. / Mr. / Ms. ..."></div>
     <div class="fg"><label>Access Password</label><input type="password" id="login-pass" placeholder="Enter your assigned password"></div>
+    <p id="login-error" role="alert" style="color:#FCA5A5;font-size:.82rem;min-height:1.2rem;margin:.35rem 0;" aria-live="polite"></p>
     <button class="btn btn-gold btn-full" style="margin-top:.5rem;" onclick="handleLogin()">Login &#x2192;</button>
     <p style="text-align:center;font-size:.72rem;color:var(--mist);margin-top:.75rem;">Principal Researcher: Adebimpe-John O.E. &nbsp;|&nbsp; Supervisors:Prof. Owolabi</p>
   </div>
@@ -1891,6 +1893,8 @@ async function refreshProtocolGate() {
       statusEl.style.borderColor = protocolCollectionEnabled ? 'rgba(78,203,130,.35)' : 'rgba(240,207,114,.3)';
     }
     if (submit) submit.disabled = !protocolCollectionEnabled;
+    const testModeNote = document.getElementById('assessment-test-mode-note');
+    if (testModeNote) testModeNote.style.display = protocolCollectionEnabled ? 'none' : 'block';
     const cognitiveNotice = document.getElementById('cognitive-protocol-notice');
     if (cognitiveNotice) {
       cognitiveNotice.textContent = protocolCollectionEnabled
@@ -1910,6 +1914,8 @@ async function refreshProtocolGate() {
   } catch (err) {
     protocolCollectionEnabled = false;
     if (submit) submit.disabled = true;
+    const testModeNote = document.getElementById('assessment-test-mode-note');
+    if (testModeNote) testModeNote.style.display = 'block';
     if (statusEl) statusEl.textContent = 'Cannot verify study approval configuration with the server. Research collection remains blocked.';
     const cognitiveNotice = document.getElementById('cognitive-protocol-notice');
     if (cognitiveNotice) cognitiveNotice.textContent = 'RESEARCH COLLECTION IS DISABLED because the backend approval status could not be verified. Use synthetic test values only. Do not enter real participant data.';
@@ -2678,10 +2684,17 @@ function logoutSession() {
 function showPage(id) {
   const researcherPages = new Set(['researcher']);
   const adminPages = new Set(['admin']);
-  const participantPages = new Set(['stroke','dementia','nutrition','stress','memory','herbs','painstudy']);
+  const assessmentPages = new Set(['stroke','dementia','nutrition','stress','memory']);
+  const restrictedPages = new Set(['painstudy']);
   if (researcherPages.has(id) && !SESSION.researcher && !SESSION.admin) { openLoginModal('researcher'); return; }
   if (adminPages.has(id) && !SESSION.admin) { openLoginModal('admin'); return; }
-  if (participantPages.has(id) && !SESSION.participant) {
+  // When the approved research gate is closed, allow assessment pages to open in
+  // synthetic-test mode. saveRecord() independently refuses all research writes.
+  // Once the backend gate is active, require participant registration/consent first.
+  if (assessmentPages.has(id) && !SESSION.participant && protocolCollectionEnabled) {
+    const rm = document.getElementById('modal-register'); if (rm) rm.classList.add('open'); return;
+  }
+  if (restrictedPages.has(id) && !SESSION.participant && !SESSION.researcher && !SESSION.admin) {
     const rm = document.getElementById('modal-register'); if (rm) rm.classList.add('open'); return;
   }
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
@@ -2735,11 +2748,16 @@ function toast(msg) {
    REGISTRATION MODAL — opens before assessment
 ══════════════════════════════════════════════ */
 function openAssessModal() {
-  if (!SESSION.participant) {
+  // A closed protocol gate permits synthetic prediction testing only. Do not
+  // force users into registration, which the backend correctly blocks.
+  if (protocolCollectionEnabled && !SESSION.participant) {
     const rm = document.getElementById('modal-register'); if (rm) rm.classList.add('open');
     return;
   }
   const am = document.getElementById('modal-assess'); if (am) am.classList.add('open');
+  if (!protocolCollectionEnabled) {
+    toast('Synthetic-test mode: assessments can run, but research records will not be saved. Do not enter real participant data.');
+  }
 }
 
 function openLoginModal(role) {
@@ -2831,11 +2849,16 @@ function skipRegistration() {
    also grants researcher visibility). Researcher password unlocks only
    the Researcher portal. Manage both from Admin → Access Control. */
 async function handleLogin() {
-  const name = (document.getElementById('login-name').value || '').trim();
+  const enteredName = (document.getElementById('login-name').value || '').trim();
   const pass = (document.getElementById('login-pass').value || '').trim();
   const role = appState.loginRole || 'researcher';
-  if (!name) { toast('Please enter your staff username or name.'); return; }
-  if (!pass) { toast('Please enter your assigned password.'); return; }
+  const name = role === 'admin' ? (enteredName || 'admin') : enteredName;
+  const loginError = document.getElementById('login-error');
+  if (loginError) loginError.textContent = '';
+  if (role !== 'admin' && !name) { if (loginError) loginError.textContent = 'Please enter your staff username or name.'; toast('Please enter your staff username or name.'); return; }
+  if (!pass) { if (loginError) loginError.textContent = 'Please enter your assigned password.'; toast('Please enter your assigned password.'); return; }
+  const loginButton = document.querySelector('#modal-login button[onclick="handleLogin()"]');
+  if (loginButton) { loginButton.disabled = true; loginButton.textContent = 'Signing in…'; }
   try {
     const response = await fetch(API_BASE + '/auth/login', {
       method:'POST', headers:{'Content-Type':'application/json'},
@@ -2859,7 +2882,12 @@ async function handleLogin() {
     toast('Secure sign-in successful.');
   } catch (e) {
     console.error('Login failed:', e);
-    toast(e.message || 'Login failed. Check your credentials and backend configuration.');
+    const message = e.message || 'Login failed. Check your credentials and backend configuration.';
+    const loginError = document.getElementById('login-error');
+    if (loginError) loginError.textContent = message;
+    toast(message);
+  } finally {
+    if (loginButton) { loginButton.disabled = false; loginButton.textContent = 'Login →'; }
   }
 }
 
@@ -4923,6 +4951,13 @@ function downloadCinnamonCSV() {
 document.addEventListener('DOMContentLoaded', function() {
   refreshProtocolGate();
   setTimeout(initCinnamonPanelTrigger, 600);
+  const loginName = document.getElementById('login-name');
+  const loginPass = document.getElementById('login-pass');
+  [loginName, loginPass].forEach(input => {
+    if (input) input.addEventListener('keydown', event => {
+      if (event.key === 'Enter') { event.preventDefault(); handleLogin(); }
+    });
+  });
 });
 
 </script>
