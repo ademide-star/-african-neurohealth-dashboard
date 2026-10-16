@@ -294,7 +294,7 @@ footer{background:rgba(7,11,22,.8);border-top:1px solid rgba(201,168,76,.15);pad
 @media(max-width:960px){.lang-switcher-nav{display:none;}}
 
 /* Privacy-first access states */
-body.public-view #pillars, body.public-view #stats, body.public-view #portals, body.public-view #neuromap { display:none !important; }
+body.public-view #pillars, body.public-view #stats, body.public-view #portals { display:none !important; }
 body.public-view .nav-links li[data-private-nav="true"] { display:none !important; }
 .access-note{font-size:.78rem;color:var(--mist);line-height:1.6;margin:.75rem 0;}
 .research-data-card{background:var(--glass);border:1px solid var(--border);border-radius:12px;padding:1rem;margin-top:1rem;}
@@ -307,7 +307,7 @@ body.public-view .nav-links li[data-private-nav="true"] { display:none !importan
 .neuromap-filters select{width:100%;background:#101a2d;color:var(--white);border:1px solid rgba(201,168,76,.3);border-radius:8px;padding:.6rem .65rem;font:inherit;font-size:.8rem;outline:none}
 .neuromap-filters option{background:#101a2d;color:var(--white)}
 .map-data-status{font-size:.76rem;color:var(--mist);line-height:1.55;margin:0 0 .8rem}
-body:not(.researcher-view) #neuromap{display:none!important}
+/* NeuroMap is public; its API exposes aggregates only. */
 @media(max-width:600px){.neuromap-filters{gap:.5rem}.neuromap-filters label{min-width:calc(50% - .25rem)}}
 
 </style>
@@ -322,7 +322,7 @@ body:not(.researcher-view) #neuromap{display:none!important}
   <ul class="nav-links">
     <li><a onclick="gotoSection('about')" data-i18n="navAbout">What We Do</a></li>
     <li data-private-nav="true"><a onclick="gotoSection('pillars')" data-i18n="navResearch">Research</a></li>
-    <li data-private-nav="true"><a onclick="gotoSection('neuromap')" data-i18n="navMap">NeuroMap</a></li>
+    <li><a onclick="gotoSection('neuromap')" data-i18n="navMap">NeuroMap</a></li>
     <li><a onclick="gotoSection('publications')" data-i18n="navPubs">Publications</a></li>
     <li><a onclick="gotoSection('contact')" data-i18n="navContact">Contact</a></li>
   </ul>
@@ -525,6 +525,7 @@ For researchers, the same platform doubles as live research infrastructure: uplo
     <span class="section-label" data-i18n="mapLabel">// NeuroMap Africa</span>
     <h2 class="section-title" style="margin-bottom:.5rem;" data-i18n="mapTitle">Interactive Brain Health Geography of Africa</h2>
     <p class="section-sub" style="margin-bottom:2rem;" data-i18n="mapDesc">Stroke hotspots, dementia prevalence, herbal medicine use, pollution overlays, sex-stratified data — across Nigeria and 54 African nations.</p>
+    <p class="map-data-status" id="map-data-status">NeuroMap is public. It displays only privacy-protected aggregate data when enough eligible records are available. No data is not the same as low risk.</p>
     <div class="map-controls" role="group" aria-label="NeuroMap data layer">
       <button class="map-btn active" data-layer="stroke" onclick="setMapLayer(this)">🫀 Stroke</button>
       <button class="map-btn" data-layer="dementia" onclick="setMapLayer(this)">🧠 Memory symptoms</button>
@@ -1953,23 +1954,17 @@ async function saveRecord(table, payload) {
     }
     const allowed = ['stroke_predictions','alzheimer_predictions','cognitive_symptom_assessments','nutrition_tracker','stress_assessments','pain_stroke_study'];
     if (!allowed.includes(table)) { console.warn('Blocked non-approved research record type:', table); return false; }
-    // Client-side convenience guard only. The backend protocol gate remains authoritative.
-    if (!protocolCollectionEnabled) {
-      console.info('Research record not saved because the backend protocol gate is closed.');
-      return false;
-    }
-    const token = currentSessionToken();
-    if (!token) { toast('Please start a participant session before saving an assessment.'); return false; }
+    // Public application storage is separate from the protocol-gated secondary research dataset.
     const clean = {};
     Object.entries(payload || {}).forEach(([key,value]) => {
       const k = key.toLowerCase();
-      if (IDENTITY_FIELD_NAMES.has(k) || k === 'user_id' || k === 'research_id' || k === 'email_address') return;
+      if (IDENTITY_FIELD_NAMES.has(k) || ['user_id','research_id','participant_id','email_address','session_id'].includes(k)) return;
       if (value === undefined || typeof value === 'function') return;
       clean[key] = value;
     });
-    const response = await fetch(API_BASE + '/research/records', {
+    const response = await fetch(API_BASE + '/public/assessments', {
       method: 'POST',
-      headers: { 'Content-Type':'application/json', 'Authorization':'Bearer ' + token },
+      headers: { 'Content-Type':'application/json' },
       body: JSON.stringify({ record_type: table, payload: clean, model_name: table === 'cognitive_symptom_assessments' ? 'African Cognitive Symptom Risk Model' : null })
     });
     const result = await response.json().catch(() => ({}));
@@ -2971,7 +2966,7 @@ const NIGERIA_STATE_CENTERS = {'Abia':[5.45,7.5],'Adamawa':[9.3,12.5],'Akwa Ibom
 let _mapAggregateCache = {at:0, layer:null, rows:[]};
 function initMap() {
   const mapEl = document.getElementById('map-el');
-  if (!mapEl || mapEl._leaflet_id || !(SESSION.researcher || SESSION.admin)) return;
+  if (!mapEl || mapEl._leaflet_id) return;
   if (!window.L) { mapEl.innerHTML = '<div style="min-height:360px;display:grid;place-items:center;color:var(--mist);padding:2rem;text-align:center">Map library unavailable. Check your internet connection and reload.</div>'; return; }
   populateMapCountryOptions(); updateMapRegionOptions(false);
   neuroMap = L.map('map-el', {zoomControl:true, scrollWheelZoom:false}).setView([1,18],3);
@@ -2998,10 +2993,9 @@ function applyMapFilters() {
 
 /* Only grouped aggregate data are requested from the protected backend. */
 async function loadResearchMapAggregates(layer) {
-  if (!AUTH_TOKEN) return [];
   if (_mapAggregateCache.layer===layer && Date.now()-_mapAggregateCache.at<60000) return _mapAggregateCache.rows;
   try {
-    const res=await fetch(API_BASE+'/research/map/aggregates?layer='+encodeURIComponent(layer),{headers:{'Authorization':'Bearer '+AUTH_TOKEN}});
+    const res=await fetch(API_BASE+'/public/neuromap/aggregates?layer='+encodeURIComponent(layer));
     const data=await res.json().catch(()=>({})); if(!res.ok) throw new Error(data.detail||'Aggregate map data unavailable');
     _mapAggregateCache={at:Date.now(),layer,rows:Array.isArray(data.aggregates)?data.aggregates:[]}; return _mapAggregateCache.rows;
   } catch(e) { console.warn('NeuroMap aggregate endpoint:',e); return []; }
@@ -3014,9 +3008,9 @@ function drawSurveyLayer(layer,sites){
   sites.forEach(d=>{const v=Number(d[cfg.key]);const color=v>=hi?'#EF4444':v>=mid?'#F59E0B':'#10B981';const sexLine=layer==='sex'?'<br>♂ hypertension: '+d.hypM+'% (n='+d.nM+') · ♀ '+d.hypF+'% (n='+d.nF+')':'';L.circleMarker([d.lat,d.lng],{radius:13,fillColor:color,color:'#3B82F6',weight:2,dashArray:'4 3',opacity:.9,fillOpacity:.58}).addTo(mapMarkersLayer).bindPopup('<div style="font-family:Outfit,sans-serif;min-width:190px"><strong>'+d.lga+'</strong> <span style="font-size:.7rem;color:#888">('+d.zone+')</span><br><b>'+v+'%</b> '+cfg.label+sexLine+'<br><span style="font-size:.72rem;color:#888">Configured Ogun field-survey summary · n='+d.n+'</span></div>');});
 }
 async function refreshMapMarkers(layer,opts){
-  if(!neuroMap||!mapMarkersLayer)return;const silent=!!(opts&&opts.silent);window._mapLayer=layer;mapMarkersLayer.clearLayers();const sites=mapStaticSitesForFilters();drawSurveyLayer(layer,sites);const aggregates=await loadResearchMapAggregates(layer);const f=currentMapFilters();let aggregateMarkers=0;
+  if(!neuroMap||!mapMarkersLayer)return;const silent=!!(opts&&opts.silent);window._mapLayer=layer;mapMarkersLayer.clearLayers();const sites=[];const aggregates=await loadResearchMapAggregates(layer);const f=currentMapFilters();let aggregateMarkers=0;
   aggregates.forEach(d=>{if(f.local!=='All study zones')return;if(f.country!=='All Africa'&&d.country!==f.country)return;if(f.country==='All Africa'&&f.region!=='All regions'&&AFRICA_COUNTRY_REGION[d.country]!==f.region)return;if(f.country==='Nigeria'&&f.region!=='All zones'&&d.geopolitical_zone!==f.region&&d.region!==f.region)return;const n=Number(d.n||0);if(n<10)return;let coords=null;if(d.country==='Nigeria'&&d.province)coords=NIGERIA_STATE_CENTERS[d.province]||NIGERIA_STATE_CENTERS[d.province.replace(/ State$/,'')];if(!coords)coords=MAP_COUNTRY_CENTERS[d.country];if(!coords)return;const highPct=Number(d.high_risk_pct||0);const color=highPct>=40?'#EF4444':highPct>=20?'#F59E0B':'#10B981';L.circleMarker(coords,{radius:Math.max(8,Math.min(22,7+Math.sqrt(n))),fillColor:color,color:'#c9a84c',weight:2,opacity:.9,fillOpacity:.58}).addTo(mapMarkersLayer).bindPopup('<div style="font-family:Outfit,sans-serif;min-width:190px"><strong>'+String(d.area||d.province||d.country)+'</strong><br><span style="font-size:.78rem">'+n+' eligible assessments (aggregated)</span><br><span style="font-size:.78rem">High-risk share among modelled records: '+Math.round(highPct)+'%</span><br><span style="font-size:.7rem;color:#888">Research records only; group size ≥ 10</span></div>');aggregateMarkers++;});
-  const status=document.getElementById('map-data-status');if(status){if(sites.length||aggregateMarkers)status.textContent='Showing '+sites.length+' configured Ogun field-survey site(s) and '+aggregateMarkers+' protected aggregate location(s). Other areas are not assigned a risk level without eligible data.';else status.textContent='No eligible aggregated research data are available for this geographic selection yet. This means “no data”, not low risk.';}if(!silent&&typeof toast==='function')toast(sites.length||aggregateMarkers?'NeuroMap updated. Only aggregate data are displayed.':'No eligible data for this selection yet.');
+  const status=document.getElementById('map-data-status');if(status){if(aggregateMarkers)status.textContent='Showing '+aggregateMarkers+' public, privacy-protected aggregate location(s). Other areas are not assigned a risk level without eligible data.';else status.textContent='No eligible public aggregate data are available for this selection yet. This means “no data”, not low risk.';}if(!silent&&typeof toast==='function')toast(aggregateMarkers?'NeuroMap updated. Only aggregate data are displayed.':'No eligible data for this selection yet.');
 }
 
 function setMapLayer(btn) {
