@@ -1958,7 +1958,20 @@ async function saveRecord(table, payload) {
       return true;
     }
     const allowed = ['stroke_predictions','alzheimer_predictions','cognitive_symptom_assessments','nutrition_tracker','stress_assessments','pain_stroke_study'];
-    if (!allowed.includes(table)) { console.warn('Blocked non-approved research record type:', table); return false; }
+    if (!allowed.includes(table)) { console.warn('Blocked non-approved record type:', table); return false; }
+    // Pain-study records are a separate research workflow and stay behind the approved protocol gate.
+    if (table === 'pain_stroke_study') {
+      if (!protocolCollectionEnabled) { toast('The pain-study research workflow is not enabled.'); return false; }
+      const token = currentSessionToken();
+      if (!token) { toast('A valid research participant session is required for this study workflow.'); return false; }
+      const researchResponse = await fetch(API_BASE + '/research/records', {
+        method: 'POST', headers: { 'Content-Type':'application/json', 'Authorization':'Bearer ' + token },
+        body: JSON.stringify({ record_type: table, payload: payload || {} })
+      });
+      const researchResult = await researchResponse.json().catch(() => ({}));
+      if (!researchResponse.ok) { toast('Research record could not be saved. Check the approved protocol and backend response.'); return false; }
+      onRecordSaved(table); return true;
+    }
     // Public application storage is separate from the protocol-gated secondary research dataset.
     const clean = {};
     Object.entries(payload || {}).forEach(([key,value]) => {
@@ -1974,8 +1987,8 @@ async function saveRecord(table, payload) {
     });
     const result = await response.json().catch(() => ({}));
     if (!response.ok) {
-      console.warn('Research save failed:', response.status, result.detail || '');
-      toast(response.status === 401 ? 'Session expired. Start again to continue.' : 'Research record could not be saved. Check backend/database configuration.');
+      console.warn('Anonymous application save failed:', response.status, result.detail || '');
+      toast('Anonymous application storage is temporarily unavailable. Your assessment result remains on screen.');
       return false;
     }
     if (SESSION.user && result.research_id) SESSION.user.id = result.research_id;
