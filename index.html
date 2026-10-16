@@ -524,7 +524,7 @@ For researchers, the same platform doubles as live research infrastructure: uplo
   <div class="wrap">
     <span class="section-label" data-i18n="mapLabel">// NeuroMap Africa</span>
     <h2 class="section-title" style="margin-bottom:.5rem;" data-i18n="mapTitle">Interactive Brain Health Geography of Africa</h2>
-    <p class="section-sub" style="margin-bottom:2rem;" data-i18n="mapDesc">Stroke hotspots, dementia prevalence, herbal medicine use, pollution overlays, sex-stratified data — across Nigeria and 54 African nations.</p>
+    <p class="section-sub" style="margin-bottom:2rem;" data-i18n="mapDesc">Explore privacy-protected summaries of stroke-risk, dementia-risk and cognitive-symptom assessments where enough records are available. Modelled results are not disease-prevalence estimates.</p>
     <p class="map-data-status" id="map-data-status">NeuroMap is public. It displays only privacy-protected aggregate data when enough eligible records are available. No data is not the same as low risk.</p>
     <div class="map-controls" role="group" aria-label="NeuroMap data layer">
       <button class="map-btn active" data-layer="stroke" onclick="setMapLayer(this)">🫀 Stroke</button>
@@ -721,6 +721,7 @@ For researchers, the same platform doubles as live research infrastructure: uplo
 
 <!-- STROKE PAGE -->
 <div id="page-stroke" class="page z1" style="padding-top:88px;padding-bottom:4rem;">
+  <div class="access-note public-data-note" style="border:1px solid var(--border);border-radius:10px;padding:.8rem 1rem;margin:.5rem 0 1.25rem;"><strong>Privacy note:</strong> You can use this assessment without an account. When you submit it, selected health fields may be stored without your name, contact details, account or research ID, or precise location to support application analytics and privacy-protected summaries. Individual records are not public. Researcher access to secondary data is separately controlled.</div>
 <div class="wrap">
   <button class="back-btn" onclick="showPage('home')">&#8592; Back</button>
 
@@ -860,6 +861,7 @@ For researchers, the same platform doubles as live research infrastructure: uplo
 
 <!-- DEMENTIA PAGE -->
 <div id="page-dementia" class="page z1" style="padding-top:88px;padding-bottom:4rem;">
+  <div class="access-note public-data-note" style="border:1px solid var(--border);border-radius:10px;padding:.8rem 1rem;margin:.5rem 0 1.25rem;"><strong>Privacy note:</strong> You can use this assessment without an account. When you submit it, selected health fields may be stored without your name, contact details, account or research ID, or precise location to support application analytics and privacy-protected summaries. Individual records are not public. Researcher access to secondary data is separately controlled.</div>
 <div class="wrap">
   <button class="back-btn" onclick="showPage('home')">&#8592; Back</button>
 
@@ -1063,6 +1065,7 @@ For researchers, the same platform doubles as live research infrastructure: uplo
 
 <!-- NUTRITION PAGE -->
 <div id="page-nutrition" class="page z1" style="padding-top:88px;padding-bottom:4rem;">
+  <div class="access-note public-data-note" style="border:1px solid var(--border);border-radius:10px;padding:.8rem 1rem;margin:.5rem 0 1.25rem;"><strong>Privacy note:</strong> You can use this assessment without an account. When you submit it, selected health fields may be stored without your name, contact details, account or research ID, or precise location to support application analytics and privacy-protected summaries. Individual records are not public. Researcher access to secondary data is separately controlled.</div>
 <div class="wrap">
   <button class="back-btn" onclick="showPage('home')">&#8592; Back</button>
   <span class="section-label">// Health Tool</span>
@@ -1202,6 +1205,7 @@ For researchers, the same platform doubles as live research infrastructure: uplo
 
 <!-- STRESS PAGE -->
 <div id="page-stress" class="page z1" style="padding-top:88px;padding-bottom:4rem;">
+  <div class="access-note public-data-note" style="border:1px solid var(--border);border-radius:10px;padding:.8rem 1rem;margin:.5rem 0 1.25rem;"><strong>Privacy note:</strong> You can use this assessment without an account. When you submit it, selected health fields may be stored without your name, contact details, account or research ID, or precise location to support application analytics and privacy-protected summaries. Individual records are not public. Researcher access to secondary data is separately controlled.</div>
 <div class="wrap">
   <button class="back-btn" onclick="showPage('home')">&#8592; Back</button>
   <span class="section-label">// Health Tool</span>
@@ -1389,6 +1393,7 @@ For researchers, the same platform doubles as live research infrastructure: uplo
 
 <!-- MEMORY PAGE -->
 <div id="page-memory" class="page z1" style="padding-top:100px;padding-bottom:4rem;">
+  <div class="access-note public-data-note" style="border:1px solid var(--border);border-radius:10px;padding:.8rem 1rem;margin:.5rem 0 1.25rem;"><strong>Privacy note:</strong> You can use this assessment without an account. When you submit it, selected health fields may be stored without your name, contact details, account or research ID, or precise location to support application analytics and privacy-protected summaries. Individual records are not public. Researcher access to secondary data is separately controlled.</div>
 <div class="wrap" style="max-width:680px;">
   <button class="back-btn" onclick="showPage('home')">&#8592; Back</button>
   <span class="section-label">// Cognitive Assessment</span>
@@ -2683,12 +2688,8 @@ function showPage(id) {
   const restrictedPages = new Set(['painstudy']);
   if (researcherPages.has(id) && !SESSION.researcher && !SESSION.admin) { openLoginModal('researcher'); return; }
   if (adminPages.has(id) && !SESSION.admin) { openLoginModal('admin'); return; }
-  // When the approved research gate is closed, allow assessment pages to open in
-  // synthetic-test mode. saveRecord() independently refuses all research writes.
-  // Once the backend gate is active, require participant registration/consent first.
-  if (assessmentPages.has(id) && !SESSION.participant && protocolCollectionEnabled) {
-    const rm = document.getElementById('modal-register'); if (rm) rm.classList.add('open'); return;
-  }
+  // Public assessments do not require research enrolment. The backend stores them
+  // in a separate anonymous application table; secondary research access remains gated.
   if (restrictedPages.has(id) && !SESSION.participant && !SESSION.researcher && !SESSION.admin) {
     const rm = document.getElementById('modal-register'); if (rm) rm.classList.add('open'); return;
   }
@@ -2743,16 +2744,8 @@ function toast(msg) {
    REGISTRATION MODAL — opens before assessment
 ══════════════════════════════════════════════ */
 function openAssessModal() {
-  // A closed protocol gate permits synthetic prediction testing only. Do not
-  // force users into registration, which the backend correctly blocks.
-  if (protocolCollectionEnabled && !SESSION.participant) {
-    const rm = document.getElementById('modal-register'); if (rm) rm.classList.add('open');
-    return;
-  }
+  // Anyone can use the public application without creating a research account.
   const am = document.getElementById('modal-assess'); if (am) am.classList.add('open');
-  if (!protocolCollectionEnabled) {
-    toast('Synthetic-test mode: assessments can run, but research records will not be saved. Do not enter real participant data.');
-  }
 }
 
 function openLoginModal(role) {
@@ -3417,13 +3410,11 @@ async function runCognitiveSymptomAssessment() {
       ((Array.isArray(result.recommendations) && result.recommendations.length) ? '<h4 style="margin:.8rem 0 .4rem;">Suggested next steps</h4><ul>' + result.recommendations.map(x => '<li>' + String(x).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])) + '</li>').join('') + '</ul>' : '') +
       ((Array.isArray(result.fields_defaulted) && result.fields_defaulted.length) ? '<p style="font-size:.78rem;color:var(--mist);margin-top:.7rem;">Model defaults used for: ' + result.fields_defaulted.map(x => String(x).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))).join(', ') + '</p>' : '') +
       '<p style="font-size:.78rem;color:var(--mist);margin-top:.8rem;">This is a model-based symptom-risk estimate, not a diagnosis. Seek clinical assessment for persistent or worsening cognitive concerns.</p>';
-    if (protocolCollectionEnabled) {
-      const saved = await saveRecord('cognitive_symptom_assessments', { assessment_type:'cognitive_symptom_assessment', inputs:payload, model_response:result, model_name:result.model_used || 'African Cognitive Symptom Risk Model', model_version:result.model_version || null, assessment_date:new Date().toISOString() });
-      if (!saved) {
-        out.insertAdjacentHTML('beforeend', '<p style="font-size:.8rem;color:var(--mist);margin-top:.8rem;">Prediction returned, but no research record was saved. Check the approved consent workflow and backend response.</p>');
-      }
+    const saved = await saveRecord('cognitive_symptom_assessments', { assessment_type:'cognitive_symptom_assessment', inputs:payload, model_response:result, model_name:result.model_used || 'African Cognitive Symptom Risk Model', model_version:result.model_version || null });
+    if (!saved) {
+      out.insertAdjacentHTML('beforeend', '<p style="font-size:.8rem;color:var(--mist);margin-top:.8rem;">Your result is available above, but anonymous storage is temporarily unavailable.</p>');
     } else {
-      out.insertAdjacentHTML('beforeend', '<p style="font-size:.8rem;color:var(--amber);margin-top:.8rem;">Synthetic-test mode: the protocol gate is closed, so this prediction was not saved as a research record.</p>');
+      out.insertAdjacentHTML('beforeend', '<p style="font-size:.8rem;color:var(--mist);margin-top:.8rem;">Saved without your name, contact details, account ID, research ID, or precise location. Researcher access is separately controlled.</p>');
     }
   } catch (e) {
     out.innerHTML = '<p style="color:#EF4444;">The cognitive-symptom assessment could not be completed: ' + String(e.message || e).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])) + '</p><p style="color:var(--mist);font-size:.82rem;">Your existing dementia-risk assessment remains available below.</p>';
