@@ -340,9 +340,9 @@ body.public-view .nav-links li[data-private-nav="true"] { display:none !importan
       </select>
     </div>
     <button class="btn btn-gold" id="nav-btn-assess" data-i18n="navAssess" onclick="openAssessModal()">🩺 Start Assessment</button>
-    <button class="btn btn-outline btn-sm" id="nav-btn-researcher" data-i18n="navResearcher" onclick="SESSION.researcher ? showPage('researcher') : openLoginModal('researcher')">Researcher Login</button>
-    <button class="btn btn-outline btn-sm" id="nav-research-id" onclick="copyResearchId()" style="display:none;" title="Click to copy your research ID">Research ID</button>
-    <button class="btn btn-outline btn-sm" id="nav-btn-logout" onclick="logoutSession()" style="display:none;">Sign out</button>
+    
+    
+    
     <a href="https://neuromatrixbiosystems.com" target="_blank" class="btn btn-outline btn-sm" style="font-size:.75rem;padding:6px 14px;">NeuroMatrix ↗</a>
     <button class="btn btn-outline btn-sm" onclick="showPage('herbs')">🌿 Herbal Remedies</button>
     <button class="btn btn-outline btn-sm" onclick="showPage('painstudy')">🩹 Pain-Stroke Study</button>
@@ -355,9 +355,9 @@ body.public-view .nav-links li[data-private-nav="true"] { display:none !importan
 <div class="hero">
   <div class="hero-inner wrap">
     <div>
-      <div class="hero-pill fade-up"><div class="hero-dot"></div><span data-i18n="heroPill">African NeuroHealth Research Lab ·GRASP/NIH/DSI</span></div>
+      <div class="hero-pill fade-up"><div class="hero-dot"></div><span data-i18n="heroPill">Public brain-health learning app</span></div>
       <h1 class="headline hero-title fade-up fade-up-1">African<br><span class="g">NeuroHealth</span><br><span class="m">Intelligence</span></h1>
-      <p class="hero-desc fade-up fade-up-2"><span data-i18n="heroDesc">AI-powered stroke and dementia risk prediction, community health intelligence, and translational neuroscience research — built for Africa, by Africa.</span></p>
+      <p class="hero-desc fade-up fade-up-2"><span data-i18n="heroDesc">Learn the warning signs of stroke, understand changes in memory and thinking, and practise what you know through quick interactive challenges.</span></p>
       <div class="hero-ctas fade-up fade-up-3">
         <button class="btn btn-gold" onclick="openAssessModal()" data-i18n="heroStartBtn">🩺 Start Assessment</button>
         <button class="btn btn-outline" onclick="gotoSection('about')" data-i18n="heroAboutBtn">📖 What This App Does</button>
@@ -365,12 +365,12 @@ body.public-view .nav-links li[data-private-nav="true"] { display:none !importan
       <div class="hero-stats fade-up fade-up-4">
         <div><span class="hero-stat-num" data-count="6">0</span><span class="hero-stat-num">+</span><span class="hero-stat-lbl" data-i18n="statLang">Languages</span></div>
         <div><span class="hero-stat-num" data-count="28">0</span><span class="hero-stat-lbl" data-i18n="statBio">Biomarkers</span></div>
-        <div><span class="hero-stat-num" data-count="36">0</span><span class="hero-stat-num">+</span><span class="hero-stat-lbl" data-i18n="statStates">States Mapped</span></div>
+        <div><span class="hero-stat-num">FAST</span><span class="hero-stat-lbl">Stroke warning signs</span></div>
       </div>
     </div>
     <div class="hero-visual">
-      <div class="float-pill fp1" data-i18n="floatPill1">🔬 ML Risk Model Active</div>
-      <div class="float-pill fp2" data-i18n="floatPill2">🌍 54 African Countries</div>
+      <div class="float-pill fp1">🧠 Learn the warning signs</div>
+      <div class="float-pill fp2" data-i18n="floatPill2">🌍 Brain health for Africa</div>
       <div class="brain-card-outer">
         <div class="brain-ring">
 <svg class="brain-logo-img" viewBox="0 0 200 200" style="width:140px;height:140px;border-radius:50%;display:block;margin:0 auto 1rem;border:2px solid var(--gold);background:#0a2418;" xmlns="http://www.w3.org/2000/svg" aria-label="ANHRL"><defs><linearGradient id="anhrlG2" x1="0" x2="1" y1="0" y2="1"><stop offset="0%" stop-color="#c9a84c"/><stop offset="100%" stop-color="#4ECB82"/></linearGradient></defs><path d="M70 70c0-13 9-22 22-22s22 9 22 22v9c6 0 12 6 12 13s-6 13-12 13v9c0 13-9 22-22 22s-22-9-22-22c-10 0-17-7-17-16s7-16 17-16v-10z" fill="none" stroke="url(#anhrlG2)" stroke-width="6" stroke-linejoin="round"/><circle cx="90" cy="80" r="4" fill="#c9a84c"/><circle cx="105" cy="100" r="4" fill="#4ECB82"/><circle cx="90" cy="120" r="4" fill="#c9a84c"/><text x="100" y="170" text-anchor="middle" fill="#c9a84c" font-family="sans-serif" font-size="18" font-weight="700">ANHRL</text></svg>
@@ -402,7 +402,7 @@ Beyond risk prediction, the platform includes a nutrition tracker, a stress asse
 </p>
 
 <p class="section-sub" style="margin-bottom:1.25rem;" data-i18n="aboutP3">
-For researchers, the same platform doubles as live research infrastructure: upload and export datasets, visualise stroke and dementia hotspots across Africa on NeuroMap, and browse a documented ethnobotanical database of herbal remedies — all built on real field data collected through community assessments.
+The app is designed for public education and self-guided learning. It does not diagnose stroke or dementia, and it cannot determine whether a person is currently having a stroke.
 </p>
 <p class="section-sub" style="margin-bottom:1.25rem;" data-i18n="aboutP4">
 <strong>Developed by:</strong> Adebimpe-John Omolola E<br>
@@ -519,6 +519,23 @@ For researchers, the same platform doubles as live research infrastructure: uplo
   </div>
 </section>
 
+
+<!-- PUBLIC BRAIN-HEALTH TOOLKIT -->
+<section id="brain-toolkit" class="section" style="padding-top:56px;padding-bottom:56px;background:linear-gradient(180deg,rgba(10,36,24,.28),rgba(7,11,22,.2));">
+ <div class="wrap"><span class="section-label">// Your brain-health toolkit</span><h2 class="section-title">Check in. Learn. Take a next step.</h2>
+ <p class="section-sub" style="margin-bottom:1.5rem;">Play short challenges about stroke warning signs and dementia-related symptoms, then explore screening tools and practical brain-health guidance. This app does not diagnose.</p>
+ <div class="toolkit-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:1rem;">
+ <button class="tool-card" onclick="showPage('stroke')"><span class="tool-icon">🫀</span><span class="tool-eyebrow">01 · Circulation</span><strong>Stroke risk screening</strong><span>Review blood pressure, lifestyle and known risk factors.</span><span class="tool-link">Start screening ↗</span></button>
+ <button class="tool-card" onclick="showPage('dementia')"><span class="tool-icon">🧠</span><span class="tool-eyebrow">02 · Memory</span><strong>Memory and dementia-risk screening</strong><span>Explore cognitive symptoms and factors associated with brain health.</span><span class="tool-link">Start screening ↗</span></button>
+ <button class="tool-card" onclick="showPage('nutrition')"><span class="tool-icon">🥬</span><span class="tool-eyebrow">03 · Everyday habits</span><strong>Nutrition check-in</strong><span>Reflect on food choices and salt intake.</span><span class="tool-link">Explore nutrition ↗</span></button>
+ <button class="tool-card" onclick="showPage('memory')"><span class="tool-icon">🧩</span><span class="tool-eyebrow">04 · Brain exercise</span><strong>Memory game</strong><span>A short recall challenge for learning, not diagnosis.</span><span class="tool-link">Play a round ↗</span></button></div>
+ <div class="card card-gold" id="symptom-quiz" style="margin-top:1.5rem;"><span class="section-label">// Quick brain-health challenge</span><h3 id="symptom-quiz-title" style="font-family:'Playfair Display',serif;font-size:1.35rem;">Can you spot the warning signs?</h3>
+ <p id="symptom-quiz-progress" style="color:var(--mist);font-size:.82rem;margin:.5rem 0;">Question 1 of 5 · Earn points as you learn</p>
+ <div style="display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;"><p id="symptom-quiz-question" style="font-weight:600;">Which sudden change can be a warning sign of stroke?</p><span class="tag tag-gold" id="symptom-quiz-score">⭐ 0 points</span></div>
+ <div id="symptom-quiz-options" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:.7rem;margin-top:1rem;"></div><p id="symptom-quiz-feedback" role="status" style="margin-top:.9rem;color:var(--mist);font-size:.88rem;min-height:1.5em;">Choose an answer to earn your first point.</p>
+ <button class="btn btn-gold btn-sm" id="symptom-quiz-next" onclick="nextSymptomQuiz()" style="margin-top:.5rem;" disabled>Next question →</button></div>
+ <div class="learn-strip" style="margin-top:1.25rem;"><div><span class="section-label">// 60-second learning</span><h3 id="learn-title">Know the warning signs of stroke</h3><p id="learn-copy">Sudden face drooping, arm weakness, or speech difficulty needs urgent medical attention. Note when symptoms began and seek emergency help immediately.</p></div><div class="learn-actions"><button class="btn btn-outline btn-sm" onclick="cycleBrainLesson()">Next lesson ↻</button><button class="btn btn-gold btn-sm" onclick="openAssessModal()">Choose an assessment</button></div></div>
+ </div></section>
 <!-- NEUROMAP -->
 <section id="neuromap" class="section" style="background:rgba(7,11,22,.45);">
   <div class="wrap">
@@ -529,9 +546,9 @@ For researchers, the same platform doubles as live research infrastructure: uplo
     <div class="map-controls" role="group" aria-label="NeuroMap data layer">
       <button class="map-btn active" data-layer="stroke" onclick="setMapLayer(this)">🫀 Stroke</button>
       <button class="map-btn" data-layer="dementia" onclick="setMapLayer(this)">🧠 Memory symptoms</button>
-      <button class="map-btn" data-layer="herbal" onclick="setMapLayer(this)">🌿 Herbal use</button>
-      <button class="map-btn" data-layer="pollution" onclick="setMapLayer(this)">💨 Pollution</button>
-      <button class="map-btn" data-layer="sex" onclick="setMapLayer(this)">⚥ Sex differences</button>
+      
+      
+      
     </div>
     <div class="neuromap-filters" aria-label="Geographic filters">
       <label>Country<select id="map-country" onchange="updateMapRegionOptions()"><option value="All Africa">All Africa</option></select></label>
@@ -1774,8 +1791,8 @@ For researchers, the same platform doubles as live research infrastructure: uplo
     <button class="modal-close" onclick="closeModal('modal-assess')">&#x2715;</button>
 <svg viewBox="0 0 64 64" style="width:64px;height:64px;border-radius:50%;display:block;margin:0 auto 1rem;border:2px solid var(--gold);background:#0a2418;" xmlns="http://www.w3.org/2000/svg" aria-label="ANHRL"><defs><linearGradient id="anhrlG3" x1="0" x2="1" y1="0" y2="1"><stop offset="0%" stop-color="#c9a84c"/><stop offset="100%" stop-color="#4ECB82"/></linearGradient></defs><path d="M22 22c0-4 3-7 7-7s7 3 7 7v3c2 0 4 2 4 4s-2 4-4 4v3c0 4-3 7-7 7s-7-3-7-7c-3 0-5-2-5-5s2-5 5-5v-4z" fill="none" stroke="url(#anhrlG3)" stroke-width="2.2" stroke-linejoin="round"/></svg>
     <h2>Start Your Assessment</h2>
-    <p>Free screening and synthetic testing. Research records are not saved while study approval is pending.</p>
-    <div id="assessment-test-mode-note" style="display:none;background:rgba(240,207,114,.08);border:1px solid rgba(240,207,114,.3);border-radius:8px;padding:.75rem;margin:.75rem 0 1rem;color:var(--amber);font-size:.8rem;line-height:1.5;">Protocol gate is closed. Use synthetic test values only. Do not enter real participant data; predictions will not be saved as research records.</div>
+    <p>Free public learning and screening. Your answers are not added to the research dataset.</p>
+    <div id="assessment-test-mode-note" style="display:none;background:rgba(240,207,114,.08);border:1px solid rgba(240,207,114,.3);border-radius:8px;padding:.75rem;margin:.75rem 0 1rem;color:var(--amber);font-size:.8rem;line-height:1.5;">Public screening only. Answers are not saved to the research dataset.</div>
     <div class="modal-opts">
       <button class="modal-opt" onclick="closeModal('modal-assess');showPage('stroke')"><span style="font-size:1.5rem;">&#x1FA7A;</span><div><strong>Stroke Risk Assessment</strong><span>BP, BMI, lifestyle, environment · AI scoring · PDF report · ~5 min</span></div></button>
       <button class="modal-opt" onclick="closeModal('modal-assess');showPage('dementia')"><span style="font-size:1.5rem;">&#x1F9EC;</span><div><strong>Dementia Risk Screening</strong><span>MMSE, metabolic, cognitive symptoms · AI scoring · PDF · ~7 min</span></div></button>
@@ -1905,7 +1922,7 @@ async function refreshProtocolGate() {
     if (cognitiveNotice) {
       cognitiveNotice.textContent = protocolCollectionEnabled
         ? 'The backend reports that research collection is enabled. Research assessments may only be saved after the approved consent and eligibility process is completed.'
-        : 'RESEARCH COLLECTION IS DISABLED. Use synthetic test values only. Do not enter real participant data. Predictions are not saved as research records while approval is pending.';
+        : 'Public screening is available. Answers are not saved to the research dataset.';
     }
     // The server exposes the approved consent version only to the registration handler via configuration;
     // the client must not invent or hard-code a version. Request it only when the gate is enabled.
@@ -1924,7 +1941,7 @@ async function refreshProtocolGate() {
     if (testModeNote) testModeNote.style.display = 'block';
     if (statusEl) statusEl.textContent = 'Cannot verify study approval configuration with the server. Research collection remains blocked.';
     const cognitiveNotice = document.getElementById('cognitive-protocol-notice');
-    if (cognitiveNotice) cognitiveNotice.textContent = 'RESEARCH COLLECTION IS DISABLED because the backend approval status could not be verified. Use synthetic test values only. Do not enter real participant data.';
+    if (cognitiveNotice) cognitiveNotice.textContent = 'Public screening is available. Answers are not saved to the research dataset.';
   }
 }
 
@@ -2110,7 +2127,7 @@ const LANG = {
     // NAV
     navResearcher:'Researcher Login', navAssess:'🩺 Start Assessment',
     // HERO
-    heroDesc:'AI-powered stroke and dementia risk prediction, community health intelligence, and translational neuroscience research — built for Africa, by Africa.',
+    heroDesc:'Learn the warning signs of stroke, understand changes in memory and thinking, and practise what you know through quick interactive challenges.',
     heroStartBtn:'🩺 Start Assessment', heroAboutBtn:'📖 What This App Does',
     statLang:'Languages', statBio:'Biomarkers', statStates:'States Mapped',
     // ABOUT
@@ -2155,7 +2172,7 @@ const LANG = {
             navSubtitle:'Intelligence',
     scrollText:'Scroll to explore',
     floatPill1:'🔬 ML Risk Model Active',
-    floatPill2:'🌍 54 African Countries',
+    floatPill2:'🌍 Brain health for Africa',
     p1Title:'Stroke Prevention',
     p1Desc:'Geospatial mapping of stroke hotspots, hypertension-driven risk modelling, and cardiometabolic profiling across Nigeria and sub-Saharan Africa.',
     p2Title:'Dementia & Alzheimer\'s',
@@ -4958,6 +4975,7 @@ document.addEventListener('DOMContentLoaded', function() {
   });
 });
 
+const symptomQuizItems=[{q:"Which sudden change can be a warning sign of stroke?",opts:["Face drooping or arm weakness","A mild cough","A paper cut"],correct:0,why:"Face drooping, arm weakness, or speech difficulty can signal a stroke. Seek emergency help immediately."},{q:"Someone suddenly has trouble speaking clearly. What should you do?",opts:["Wait until tomorrow","Seek emergency medical help now","Give them food and let them sleep"],correct:1,why:"Sudden speech difficulty is an emergency warning sign. Note when symptoms began and get emergency help."},{q:"Which memory change deserves a medical check if it persists or worsens?",opts:["Forgetting where you put a pen once","Repeatedly getting lost in familiar places","Not remembering a song lyric"],correct:1,why:"Persistent changes affecting daily life deserve clinical assessment."},{q:"Can this app diagnose a stroke or dementia?",opts:["Yes, it replaces a clinician","No, it provides learning and screening information","Only if you score 100%"],correct:1,why:"The app is educational. It cannot diagnose or rule out a condition."},{q:"What does FAST remind people to check for stroke?",opts:["Face, Arms, Speech, Time","Food, Activity, Sleep, Temperature","Feet, Appetite, Skin, Thirst"],correct:0,why:"FAST means Face, Arms, Speech, Time. Sudden symptoms require emergency help."}];let symptomQuizIndex=0,symptomQuizPoints=0,symptomQuizAnswered=false;function renderSymptomQuiz(){const item=symptomQuizItems[symptomQuizIndex];if(!item)return;document.getElementById('symptom-quiz-question').textContent=item.q;document.getElementById('symptom-quiz-progress').textContent='Question '+(symptomQuizIndex+1)+' of '+symptomQuizItems.length+' · Earn points as you learn';document.getElementById('symptom-quiz-score').textContent='⭐ '+symptomQuizPoints+' points';document.getElementById('symptom-quiz-feedback').textContent='Choose an answer to earn points.';document.getElementById('symptom-quiz-next').textContent=symptomQuizIndex===symptomQuizItems.length-1?'Play again ↻':'Next question →';document.getElementById('symptom-quiz-next').disabled=true;symptomQuizAnswered=false;const opts=document.getElementById('symptom-quiz-options');opts.innerHTML='';item.opts.forEach((label,i)=>{const b=document.createElement('button');b.className='btn btn-outline';b.textContent=label;b.onclick=()=>answerSymptomQuiz(i);opts.appendChild(b);});}function answerSymptomQuiz(choice){if(symptomQuizAnswered)return;symptomQuizAnswered=true;const item=symptomQuizItems[symptomQuizIndex],buttons=document.querySelectorAll('#symptom-quiz-options button');buttons.forEach((b,i)=>{b.disabled=true;if(i===item.correct)b.style.borderColor='var(--mint)';if(i===choice&&choice!==item.correct)b.style.borderColor='#EF4444';});const correct=choice===item.correct;if(correct)symptomQuizPoints+=10;document.getElementById('symptom-quiz-score').textContent='⭐ '+symptomQuizPoints+' points';document.getElementById('symptom-quiz-feedback').textContent=(correct?'Correct! +10 points. ':'Not quite. ')+item.why;document.getElementById('symptom-quiz-next').disabled=false;}function nextSymptomQuiz(){if(symptomQuizIndex===symptomQuizItems.length-1){symptomQuizIndex=0;symptomQuizPoints=0;}else symptomQuizIndex++;renderSymptomQuiz();}document.addEventListener('DOMContentLoaded',()=>{if(document.getElementById('symptom-quiz'))renderSymptomQuiz();});
 </script>
 
 </body>
